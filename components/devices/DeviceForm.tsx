@@ -42,7 +42,7 @@ export default function DeviceForm({ categories, createDeviceAction }: DeviceFor
         resolver: zodResolver(createDeviceFormSchema),
         defaultValues: {
             name: "",
-            userId: userId || "",
+            userId: userId || "default",
             sensors: [{ name: "", unit: "", categoryId: "" }],
             group: { name: "Default" }
         }
@@ -54,14 +54,24 @@ export default function DeviceForm({ categories, createDeviceAction }: DeviceFor
     });
 
     function handleSubmit(data: CreateDeviceFormData) {
+        console.log("Form submitted with data:", data);
         startTransition(async () => {
-            const result = await createDeviceAction(data);
+            try {
+                console.log("Calling server action...");
+                const result = await createDeviceAction(data);
+                console.log("Server action result:", result);
 
-            if (result.success) {
-                toast.success("Device created successfully");
-                form.reset();
-            } else {
-                toast.error("Failed to create device", { description: result.message, });
+                if (result.success) {
+                    toast.success("Device created successfully");
+                    form.reset();
+                } else {
+                    toast.error("Failed to create device", { description: result.message });
+                }
+            } catch (error) {
+                console.error("Error during form submission:", error);
+                toast.error("An unexpected error occurred", {
+                    description: error instanceof Error ? error.message : "Please try again"
+                });
             }
         });
     }
@@ -116,7 +126,6 @@ export default function DeviceForm({ categories, createDeviceAction }: DeviceFor
                             Add Sensor
                         </Button>
                     </div>
-
                     {fields.map((field, index) => (
                         <div key={field.id} className="space-y-4 p-4 border rounded-md">
                             <div className="flex items-center justify-between">
