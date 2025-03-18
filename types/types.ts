@@ -80,6 +80,7 @@ export const createDeviceFormSchema = z.object({
             categoryId: z.string().nonempty({ message: "Sensor category is required" }),
         })
     ).min(1, { message: "At least one sensor is required" }).superRefine((items, ctx) => {
+        // The refine here checks if sensor names are unique, adding errors to all duplicated fields
         const uniqueNames = new Map<string, number>()
         items.forEach((item, idx) => {
             const firstAppearanceIndex = uniqueNames.get(item.name)
@@ -103,5 +104,10 @@ export const createDeviceFormSchema = z.object({
         name: z.string().optional(),
     })
 });
-
 export type CreateDeviceFormData = z.infer<typeof createDeviceFormSchema>;
+
+export const createCategoryFormSchema = z.object({
+    userId: z.string().nonempty({ message: "User ID is required" }),
+    name: z.string().nonempty({ message: "Category name is required" }),
+});
+export type CreateCategoryFormData = z.infer<typeof createCategoryFormSchema>;
