@@ -6,6 +6,7 @@ import { getGroupSensors } from "@/lib/contexts/groupSensorsContext"
 import { createMultipleSensorValues } from "@/lib/contexts/sensorValuesContext"
 import { getUserFromToken } from "@/lib/contexts/userTokensContext"
 import redis from "@/lib/redis"
+import { SensorValueEntry } from "@/types/types"
 
 type SensorsLogBody = {
     sensor_id: string
@@ -26,12 +27,6 @@ type RedisRequestCache<T = Object> = {
 const CACHE_EXPIRATION = 90 // 90 seconds
 
 type GetFromDBResponse = RedisRequestCache<Map<string, string>> | "Error: bad token" | "Error: device not found" | "Error: user does not own device, group or sensors"
-
-export type LogEntry = {
-    groupSensorId: string;
-    timestamp: Date;
-    value: number;
-};
 
 
 export async function POST(req: Request) {
@@ -69,12 +64,12 @@ export async function POST(req: Request) {
         await redis.expire(token + device_id, CACHE_EXPIRATION)
     }
     const { groupSensorIdMap } = cache as RedisRequestCache<Map<string, string>>
-    const logs: LogEntry[] = sensors.map(sensor => (
+    const logs: SensorValueEntry[] = sensors.map(sensor => (
         {
             groupSensorId: groupSensorIdMap.get(sensor.sensor_id),
             timestamp: sensor.timestamp ? new Date(sensor.timestamp * 1000) : new Date(),
             value: sensor.value
-        })).filter((log): log is LogEntry => log !== null);
+        })).filter((log): log is SensorValueEntry => log !== null);
     //Store logs in the database
     await createMultipleSensorValues(logs)
     return new Response('Success', {
@@ -131,7 +126,6 @@ async function forceCache(token: string, data: RedisRequestCache<Map<string, str
     const cache_key = getCacheKey(token, data.device_id)
     const dataCopy: RedisRequestCache = { ...data }
     dataCopy.groupSensorIdMap = Object.fromEntries(data.groupSensorIdMap)
-    // Cache for 10 minutes
     await redis.pipeline()
         .set(cache_key, JSON.stringify(dataCopy))
         .expire(cache_key, CACHE_EXPIRATION)

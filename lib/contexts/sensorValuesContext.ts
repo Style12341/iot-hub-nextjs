@@ -1,10 +1,10 @@
-import { LogEntry } from "@/app/api/v1/devices/log/route";
+import { SensorValueEntry } from "@/types/types"
 import db from "../prisma";
 
 
 
 
-export async function createMultipleSensorValues(data: LogEntry[]) {
+export async function createMultipleSensorValues(data: SensorValueEntry[]) {
     return await db.sensorValue.createMany({
         data: data.map(entry => ({
             value: entry.value,
