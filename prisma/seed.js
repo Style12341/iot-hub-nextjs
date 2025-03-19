@@ -8,12 +8,57 @@ async function main() {
             role: "ADMIN",
         },
     });
-    await db.sensorCategory.create({
+    const category = await db.sensorCategory.create({
         data: {
             name: "Temperature",
             userId: admin_user_id,
         },
     });
+    const token = await db.userTokens.create({
+        data: {
+            context: "log",
+            token: "testToken",
+            userId: user.id
+        },
+    });
+    const device = await db.device.create({
+        data: {
+            name: "testDevice",
+            userId: user.id,
+            Sensors: {
+                create: {
+                    name: "testSensor",
+                    unit: "testUnit",
+                    Category: {
+                        connect: {
+                            id: category.id
+                        }
+                    }
+                }
+            },
+            Groups: {
+                create: {
+                    name: "TestGroup"
+                }
+            }
+        },
+        // Include relevant relations
+        include: {
+            Sensors: true,
+            Groups: true,
+
+        }
+    });
+    const group = device.Groups[0];
+    await db.groupSensor.createMany({
+        data: device.Sensors.map(sensor => ({
+            groupId: group.id,
+            sensorId: sensor.id,
+            active: true
+        }))
+    });
+    console.log("Device: ", device);
+    console.log("Token: ", token);
 }
 main()
     .then(async () => {

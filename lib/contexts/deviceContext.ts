@@ -40,3 +40,19 @@ export const createDevice = async (data: CreateDeviceFormData) => {
     });
     return device;
 };
+export const getDevice = async (id: string) => {
+    return await db.device.findUnique({
+        where: {
+            id
+        },
+        include: {
+            Sensors: {
+                include: {
+                    Category: true
+                }
+            },
+            Groups: true,
+            User: true
+        }
+    });
+}
