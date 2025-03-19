@@ -23,6 +23,7 @@ model User {
   role             UserRole         @default(USER)
   Devices          Device[]
   SensorCategories SensorCategory[]
+  Tokens           UserTokens[]
 }
 
 model Device {
@@ -68,12 +69,33 @@ model Group {
 }
 
 model GroupSensor {
-  id       String  @id @default(uuid())
-  Group    Group   @relation(fields: [groupId], references: [id])
-  groupId  String
-  Sensor   Sensor  @relation(fields: [sensorId], references: [id])
-  sensorId String
-  active   Boolean @default(true)
+  id          String        @id @default(uuid())
+  Group       Group         @relation(fields: [groupId], references: [id])
+  groupId     String
+  Sensor      Sensor        @relation(fields: [sensorId], references: [id])
+  sensorId    String
+  active      Boolean       @default(true)
+  SensorValue SensorValue[]
 
   @@unique(name: "groupsSensors", [groupId, sensorId])
+}
+
+model SensorValue {
+  timestamp     DateTime    @default(now())
+  value         Float
+  GroupSensor   GroupSensor @relation(fields: [groupSensorId], references: [id])
+  groupSensorId String
+
+  @@id([timestamp, groupSensorId])
+}
+
+model UserTokens {
+  id        String   @id @default(uuid())
+  token     String
+  createdAt DateTime @default(now())
+  context   String
+  User      User     @relation(fields: [userId], references: [id])
+  userId    String
+
+  @@unique([token, context])
 }
