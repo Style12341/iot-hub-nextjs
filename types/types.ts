@@ -111,3 +111,8 @@ export const createCategoryFormSchema = z.object({
     name: z.string().nonempty({ message: "Category name is required" }),
 });
 export type CreateCategoryFormData = z.infer<typeof createCategoryFormSchema>;
+export type SensorValueEntry = {
+    groupSensorId: string;
+    timestamp: Date;
+    value: number;
+};
