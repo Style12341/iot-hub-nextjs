@@ -23,6 +23,7 @@ model User {
   role             UserRole         @default(USER)
   Devices          Device[]
   SensorCategories SensorCategory[]
+  Tokens           UserTokens[]
 }
 
 model Device {
@@ -86,4 +87,15 @@ model SensorValue {
   groupSensorId String
 
   @@id([timestamp, groupSensorId])
+}
+
+model UserTokens {
+  id        String   @id @default(uuid())
+  token     String
+  createdAt DateTime @default(now())
+  context   String
+  User      User     @relation(fields: [userId], references: [id])
+  userId    String
+
+  @@unique([token, context])
 }
