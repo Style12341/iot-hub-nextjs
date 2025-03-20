@@ -1,5 +1,3 @@
-import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet"
-import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import {
   SignInButton,
@@ -11,38 +9,13 @@ import {
 export default function Navbar() {
   return (
     <header className="flex h-20 w-full shrink-0 items-center px-4 md:px-6">
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="lg:hidden">
-            <MenuIcon className="h-6 w-6" />
-            <span className="sr-only">Toggle navigation menu</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left">
-          <Link href="#" className="mr-6 hidden lg:flex" prefetch={false}>
-            <MountainIcon className="h-6 w-6" />
-            <span className="sr-only">Acme Inc</span>
-          </Link>
-          <div className="grid gap-2 py-6">
-            <HiddenNavbarLink href="#">
-              Home
-            </HiddenNavbarLink>
-            <SignedOut>
-              <SignInButton />
-              <SignUpButton />
-            </SignedOut>
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-          </div>
-        </SheetContent>
-      </Sheet>
-      <Link href="#" className="mr-6 hidden lg:flex" prefetch={false}>
+      <Link href="#" className="mr-6 flex" prefetch={false}>
         <MountainIcon className="h-6 w-6" />
         <span className="sr-only">Acme Inc</span>
       </Link>
-      <nav className="ml-auto hidden lg:flex gap-6">
-        <NavbarLink href="#">Home</NavbarLink>
+      <nav className="ml-auto flex gap-6">
+        <NavbarLink href="/">Home</NavbarLink>
+        <NavbarLink href="/dashboard">Dashboard</NavbarLink>
         <SignedOut>
           <SignInButton />
           <SignUpButton />
