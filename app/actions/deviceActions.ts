@@ -5,7 +5,7 @@ import { CreateDeviceFormData, createErrorResponse, createSuccessResponse, Serve
 import { auth } from "@clerk/nextjs/server";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
-export async function createDeviceAction(data: CreateDeviceFormData): Promise<ServerActionResponse> {
+export async function createDeviceAction(data: CreateDeviceFormData) {
     try {
         // Server side validations
         const { userId } = await auth();

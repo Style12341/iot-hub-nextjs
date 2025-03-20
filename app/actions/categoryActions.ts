@@ -3,9 +3,9 @@ import { createCategory, editCategory } from "@/lib/contexts/categoriesContext";
 import { CreateCategoryFormData, createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
-export async function createCategoryAction(data: CreateCategoryFormData): Promise<ServerActionResponse> {
+export async function createCategoryAction(data: CreateCategoryFormData) {
     try {
-        const category = createCategory(data);
+        const category = await createCategory(data);
 
         return createSuccessResponse(ServerActionReason.CREATED, "Category created successfully", category);
     } catch (error) {
@@ -23,9 +23,9 @@ export async function createCategoryAction(data: CreateCategoryFormData): Promis
         }
     }
 }
-export async function editCategoryAction(data: CreateCategoryFormData, categoryId: string): Promise<ServerActionResponse> {
+export async function editCategoryAction(data: CreateCategoryFormData, categoryId: string) {
     try {
-        const category = editCategory(data, categoryId);
+        const category = await editCategory(data, categoryId);
         return createSuccessResponse(ServerActionReason.SUCCESS, "Category updated successfully", category);
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {

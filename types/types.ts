@@ -43,27 +43,42 @@ type SuccessReasons = ServerActionReason.SUCCESS | ServerActionReason.CREATED | 
 type ErrorReasons = Exclude<ServerActionReason, SuccessReasons>;
 
 
-// Generic response interface for both server actions and API endpoints
-export interface ServerActionResponse<T = unknown> {
-    success: boolean;
-    reason: ServerActionReason;
+export type SuccessResponse<T> = {
+    success: true;
+    reason: SuccessReasons;
     message: string;
-    data?: T; // Optional because error responses might not have data
-    statusCode?: number; // Optional for API usage
-}
+    data: T;
+    statusCode: number;
+};
+
+export type ErrorResponse = {
+    success: false;
+    reason: ErrorReasons;
+    message: string;
+    statusCode: number;
+};
+
+// Generic response type as a union of success and error responses
+export type ServerActionResponse<T = unknown> = SuccessResponse<T> | ErrorResponse;
+
 // Helper functions to create standardized responses
-export const createSuccessResponse = <T = unknown>(reason: SuccessReasons = ServerActionReason.SUCCESS, message = "Operation successful", data?: T): ServerActionResponse<T> => ({
+export const createSuccessResponse = <T>(
+    reason: SuccessReasons = ServerActionReason.SUCCESS,
+    message = "Operation successful",
+    data: T
+): SuccessResponse<T> => ({
     success: true,
-    reason: reason,
+    reason,
     message,
     data,
     statusCode: reasonToStatusCode[reason],
 });
 
+
 export const createErrorResponse = (
-    reason: ServerActionReason = ServerActionReason.UNKNOWN_ERROR,
+    reason: ErrorReasons = ServerActionReason.UNKNOWN_ERROR,
     message = "An error occurred"
-): ServerActionResponse => ({
+): ErrorResponse => ({
     success: false,
     reason,
     message,
