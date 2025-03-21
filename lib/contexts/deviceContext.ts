@@ -29,7 +29,7 @@ export interface DeviceQueryResult {
     sensors: SensorQueryResult[];
 };
 
-export interface DevicesQueryResult  {
+export interface DevicesQueryResult {
     device: DeviceQueryResult;
 };
 
@@ -111,7 +111,7 @@ export const getDevice = async (id: string) => {
     if (!device) {
         return null;
     }
-    device.status = Date.now() - device.lastValueAt.getTime() < ONLINE_DEVICE_THRESHOLD ? "ONLINE" : "OFFLINE";
+    device.status = getDeviceStatusFromLastValueAt(device.lastValueAt);
     return device;
 }
 export const getDevicesWithActiveSensors = async (userId: string) => {
@@ -164,6 +164,47 @@ export const getDevicesWithActiveSensors = async (userId: string) => {
         GROUP BY d."id", g."id"
         ORDER BY d."status" DESC, d."name" ASC
     `;
+    // Map status accordinglt
+
+    devices.forEach(device => {
+        device.device.status = getDeviceStatusFromLastValueAt(device.device.lastValueAt);
+    });
 
     return devices;
 };
+export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string) {
+    // Ensure we're working with a properly formatted date
+    let lastValueTime: number;
+
+    if (typeof lastValueAt === 'string') {
+        // For strings, make sure we handle both formats correctly
+        // If the string doesn't have 'Z' or '+' timezone info, assume it's UTC
+        if (!lastValueAt.endsWith('Z') && !lastValueAt.includes('+')) {
+            lastValueTime = new Date(`${lastValueAt}Z`).getTime();
+        } else {
+            lastValueTime = new Date(lastValueAt).getTime();
+        }
+    } else {
+        // Already a Date object
+        lastValueTime = lastValueAt.getTime();
+    }
+
+    const now = Date.now();
+    const diff = now - lastValueTime;
+
+    // For debugging
+    // console.log('Input lastValueAt:', lastValueAt);
+    // console.log('Parsed lastValueAt:', new Date(lastValueTime).toISOString());
+    // console.log('Current time:', new Date(now).toISOString());
+    // console.log('Time difference (ms):', diff);
+
+    // Sanity check for future timestamps
+    if (diff < -10000) { // Allow a small buffer for clock differences (10 seconds)
+        console.warn('Warning: lastValueAt timestamp appears to be in the future:',
+            new Date(lastValueTime).toISOString(),
+            'Current time:', new Date(now).toISOString());
+        return "ONLINE"; // Consider devices with future timestamps as online
+    }
+
+    return diff < ONLINE_DEVICE_THRESHOLD ? "ONLINE" : "OFFLINE";
+}

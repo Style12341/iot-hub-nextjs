@@ -7,53 +7,51 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import SensorListItem from "./sensors/SensorListItem";
-import { DeviceQueryResult, SensorQueryResult } from "@/lib/contexts/deviceContext";
+import { DeviceQueryResult, getDeviceStatusFromLastValueAt, SensorQueryResult } from "@/lib/contexts/deviceContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { timeStamp } from "console";
 
 interface DeviceCardProps {
     device: DeviceQueryResult
 }
 
+// Threshold for device status in milliseconds (90 seconds)
+const ONLINE_THRESHOLD_MS = 90 * 1000;
+
 export default function DeviceCard({ device }: DeviceCardProps) {
     const [deviceData, setDeviceData] = useState(device);
     const [isExpanded, setIsExpanded] = useState(false);
-    /*     const mockedExtraSensors: SensorQueryResult[] = [
-            {
-                id: "sensor-4",
-                name: "Temperature Sensor",
-                category: "Temperature",
-                unit: "°C",
-                groupSensorId: "group-1-sensor-4",
-                values: [{ value: 25, timestamp: new Date().toString() }]
-            },
-            {
-                id: "sensor-5",
-                name: "Humidity Sensor",
-                category: "Humidity",
-                unit: "%",
-                groupSensorId: "group-1-sensor-5",
-                values: [{ value: 50, timestamp: new Date().toString() }]
-            },
-            {
-                id: "sensor-6",
-                name: "Humidity Sensor",
-                category: "Humidity",
-                unit: "%",
-                groupSensorId: "group-1-sensor-6",
-                values: [{ value: 50, timestamp: new Date().toString() }]
-            }
-        ]
-        useEffect(() => {
-    
-            setDeviceData({
-                ...deviceData,
-                sensors: [...deviceData.sensors, ...mockedExtraSensors]
-            });
-        }, []); */
+
     // Default number of sensors to show
     const initialSensorsCount = 3;
     const hasMoreSensors = deviceData.sensors.length > initialSensorsCount;
+
+    // Update device status based on last value timestamp
+    useEffect(() => {
+
+        // Set up interval to check status every 10 seconds
+        const intervalId = setInterval(updateDeviceStatus, 10000);
+
+        // Cleanup interval on component unmount
+        return () => clearInterval(intervalId);
+
+        // Function to update device status
+        function updateDeviceStatus() {
+            const status = getDeviceStatusFromLastValueAt(deviceData.lastValueAt);
+            if (status === "OFFLINE" && deviceData.status === "ONLINE") {
+                // Device has gone offline
+                setDeviceData(prev => ({
+                    ...prev,
+                    status: "OFFLINE"
+                }));
+            } else if (status === "ONLINE" && deviceData.status === "OFFLINE") {
+                // Device has come back online
+                setDeviceData(prev => ({
+                    ...prev,
+                    status: "ONLINE"
+                }));
+            }
+        }
+    }, [deviceData.lastValueAt]);
 
     return (
         <Card className="overflow-hidden">
@@ -66,6 +64,17 @@ export default function DeviceCard({ device }: DeviceCardProps) {
                 </div>
                 <CardDescription>
                     Group: {deviceData.group.name}
+                </CardDescription>
+                <CardDescription className="text-xs">
+                    Last activity: {new Date(deviceData.lastValueAt).toLocaleString('en-GB', {
+                        day: '2-digit',
+                        month: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    })}
                 </CardDescription>
             </CardHeader>
             <CardContent>
