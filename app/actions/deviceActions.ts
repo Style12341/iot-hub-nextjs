@@ -1,6 +1,6 @@
 "use server";
 
-import { createDevice } from "@/lib/contexts/deviceContext";
+import { createDevice, getDevicesWithActiveSensors } from "@/lib/contexts/deviceContext";
 import { CreateDeviceFormData, createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
@@ -34,4 +34,7 @@ export async function createDeviceAction(data: CreateDeviceFormData) {
             return createErrorResponse();
         }
     }
+}
+export async function getDevicesWithActiveSensorsAction(userId: string) {
+    return await getDevicesWithActiveSensors(userId);
 }
