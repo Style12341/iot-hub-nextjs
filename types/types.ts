@@ -131,3 +131,9 @@ export type SensorValueEntry = {
     timestamp: Date;
     value: number;
 };
+export type CreateTokenFormData = {
+    userId: string;
+    context: string;
+};
+export const LOGTOKEN = "log";
+export type Token = string;

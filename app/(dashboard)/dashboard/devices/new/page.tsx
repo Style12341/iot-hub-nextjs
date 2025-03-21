@@ -6,6 +6,7 @@ import { auth } from "@clerk/nextjs/server";
 import { createCategoryAction } from "@/app/actions/categoryActions";
 import CategoryDialog from "@/components/categories/CategoryDialog";
 import { getUserCategories } from "@/lib/contexts/categoriesContext";
+import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
 
 const prisma = new PrismaClient();
 
@@ -18,12 +19,17 @@ export default async function NewDevicePage() {
     const categories = await getUserCategories(userId);
 
     return (
-        <div className="container mx-auto py-8 px-8">
-            <DeviceForm
-                categories={categories}
-                deviceAction={createDeviceAction}
-                categoryAction={createCategoryAction}
-            />
-        </div>
+        <>
+            <BreadcrumbHandler
+                breadcrumbs={[{ href: '/dashboard/devices', name: 'Devices' }]}
+                page="New"></BreadcrumbHandler>
+            <div className="container mx-auto py-8 px-8">
+                <DeviceForm
+                    categories={categories}
+                    deviceAction={createDeviceAction}
+                    categoryAction={createCategoryAction}
+                />
+            </div>
+        </>
     );
 }

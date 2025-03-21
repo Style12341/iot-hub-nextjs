@@ -1,3 +1,5 @@
+import { upsertToken } from "@/lib/contexts/userTokensContext";
+import { LOGTOKEN } from "@/types/types";
 import { PrismaClient } from "@prisma/client";
 const db = new PrismaClient();
 async function main() {
@@ -14,13 +16,7 @@ async function main() {
             userId: admin_user_id,
         },
     });
-    const token = await db.userTokens.create({
-        data: {
-            context: "log",
-            token: "testToken",
-            userId: user.id
-        },
-    });
+    const token = await upsertToken(admin_user_id, LOGTOKEN);
     const device = await db.device.create({
         data: {
             name: "testDevice",
