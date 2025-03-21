@@ -88,9 +88,11 @@ export function DashboardSidebar() {
                                             <SidebarMenuSub>
                                                 {item.items.map((item) => (
                                                     <SidebarMenuSubItem key={item.title}>
-                                                        <SidebarLink href={item.url}>
-                                                            {item.title}
-                                                        </SidebarLink>
+                                                        <SidebarMenuSubButton asChild>
+                                                            <SidebarLink href={item.url}>
+                                                                {item.title}
+                                                            </SidebarLink>
+                                                        </SidebarMenuSubButton>
                                                     </SidebarMenuSubItem>
                                                 ))}
                                             </SidebarMenuSub>
@@ -99,6 +101,15 @@ export function DashboardSidebar() {
                                 </SidebarMenuItem>
                             </Collapsible>
                         ))}
+                    </SidebarMenu>
+                </SidebarGroup>
+                <SidebarGroup>
+                    <SidebarMenu>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild>
+                                <SidebarLink href="/dashboard/settings">Settings</SidebarLink>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarGroup>
             </SidebarContent>

@@ -6,7 +6,7 @@ import { getGroupSensors } from "@/lib/contexts/groupSensorsContext"
 import { createMultipleSensorValues } from "@/lib/contexts/sensorValuesContext"
 import { getUserFromToken } from "@/lib/contexts/userTokensContext"
 import redis from "@/lib/redis"
-import { SensorValueEntry } from "@/types/types"
+import { LOGTOKEN, SensorValueEntry } from "@/types/types"
 
 type SensorsLogBody = {
     sensor_id: string
@@ -92,7 +92,7 @@ function getCacheKey(token: string, device_id: string) {
 }
 async function validateRequestFromDB(token: string, device_id: string, group_id: string, sensor_ids: string[]): Promise<GetFromDBResponse> {
     const [user, device] = await Promise.all([
-        getUserFromToken(token, 'log'),
+        getUserFromToken(token, LOGTOKEN),
         getDevice(device_id)
     ]);
 

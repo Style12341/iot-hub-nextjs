@@ -1,10 +1,18 @@
-"use client";
-import { useBreadcrumbsEffect } from "@/lib/useBreadcrumbsEffect";
-import { useEffect } from "react";
+import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
+
 
 export default function Dashboard() {
-    // Set breadcrumbs in one line
-    useBreadcrumbsEffect([
-    ], 'Dashboard');
-    return <div>Dashboard</div>
+    return (
+        <>
+            {/* Client component that handles breadcrumbs */}
+            <BreadcrumbHandler
+                breadcrumbs={[{ href: '/dashboard', name: 'Dashboard' }]}
+                page="Overview"
+            />
+
+            {/* Server component content */}
+            <div>Dashboard</div>
+        </>
+    );
+
 }

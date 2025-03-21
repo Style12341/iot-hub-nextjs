@@ -13,15 +13,12 @@ export default function SidebarLink({ href, children }: SidebarLinkProps) {
     const { toggleSidebar } = useSidebar();
 
     const handleClick = () => {
-        console.log(window.innerWidth);
         if (window.innerWidth < 768) {
             toggleSidebar();
         }
     };
 
     return (
-        <SidebarMenuSubButton asChild>
-            <Link href={href} onClick={handleClick}>{children} </Link>
-        </SidebarMenuSubButton>
+        <Link href={href} onClick={handleClick}>{children} </Link>
     );
 }
