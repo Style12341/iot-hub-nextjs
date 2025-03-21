@@ -137,3 +137,19 @@ export type CreateTokenFormData = {
 };
 export const LOGTOKEN = "log";
 export type Token = string;
+export interface SensorValueSSEMessage {
+    value: number;
+    timestamp: string;
+}
+export interface SensorSSEMessage {
+    id?: string;
+    groupSensorId: string;
+    value: SensorValueSSEMessage;
+}
+export type DeviceSSEType = "connected" | "new sensors";
+export interface DeviceSSEMessage {
+    id: string;
+    type: DeviceSSEType;
+    lastValueAt: Date;
+    sensors: SensorSSEMessage[];
+}

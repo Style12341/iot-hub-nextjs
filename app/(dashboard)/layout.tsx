@@ -29,7 +29,7 @@ export default function RootLayout({
                                         <div className="p-4 lg:p-6">
                                             {children}
                                         </div>
-                                        <Toaster richColors={true} />
+                                        <Toaster richColors={true} closeButton/>
                                     </SidebarInset>
                                 </BreadcrumbProvider>
                             </ClerkProvider>
