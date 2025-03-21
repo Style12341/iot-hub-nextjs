@@ -5,6 +5,7 @@ import { getDevice } from '@/lib/contexts/deviceContext';
 import { getGroupSensors } from '@/lib/contexts/groupSensorsContext';
 import { createMultipleSensorValues } from '@/lib/contexts/sensorValuesContext';
 import { getUserFromToken } from '@/lib/contexts/userTokensContext';
+import { LOGTOKEN } from '@/types/types';
 
 type SensorsLogBody = {
     sensor_id: string;
@@ -46,7 +47,7 @@ async function tryGetCache(token: string, device_id: string): Promise<RedisReque
 
 async function validateRequestFromDB(token: string, device_id: string, group_id: string, sensor_ids: string[]): Promise<RedisRequestCache<Map<string, string>> | string> {
     const [user, device] = await Promise.all([
-        getUserFromToken(token, 'log'),
+        getUserFromToken(token, LOGTOKEN),
         getDevice(device_id)
     ]);
 
