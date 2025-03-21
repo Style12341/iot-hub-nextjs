@@ -9,6 +9,7 @@ import Link from "next/link";
 import SensorListItem from "./sensors/SensorListItem";
 import { DeviceQueryResult, getDeviceStatusFromLastValueAt, SensorQueryResult } from "@/lib/contexts/deviceContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { toast } from "sonner";
 
 interface DeviceCardProps {
     device: DeviceQueryResult
@@ -43,12 +44,14 @@ export default function DeviceCard({ device }: DeviceCardProps) {
                     ...prev,
                     status: "OFFLINE"
                 }));
+                toast.warning(`Device ${deviceData.name} has gone offline`);
             } else if (status === "ONLINE" && deviceData.status === "OFFLINE") {
                 // Device has come back online
                 setDeviceData(prev => ({
                     ...prev,
                     status: "ONLINE"
                 }));
+                toast.info(`Device ${deviceData.name} is back online`);
             }
         }
     }, [deviceData.lastValueAt]);
