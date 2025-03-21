@@ -1,7 +1,7 @@
 // /lib/workers/logWorker.ts
 import { Worker } from 'bullmq';
 import redis from '@/lib/redis';
-import { getDevice } from '@/lib/contexts/deviceContext';
+import { getDevice, updateDeviceActiveGroup, updateDeviceLastValueAt } from '@/lib/contexts/deviceContext';
 import { getGroupSensors } from '@/lib/contexts/groupSensorsContext';
 import { createMultipleSensorValues } from '@/lib/contexts/sensorValuesContext';
 import { getUserFromToken } from '@/lib/contexts/userTokensContext';
@@ -124,16 +124,21 @@ export async function processLog(body: DeviceLogBody) {
     }
 
     const { groupSensorIdMap } = cache as RedisRequestCache<Map<string, string>>;
-    const logs: LogEntry[] = sensors.map(sensor => ({
-        groupSensorId: groupSensorIdMap.get(sensor.sensor_id) as string,
-        timestamp: sensor.timestamp ? new Date(sensor.timestamp * 1000) : new Date(),
-        value: sensor.value
-    }));
-
+    const logs: LogEntry[] = sensors.map(sensor => (
+        {
+            groupSensorId: groupSensorIdMap.get(sensor.sensor_id) as string,
+            timestamp: sensor.timestamp ? new Date(sensor.timestamp * 1000) : new Date(),
+            value: sensor.value
+        }
+    ));
+    //Publish sensor values to Redis so web clients subscribed to the groupSensor can receive them
+    //publishSensorValues(logs);
+    // Set active group and update last value timestamp
+    updateDeviceActiveGroup(device_id, group_id);
+    updateDeviceLastValueAt(device_id);
     await createMultipleSensorValues(logs);
     return "Success";
 }
-
 // Instantiate a BullMQ Worker that processes log jobs
 const logWorker = new Worker(
     'logQueue',
