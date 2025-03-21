@@ -1,15 +1,8 @@
 // /api/v1/devices/log
 // Could have device id as a query parameter but for compatibility it will stay in the request body
 
-import { getDevice } from "@/lib/contexts/deviceContext"
-import { getGroupSensors } from "@/lib/contexts/groupSensorsContext"
-import { createMultipleSensorValues } from "@/lib/contexts/sensorValuesContext"
-import { getUserFromToken } from "@/lib/contexts/userTokensContext"
 import redis from "@/lib/redis"
-
-import { LOGTOKEN, SensorValueEntry } from "@/types/types"
 import { processLog } from "@/lib/workers/logWorker"
-import { SensorValueEntry } from "@/types/types"
 import { Queue } from "bullmq"
 
 type SensorsLogBody = {
