@@ -13,7 +13,6 @@ export default async function DashboardSettingsPage() {
     return (
         <>
             <BreadcrumbHandler
-                breadcrumbs={[{ href: '/dashboard', name: 'Dashboard' }]}
                 page="Settings"
             />
             <div className="space-y-6">
