@@ -26,14 +26,25 @@ model User {
   Tokens           UserTokens[]
 }
 
-model Device {
-  id      String   @id @default(uuid())
-  name    String
-  User    User     @relation(fields: [userId], references: [id])
-  userId  String
-  Sensors Sensor[]
-  Groups  Group[]
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+  WAITING
+}
 
+model Device {
+  id            String       @id @default(uuid())
+  name          String
+  User          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  Sensors       Sensor[]
+  Groups        Group[]
+  lastValueAt   DateTime?
+  status        DeviceStatus @default(WAITING)
+  ActiveGroup   Group?       @relation("ActiveGroup", fields: [activeGroupId], references: [id], onDelete: SetNull)
+  activeGroupId String?
+
+  @@unique([activeGroupId])
   @@unique(name: "usersDevices", [name, userId])
 }
 
@@ -41,17 +52,17 @@ model Sensor {
   id          String         @id @default(uuid())
   name        String
   unit        String
-  Device      Device         @relation(fields: [deviceId], references: [id])
+  Device      Device         @relation(fields: [deviceId], references: [id], onDelete: Cascade)
   deviceId    String
   GroupSensor GroupSensor[]
-  Category    SensorCategory @relation(fields: [categoryId], references: [id])
-  categoryId  String
+  Category    SensorCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId  String?
 }
 
 model SensorCategory {
   id     String   @id @default(uuid())
   name   String
-  User   User     @relation(fields: [userId], references: [id])
+  User   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
   Sensor Sensor[]
 
@@ -59,20 +70,21 @@ model SensorCategory {
 }
 
 model Group {
-  id          String        @id @default(uuid())
-  name        String
-  Device      Device        @relation(fields: [deviceId], references: [id])
-  deviceId    String
-  GroupSensor GroupSensor[]
+  id              String        @id @default(uuid())
+  name            String
+  Device          Device        @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  deviceId        String
+  GroupSensor     GroupSensor[]
+  ActiveForDevice Device?       @relation("ActiveGroup")
 
   @@unique(name: "devicesGroups", [name, deviceId])
 }
 
 model GroupSensor {
   id          String        @id @default(uuid())
-  Group       Group         @relation(fields: [groupId], references: [id])
+  Group       Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId     String
-  Sensor      Sensor        @relation(fields: [sensorId], references: [id])
+  Sensor      Sensor        @relation(fields: [sensorId], references: [id], onDelete: Cascade)
   sensorId    String
   active      Boolean       @default(true)
   SensorValue SensorValue[]
@@ -83,7 +95,7 @@ model GroupSensor {
 model SensorValue {
   timestamp     DateTime    @default(now())
   value         Float
-  GroupSensor   GroupSensor @relation(fields: [groupSensorId], references: [id])
+  GroupSensor   GroupSensor @relation(fields: [groupSensorId], references: [id], onDelete: Cascade)
   groupSensorId String
 
   @@id([timestamp, groupSensorId])
@@ -94,7 +106,7 @@ model UserTokens {
   token     String
   createdAt DateTime @default(now())
   context   String
-  User      User     @relation(fields: [userId], references: [id])
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
 
   @@unique([token, context])

@@ -22,15 +22,23 @@ async function main() {
             name: "testDevice",
             userId: user.id,
             Sensors: {
-                create: {
+                create: [{
                     name: "testSensor",
-                    unit: "testUnit",
+                    unit: "°C",
                     Category: {
                         connect: {
                             id: category.id
                         }
                     }
-                }
+                }, {
+                    name: "testSensor2",
+                    unit: "°F",
+                    Category: {
+                        connect: {
+                            id: category.id
+                        }
+                    }
+                }]
             },
             Groups: {
                 create: {
@@ -45,7 +53,16 @@ async function main() {
 
         }
     });
+    await db.device.update({
+        where: {
+            id: device.id
+        },
+        data: {
+            activeGroupId: device.Groups[0].id
+        }
+    });
     const group = device.Groups[0];
+    device.activeGroupId = group.id;
     await db.groupSensor.createMany({
         data: device.Sensors.map(sensor => ({
             groupId: group.id,
