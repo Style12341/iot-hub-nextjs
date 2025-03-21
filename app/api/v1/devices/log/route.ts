@@ -6,6 +6,8 @@ import { getGroupSensors } from "@/lib/contexts/groupSensorsContext"
 import { createMultipleSensorValues } from "@/lib/contexts/sensorValuesContext"
 import { getUserFromToken } from "@/lib/contexts/userTokensContext"
 import redis from "@/lib/redis"
+
+import { LOGTOKEN, SensorValueEntry } from "@/types/types"
 import { processLog } from "@/lib/workers/logWorker"
 import { SensorValueEntry } from "@/types/types"
 import { Queue } from "bullmq"
@@ -38,6 +40,7 @@ export async function POST(req: Request) {
             status: 403,
         })
     }
+
     const body: DeviceLogBody = await req.json()
     const { device_id, group_id, sensors, fast } = body;
     const requestData = { token, device_id, group_id, sensors };
