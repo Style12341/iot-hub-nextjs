@@ -103,7 +103,7 @@ function isCacheValid(
     return true;
 }
 
-export async function processLog(body: DeviceLogBody): Promise<string> {
+export async function processLog(body: DeviceLogBody) {
     const { token, device_id, group_id, sensors } = body;
     const sensor_ids = sensors.map(sensor => sensor.sensor_id);
 

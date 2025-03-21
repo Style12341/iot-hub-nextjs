@@ -1,6 +1,7 @@
 import { CreateDeviceFormData } from "@/types/types";
 import db from "../prisma";
 // Example usage
+const ONLINE_DEVICE_THRESHOLD = 90000; // 1 minute
 export const createDevice = async (data: CreateDeviceFormData) => {
     const device = await db.device.create({
         data: {
@@ -40,8 +41,18 @@ export const createDevice = async (data: CreateDeviceFormData) => {
     });
     return device;
 };
+export const updateDeviceLastValueAt = async (deviceId: string) => {
+    await db.device.update({
+        where: {
+            id: deviceId
+        },
+        data: {
+            lastValueAt: new Date()
+        }
+    });
+}
 export const getDevice = async (id: string) => {
-    return await db.device.findUnique({
+    const device = await db.device.findUnique({
         where: {
             id
         },
@@ -55,4 +66,9 @@ export const getDevice = async (id: string) => {
             User: true
         }
     });
+    if (!device) {
+        return null;
+    }
+    device.status = Date.now() - device.lastValueAt.getTime() < ONLINE_DEVICE_THRESHOLD ? "ONLINE" : "OFFLINE";
+    return device;
 }

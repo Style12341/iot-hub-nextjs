@@ -1,0 +1,6 @@
+-- CreateEnum
+CREATE TYPE "DeviceStatus" AS ENUM ('ONLINE', 'OFFLINE', 'DISABLED');
+
+-- AlterTable
+ALTER TABLE "Device" ADD COLUMN     "lastValueAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "status" "DeviceStatus" NOT NULL DEFAULT 'ONLINE';
