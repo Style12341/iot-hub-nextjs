@@ -16,13 +16,6 @@ type DeviceLogBody = {
     group_id: string
     sensors: SensorsLogBody[]
 }
-type RedisRequestCache<T = Object> = {
-    device_id: string
-    group_id: string
-    sensors_ids: string[]
-    groupSensorIdMap: T
-}
-
 
 const logQueue = new Queue('logQueue', { connection: redis });
 

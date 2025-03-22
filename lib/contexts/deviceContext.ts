@@ -3,7 +3,7 @@ import db from "../prisma";
 // Example usage
 export interface SensorValueQueryResult {
     value: number;
-    timestamp: string; // or Date if you plan to parse it
+    timestamp: string | Date; // or Date if you plan to parse it
 };
 
 export interface SensorQueryResult {
@@ -21,7 +21,7 @@ export interface GroupQueryResult {
 };
 
 export interface DeviceQueryResult {
-    id: number;
+    id: string;
     name: string;
     status: "ONLINE" | "OFFLINE";
     lastValueAt: Date;
@@ -72,6 +72,15 @@ export const createDevice = async (data: CreateDeviceFormData) => {
         }))
     });
     return device;
+};
+export const validateDeviceOwnership = async (userId: string, deviceId: string) => {
+    const device = await db.device.findFirst({
+        where: {
+            id: deviceId,
+            userId
+        }
+    });
+    return !!device;
 };
 export const updateDeviceLastValueAt = async (deviceId: string) => {
     await db.device.update({
