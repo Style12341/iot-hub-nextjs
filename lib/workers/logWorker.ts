@@ -34,17 +34,58 @@ export type LogEntry = {
     timestamp: Date;
     value: number;
 };
-
-// Utility functions (same as before)
-async function tryGetCache(token: string, device_id: string): Promise<RedisRequestCache<Map<string, string>> | null> {
-    const cache_key = getCacheKey(token, device_id);
-    const data = await redis.get(cache_key);
-    if (!data) return null;
-    const body: RedisRequestCache = JSON.parse(data);
-    body.groupSensorIdMap = new Map(Object.entries(body.groupSensorIdMap));
-    return body as RedisRequestCache<Map<string, string>>;
+// Create a wrapper for Redis operations with fallback
+async function safeRedisOperation<T>(operation: () => Promise<T>, fallback: () => Promise<T>): Promise<T> {
+    try {
+        return await operation();
+    } catch (error) {
+        console.warn('Redis operation failed, using fallback:', error);
+        return await fallback();
+    }
 }
-
+async function tryGetCache(token: string, device_id: string): Promise<RedisRequestCache<Map<string, string>> | null> {
+    return safeRedisOperation(
+        async () => {
+            const cache_key = getCacheKey(token, device_id);
+            const data = await redis.get(cache_key);
+            if (!data) return null;
+            const body: RedisRequestCache = JSON.parse(data);
+            body.groupSensorIdMap = new Map(Object.entries(body.groupSensorIdMap));
+            return body as RedisRequestCache<Map<string, string>>;
+        },
+        async () => {
+            // Return null when Redis is down - will force DB validation
+            return null;
+        }
+    );
+}
+async function forceCache(token: string, data: RedisRequestCache<Map<string, string>>): Promise<void> {
+    return safeRedisOperation(
+        async () => {
+            const cache_key = `${token}:${data.device_id}`;
+            const dataCopy: RedisRequestCache = { ...data };
+            dataCopy.groupSensorIdMap = Object.fromEntries(data.groupSensorIdMap);
+            await redis.pipeline()
+                .set(cache_key, JSON.stringify(dataCopy))
+                .expire(cache_key, CACHE_EXPIRATION)
+                .exec();
+        },
+        async () => {
+            // Do nothing if Redis is down - the application will continue without caching
+            return;
+        }
+    );
+}
+async function refreshTTLOnCache(token: string, device_id: string): Promise<void> {
+    return safeRedisOperation(
+        async () => {
+            await redis.expire(getCacheKey(token, device_id), CACHE_EXPIRATION);
+        },
+        async () => {
+            return;
+        }
+    );
+}
 async function validateRequestFromDB(token: string, device_id: string, group_id: string, sensor_ids: string[]): Promise<RedisRequestCache<Map<string, string>> | string> {
     const [user, device] = await Promise.all([
         getUserFromToken(token, LOGTOKEN),
@@ -76,17 +117,6 @@ async function validateRequestFromDB(token: string, device_id: string, group_id:
     };
     return ans;
 }
-
-async function forceCache(token: string, data: RedisRequestCache<Map<string, string>>): Promise<void> {
-    const cache_key = `${token}:${data.device_id}`;
-    const dataCopy: RedisRequestCache = { ...data };
-    dataCopy.groupSensorIdMap = Object.fromEntries(data.groupSensorIdMap);
-    await redis.pipeline()
-        .set(cache_key, JSON.stringify(dataCopy))
-        .expire(cache_key, CACHE_EXPIRATION)
-        .exec();
-}
-
 function isCacheValid(
     cache: RedisRequestCache<Map<string, string>> | null,
     device_id: string,
@@ -120,7 +150,7 @@ export async function processLog(body: DeviceLogBody) {
         cache = validationResult;
     } else {
         console.log("Cache hit");
-        await redis.expire(getCacheKey(token, device_id), CACHE_EXPIRATION);
+        await refreshTTLOnCache(token, device_id);
     }
 
     const { groupSensorIdMap } = cache as RedisRequestCache<Map<string, string>>;
@@ -159,6 +189,10 @@ const logWorker = new Worker(
 
 logWorker.on('failed', (job, err) => {
     console.error(`Job ${job?.id || "no-id"} failed with error: ${err}`);
+});
+
+logWorker.on('error', err => {
+    console.error('Worker error (likely Redis connection issue):', err);
 });
 function getCacheKey(token: string, device_id: string) {
     return `${token}:${device_id}`;

@@ -41,7 +41,12 @@ export async function POST(req: Request) {
     if (fast) {
         // Enqueue the job and return immediately
         console.log("Sending job to queue")
-        await logQueue.add('logJob', requestData);
+        // On catch execute processLog synchronously
+        logQueue.add('logJob', requestData).catch(async () => {
+            console.log("Job logging failed, executing synchronously")
+            processLog(requestData);
+        }
+        );
         return new Response('Accepted', {
             status: 202,
         });
