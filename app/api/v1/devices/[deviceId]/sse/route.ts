@@ -1,7 +1,7 @@
 import { validateDeviceOwnership } from "@/lib/contexts/deviceContext";
 import { redisSub } from "@/lib/redis";
 import { getDeviceChannel } from "@/lib/sseUtils";
-import { DeviceSSEMessage } from "@/types/types";
+import { DeviceSSEMessage, DeviceSSEType } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
 
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ devi
     }
 
     // Get channels for all sensors in this device
-    const channel = await getDeviceChannel(deviceId);
+    const subscribeChannel = await getDeviceChannel(deviceId);
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
@@ -32,8 +32,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ devi
             };
 
             // Subscribe to all sensor channels for this device
-            redis.subscribe(channel).then(() => {
-                console.log(`Subscribed to ${channel} for device ${deviceId}`);
+            redis.subscribe(subscribeChannel).then(() => {
+                console.log(`Subscribed to ${subscribeChannel} for device ${deviceId}`);
                 sendEvent({
                     type: "connected",
                     message: `Monitoring device ${deviceId}`
@@ -42,9 +42,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ devi
 
             // Listen for messages on any of the subscribed channels
             const listener = (channel: string, message: string) => {
-                if (channel.includes(channel)) {
+                if (subscribeChannel === channel) {
                     try {
                         const data: DeviceSSEMessage = JSON.parse(message);
+                        const type: DeviceSSEType = data.type;
                         // Add channel info to help identify the sensor
                         sendEvent({
                             ...data,
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ devi
 
             // Clean up on client disconnect
             req.signal.addEventListener("abort", () => {
-                redis.unsubscribe(channel);
+                redis.unsubscribe(subscribeChannel);
                 redis.off("message", listener);
                 controller.close();
                 console.log(`Closed SSE connection for device ${deviceId}`);

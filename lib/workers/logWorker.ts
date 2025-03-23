@@ -224,7 +224,7 @@ export async function processLog(body: DeviceLogBody) {
         const deviceStatus: DeviceSSEMessage = {
             id: device_id,
             lastValueAt: new Date(),
-            type: "sensor",
+            type: "new sensors",
             sensors: logs.map(log => ({
                 groupSensorId: log.groupSensorId,
                 value: {
@@ -237,15 +237,6 @@ export async function processLog(body: DeviceLogBody) {
         console.log(`[${device_id}] Starting Promise.all for database/publishing operations`);
         try {
             // Perform operations one by one for better error reporting
-            console.log(`[${device_id}] Publishing device status`);
-            try {
-                await publishDeviceStatus(deviceStatus);
-                console.log(`[${device_id}] Successfully published device status`);
-            } catch (publishError: any) {
-                console.error(`[${device_id}] Failed to publish device status: ${publishError.message}`);
-                // Continue with other operations
-            }
-
             console.log(`[${device_id}] Updating device active group`);
             await updateDeviceActiveGroup(device_id, group_id);
 
@@ -255,6 +246,14 @@ export async function processLog(body: DeviceLogBody) {
             console.log(`[${device_id}] Creating sensor values in database`);
             await createMultipleSensorValues(logs);
 
+            console.log(`[${device_id}] Publishing device status`);
+            try {
+                await publishDeviceStatus(deviceStatus);
+                console.log(`[${device_id}] Successfully published device status`);
+            } catch (publishError: any) {
+                console.error(`[${device_id}] Failed to publish device status: ${publishError.message}`);
+                // Continue with other operations
+            }
             console.log(`[${device_id}] All operations completed successfully`);
             return "Success";
         } catch (processingError: any) {

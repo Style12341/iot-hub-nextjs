@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Device" ALTER COLUMN "status" SET DEFAULT 'WAITING';

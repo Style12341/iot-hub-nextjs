@@ -18,7 +18,6 @@ export default function SensorListItem({ sensor }: SensorListItemProps) {
     const [isValueUpdated, setIsValueUpdated] = useState(false);
     // Key for triggering AnimatePresence
     const [valueKey, setValueKey] = useState(0);
-
     // Update local state when prop changes
     useEffect(() => {
         const newValue = sensor.values[0]?.value?.toString();
@@ -42,7 +41,7 @@ export default function SensorListItem({ sensor }: SensorListItemProps) {
             <div className="flex justify-between items-center">
                 <div>
                     <p className="text-sm font-medium">{sensorData.name}</p>
-                    <p className="text-xs text-muted-foreground">Category: {sensorData.category}</p>
+                    <p className="text-xs text-muted-foreground">Category: {sensorData.category ?? "No Category"}</p>
                 </div>
                 {sensorData.values && sensorData.values.length > 0 && (
                     <p className="text-sm font-medium">

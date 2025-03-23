@@ -146,9 +146,10 @@ export interface SensorSSEMessage {
     groupSensorId: string;
     value: SensorValueSSEMessage;
 }
+export type DeviceSSEType = "connected" | "new sensors";
 export interface DeviceSSEMessage {
     id: string;
-    type: "connected" | "sensor";
+    type: DeviceSSEType;
     lastValueAt: Date;
     sensors: SensorSSEMessage[];
 }

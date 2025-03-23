@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { getDeviceEventSource } from "@/lib/sseUtils";
 import { DeviceSSEMessage } from "@/types/types";
 import { motion, AnimatePresence } from "framer-motion";
+import { getDeviceWithActiveSensorsAction } from "@/app/actions/deviceActions";
 
 interface DeviceCardProps {
     device: DeviceQueryResult
@@ -26,7 +27,7 @@ export default function DeviceCard({ device }: DeviceCardProps) {
 
     // Default number of sensors to show
     const initialSensorsCount = 3;
-    const hasMoreSensors = deviceData.sensors.length > initialSensorsCount;
+    const hasMoreSensors = deviceData.sensors ? deviceData.sensors.length > initialSensorsCount : false;
     const [refreshKey, setRefreshKey] = useState(false);
     const updateDeviceStatus = () => {
         const newStatus = getDeviceStatusFromLastValueAt(deviceData.lastValueAt);
@@ -40,11 +41,18 @@ export default function DeviceCard({ device }: DeviceCardProps) {
 
             setIsStatusChanging(true);
             setTimeout(() => setIsStatusChanging(false), 1000);
+            if (newStatus != "WAITING") {
+                setDeviceData(prev => {
+                    if (prev.lastValueAt === null || prev.group === null || prev.sensors === null) {
+                        return prev;
+                    }
+                    return {
+                        ...prev,
+                        status: newStatus
+                    };
+                });
+            }
 
-            setDeviceData(prev => ({
-                ...prev,
-                status: newStatus
-            }));
         }
     };
 
@@ -61,18 +69,27 @@ export default function DeviceCard({ device }: DeviceCardProps) {
         // Set up SSE connection for real-time data
         const eventSource = getDeviceEventSource(deviceData.id);
 
-        eventSource.onmessage = (event) => {
+        eventSource.onmessage = async (event) => {
             const data: DeviceSSEMessage = JSON.parse(event.data);
 
             // Skip connection messages
             if (data.type === "connected") {
                 return;
             }
+            if (data.type === "new sensors" && data.lastValueAt && deviceData.status === "WAITING") {
+                const response = await getDeviceWithActiveSensorsAction(deviceData.id);
+                if (!response.success) {
+                    toast.error("Failed to get device data, please refresh the page.");
+                    return;
+                }
+                setDeviceData(response.data.device);
+                return;
+            }
 
             // Update device data with new values
             setDeviceData(prev => {
                 // Create a new sensors array with updated values
-                const updatedSensors = prev.sensors.map((sensor) => {
+                const updatedSensors = prev.sensors ? prev.sensors.map((sensor) => {
                     // Check if this sensor has updated data in the message
                     const newSensor = data.sensors.find(
                         (s) => s.groupSensorId === sensor.groupSensorId
@@ -91,13 +108,42 @@ export default function DeviceCard({ device }: DeviceCardProps) {
                         };
                     }
                     return sensor;
-                });
-
+                }) : [];
+                // MOCK SENSORS
+                /*  const mockSensors = [...updatedSensors, {
+                     id: "1",
+                     name: "mockSensor",
+                     unit: "°C",
+                     category: "Temperature",
+                     groupSensorId: "1",
+                     values: [
+                         {
+                             value: 20,
+                             timestamp: new Date()
+                         }
+                     ]
+                 },
+                 {
+                     id: "2",
+                     name: "mockSensor2",
+                     unit: "°C",
+                     category: "Temperature",
+                     groupSensorId: "2",
+                     values: [
+                         {
+                             value: 25,
+                             timestamp: new Date()
+                         }
+                     ]
+                 }]; */
+                // MOCK SENSORS
                 // Important: updating lastValueAt will trigger the other useEffect
                 return {
                     ...prev,
                     lastValueAt: new Date(data.lastValueAt),
-                    sensors: updatedSensors
+                    sensors: updatedSensors,
+                    status: prev.status === "ONLINE" || prev.status === "OFFLINE" ? prev.status : "OFFLINE",
+                    group: prev.group// Ensure group is not null
                 };
             });
         };
@@ -157,7 +203,7 @@ export default function DeviceCard({ device }: DeviceCardProps) {
     const animationProps = getAnimationProps();
 
     return (
-        <Card className="overflow-hidden">
+        <Card className="h-auto">
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{deviceData.name}</CardTitle>
@@ -174,84 +220,95 @@ export default function DeviceCard({ device }: DeviceCardProps) {
                         </motion.div>
                     </AnimatePresence>
                 </div>
-                <CardDescription>
-                    Group: {deviceData.group.name}
-                </CardDescription>
-                <CardDescription className="text-xs">
-                    Last activity: {new Date(deviceData.lastValueAt).toLocaleString('en-GB', {
-                        day: '2-digit',
-                        month: 'numeric',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false
-                    })}
-                </CardDescription>
+
+                {deviceData.status != "WAITING" ? <>
+                    <CardDescription>
+                        Group: {deviceData.group.name}
+                    </CardDescription>
+                    <CardDescription className="text-xs">
+                        Last activity: {new Date(deviceData.lastValueAt).toLocaleString('en-GB', {
+                            day: '2-digit',
+                            month: 'numeric',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                        })}
+                    </CardDescription> </> :
+                    <CardDescription className="text-xs">
+                        Waiting for data...
+                    </CardDescription>
+                }
             </CardHeader>
-            <CardContent>
-                <div className="space-y-2">
-                    <h3 className="text-sm font-medium">
-                        Active Sensors ({deviceData.sensors.length})
-                    </h3>
+            {deviceData.status != "WAITING" ?
+                <CardContent>
+                    <div className="space-y-2">
+                        <h3 className="text-sm font-medium">
+                            Active Sensors ({deviceData.sensors.length})
+                        </h3>
 
-                    <Collapsible
-                        open={isExpanded}
-                        onOpenChange={setIsExpanded}
-                        className="w-full"
-                    >
-                        <ul className="divide-y pb-2">
-                            {/* Always visible sensors */}
-                            {deviceData.sensors
-                                .slice(0, initialSensorsCount)
-                                .map((sensor) => (
-                                    <SensorListItem key={sensor.id} sensor={sensor} />
-                                ))}
-                        </ul>
+                        <Collapsible
+                            open={isExpanded}
+                            onOpenChange={setIsExpanded}
+                            className="w-full"
+                        >
+                            <ul className="divide-y pb-2">
+                                {/* Always visible sensors */}
+                                {deviceData.sensors
+                                    .slice(0, initialSensorsCount)
+                                    .map((sensor) => (
+                                        <SensorListItem key={sensor.id} sensor={sensor} />
+                                    ))}
+                            </ul>
 
-                        {/* Collapsible content for additional sensors */}
-                        {hasMoreSensors && (
-                            <>
-                                <CollapsibleContent>
-                                    <ul className="divide-y border-t pt-2">
-                                        {deviceData.sensors
-                                            .slice(initialSensorsCount)
-                                            .map((sensor) => (
-                                                <SensorListItem key={sensor.id} sensor={sensor} />
-                                            ))}
-                                    </ul>
-                                </CollapsibleContent>
+                            {/* Collapsible content for additional sensors */}
+                            {hasMoreSensors && (
+                                <>
+                                    <CollapsibleContent>
+                                        <ul className="divide-y border-t pt-2">
+                                            {deviceData.sensors
+                                                .slice(initialSensorsCount)
+                                                .map((sensor) => (
+                                                    <SensorListItem key={sensor.id} sensor={sensor} />
+                                                ))}
+                                        </ul>
+                                    </CollapsibleContent>
 
-                                <CollapsibleTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="w-full mt-2 text-xs text-muted-foreground"
-                                    >
-                                        {isExpanded ? (
-                                            <>
-                                                <ChevronUp className="h-3 w-3 mr-1" />
-                                                Show less
-                                            </>
-                                        ) : (
-                                            <>
-                                                <ChevronDown className="h-3 w-3 mr-1" />
-                                                Show {deviceData.sensors.length - initialSensorsCount} more sensors
-                                            </>
-                                        )}
-                                    </Button>
-                                </CollapsibleTrigger>
-                            </>
-                        )}
-                    </Collapsible>
+                                    <CollapsibleTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="w-full mt-2 text-xs text-muted-foreground"
+                                        >
+                                            {isExpanded ? (
+                                                <>
+                                                    <ChevronUp className="h-3 w-3 mr-1" />
+                                                    Show less
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <ChevronDown className="h-3 w-3 mr-1" />
+                                                    Show {deviceData.sensors.length - initialSensorsCount} more sensors
+                                                </>
+                                            )}
+                                        </Button>
+                                    </CollapsibleTrigger>
+                                </>
+                            )}
+                        </Collapsible>
 
-                    <Button variant="outline" size="sm" className="w-full mt-4" asChild>
-                        <Link href={`/dashboard/devices/${deviceData.id}`}>
-                            View Details <ChevronRight className="ml-2 h-4 w-4" />
-                        </Link>
-                    </Button>
-                </div>
-            </CardContent>
+                        <Button variant="outline" size="sm" className="w-full mt-4" asChild>
+                            <Link href={`/dashboard/devices/${deviceData.id}`}>
+                                View Details <ChevronRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </div>
+                </CardContent>
+                :
+                <CardContent>
+                    Waiting for data...
+                </CardContent>}
         </Card>
     );
 }

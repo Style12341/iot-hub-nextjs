@@ -31,9 +31,11 @@ export default async function DevicesIndex() {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-min">
                 {results.map((device) => (
-                    <DeviceCard key={device.device.id} device={device.device} />
+                    <div key={device.device.id}>
+                        <DeviceCard device={device.device} />
+                    </div>
                 ))}
             </div>
 
