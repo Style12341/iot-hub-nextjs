@@ -51,13 +51,9 @@ export default function SensorListItem({ sensor }: SensorListItemProps) {
                                 key={valueKey}
                                 initial={{
                                     scale: 1,
-                                    backgroundColor: "rgba(0, 0, 0, 0)"
                                 }}
                                 animate={{
                                     scale: isValueUpdated ? [1, 1.15, 1] : 1,
-                                    backgroundColor: isValueUpdated
-                                        ? ["rgba(0, 0, 0, 0)", "rgba(var(--primary), 0.15)", "rgba(0, 0, 0, 0)"]
-                                        : "rgba(0, 0, 0, 0)"
                                 }}
                                 transition={{
                                     duration: 0.6,
