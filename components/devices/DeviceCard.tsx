@@ -214,7 +214,7 @@ export default function DeviceCard({ device }: DeviceCardProps) {
                             animate={animationProps.animate}
                             transition={animationProps.transition}
                         >
-                            <Badge variant={deviceData.status === "ONLINE" ? "success" : "destructive"}>
+                            <Badge variant={deviceData.status === "ONLINE" ? "success" : deviceData.status === "WAITING" ? "outline" : "destructive"}>
                                 {deviceData.status}
                             </Badge>
                         </motion.div>
@@ -236,9 +236,7 @@ export default function DeviceCard({ device }: DeviceCardProps) {
                             hour12: false
                         })}
                     </CardDescription> </> :
-                    <CardDescription className="text-xs">
-                        Waiting for data...
-                    </CardDescription>
+                    <></>
                 }
             </CardHeader>
             {deviceData.status != "WAITING" ?
@@ -306,7 +304,7 @@ export default function DeviceCard({ device }: DeviceCardProps) {
                     </div>
                 </CardContent>
                 :
-                <CardContent>
+                <CardContent className="flex justify-center items-center">
                     Waiting for data...
                 </CardContent>}
         </Card>
