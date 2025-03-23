@@ -12,6 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { toast } from "sonner";
 import { getDeviceEventSource } from "@/lib/sseUtils";
 import { DeviceSSEMessage } from "@/types/types";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface DeviceCardProps {
     device: DeviceQueryResult
@@ -21,6 +22,7 @@ interface DeviceCardProps {
 export default function DeviceCard({ device }: DeviceCardProps) {
     const [deviceData, setDeviceData] = useState(device);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isStatusChanging, setIsStatusChanging] = useState(false);
 
     // Default number of sensors to show
     const initialSensorsCount = 3;
@@ -35,6 +37,9 @@ export default function DeviceCard({ device }: DeviceCardProps) {
             } else if (newStatus === "ONLINE" && deviceData.status === "OFFLINE") {
                 toast.info(`Device ${deviceData.name} is back online`);
             }
+
+            setIsStatusChanging(true);
+            setTimeout(() => setIsStatusChanging(false), 1000);
 
             setDeviceData(prev => ({
                 ...prev,
@@ -108,14 +113,66 @@ export default function DeviceCard({ device }: DeviceCardProps) {
         };
     }, [deviceData.id, deviceData.name]); // Added required dependencies
 
+    // Get animation settings based on status
+    const getAnimationProps = () => {
+        // Base animation for status change
+        const baseAnimation = {
+            initial: { scale: 0.8, opacity: 0 },
+            animate: {
+                scale: isStatusChanging ? [1, 1.2, 1] : 1,
+                opacity: 1
+            },
+            transition: {
+                duration: 0.5,
+                scale: {
+                    duration: 0.3,
+                    times: [0, 0.5, 1]
+                }
+            }
+        };
+
+        // Add beating animation when online
+        if (deviceData.status === "ONLINE" && !isStatusChanging) {
+            return {
+                ...baseAnimation,
+                animate: {
+                    ...baseAnimation.animate,
+                    scale: [1, 1.04, 1],
+                },
+                transition: {
+                    ...baseAnimation.transition,
+                    scale: {
+                        repeat: Infinity,
+                        repeatType: "reverse" as const,
+                        duration: 2,
+                        ease: "easeInOut"
+                    }
+                }
+            };
+        }
+
+        return baseAnimation;
+    };
+
+    const animationProps = getAnimationProps();
+
     return (
         <Card className="overflow-hidden">
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{deviceData.name}</CardTitle>
-                    <Badge variant={deviceData.status === "ONLINE" ? "success" : "destructive"}>
-                        {deviceData.status}
-                    </Badge>
+                    <AnimatePresence>
+                        <motion.div
+                            key={deviceData.status}
+                            initial={animationProps.initial}
+                            animate={animationProps.animate}
+                            transition={animationProps.transition}
+                        >
+                            <Badge variant={deviceData.status === "ONLINE" ? "success" : "destructive"}>
+                                {deviceData.status}
+                            </Badge>
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
                 <CardDescription>
                     Group: {deviceData.group.name}
