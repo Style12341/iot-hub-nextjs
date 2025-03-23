@@ -190,6 +190,7 @@ export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string) {
         // If the string doesn't have 'Z' or '+' timezone info, assume it's UTC
         if (!lastValueAt.endsWith('Z') && !lastValueAt.includes('+')) {
             lastValueTime = new Date(`${lastValueAt}Z`).getTime();
+            console.log('Parsed lastValueAt:', new Date(lastValueTime).toISOString());
         } else {
             lastValueTime = new Date(lastValueAt).getTime();
         }
@@ -199,6 +200,7 @@ export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string) {
     }
 
     const now = Date.now();
+    console.log('Current time:', new Date(now).toISOString());
     const diff = now - lastValueTime;
 
     // For debugging

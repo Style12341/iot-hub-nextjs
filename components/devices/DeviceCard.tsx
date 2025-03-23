@@ -17,8 +17,6 @@ interface DeviceCardProps {
     device: DeviceQueryResult
 }
 
-// Threshold for device status in milliseconds (90 seconds)
-const ONLINE_THRESHOLD_MS = 90 * 1000;
 
 export default function DeviceCard({ device }: DeviceCardProps) {
     const [deviceData, setDeviceData] = useState(device);
@@ -27,50 +25,54 @@ export default function DeviceCard({ device }: DeviceCardProps) {
     // Default number of sensors to show
     const initialSensorsCount = 3;
     const hasMoreSensors = deviceData.sensors.length > initialSensorsCount;
-    function updateDeviceStatus() {
-        const status = getDeviceStatusFromLastValueAt(deviceData.lastValueAt);
-        if (status === "OFFLINE" && deviceData.status === "ONLINE") {
-            // Device has gone offline
+    const [refreshKey, setRefreshKey] = useState(false);
+    const updateDeviceStatus = () => {
+        const newStatus = getDeviceStatusFromLastValueAt(deviceData.lastValueAt);
+
+        if (newStatus !== deviceData.status) {
+            if (newStatus === "OFFLINE" && deviceData.status === "ONLINE") {
+                toast.warning(`Device ${deviceData.name} has gone offline`);
+            } else if (newStatus === "ONLINE" && deviceData.status === "OFFLINE") {
+                toast.info(`Device ${deviceData.name} is back online`);
+            }
+
             setDeviceData(prev => ({
                 ...prev,
-                status: "OFFLINE"
+                status: newStatus
             }));
-            toast.warning(`Device ${deviceData.name} has gone offline`);
-        } else if (status === "ONLINE" && deviceData.status === "OFFLINE") {
-            // Device has come back online
-            setDeviceData(prev => ({
-                ...prev,
-                status: "ONLINE"
-            }));
-            toast.info(`Device ${deviceData.name} is back online`);
         }
-    }
-    // Update device status based on last value timestamp
+    };
+
+    // Effect to handle status updates based on lastValueAt changes
     useEffect(() => {
         updateDeviceStatus();
-    }, [deviceData.lastValueAt]);
+    }, [deviceData.lastValueAt, refreshKey]);
+
+    // Effect for interval status check and SSE connection
     useEffect(() => {
         // Set up interval to check status every 10 seconds
-        const intervalId = setInterval(updateDeviceStatus, 10000);
+        const intervalId = setInterval(() => { setRefreshKey((prev) => !prev) }, 10000);
 
-        // Cleanup interval on component unmount
-        console.log("DeviceCard mounted");
+        // Set up SSE connection for real-time data
         const eventSource = getDeviceEventSource(deviceData.id);
 
         eventSource.onmessage = (event) => {
             const data: DeviceSSEMessage = JSON.parse(event.data);
+
+            // Skip connection messages
             if (data.type === "connected") {
-                console.log(data);
                 return;
             }
-            console.log("Received device data:", data);
+
+            // Update device data with new values
             setDeviceData(prev => {
-                console.log(prev)
                 // Create a new sensors array with updated values
                 const updatedSensors = prev.sensors.map((sensor) => {
                     // Check if this sensor has updated data in the message
-                    console.log("Current sensor:", sensor);
-                    const newSensor = data.sensors.find((s) => s.groupSensorId === sensor.groupSensorId);
+                    const newSensor = data.sensors.find(
+                        (s) => s.groupSensorId === sensor.groupSensorId
+                    );
+
                     if (data.sensors && newSensor) {
                         return {
                             ...sensor,
@@ -86,9 +88,9 @@ export default function DeviceCard({ device }: DeviceCardProps) {
                     return sensor;
                 });
 
+                // Important: updating lastValueAt will trigger the other useEffect
                 return {
                     ...prev,
-                    status: "ONLINE",
                     lastValueAt: new Date(data.lastValueAt),
                     sensors: updatedSensors
                 };
@@ -104,7 +106,7 @@ export default function DeviceCard({ device }: DeviceCardProps) {
             eventSource.close();
             clearInterval(intervalId);
         };
-    }, []);
+    }, [deviceData.id, deviceData.name]); // Added required dependencies
 
     return (
         <Card className="overflow-hidden">

@@ -24,7 +24,7 @@ async function main() {
             Sensors: {
                 create: [{
                     name: "testSensor",
-                    unit: "testUnit",
+                    unit: "°C",
                     Category: {
                         connect: {
                             id: category.id
@@ -32,7 +32,7 @@ async function main() {
                     }
                 }, {
                     name: "testSensor2",
-                    unit: "testUnit2",
+                    unit: "°F",
                     Category: {
                         connect: {
                             id: category.id
