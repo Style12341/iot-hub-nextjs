@@ -7,6 +7,7 @@ import { createMultipleSensorValues } from '@/lib/contexts/sensorValuesContext';
 import { getUserFromToken } from '@/lib/contexts/userTokensContext';
 import { DeviceSSEMessage, LOGTOKEN } from '@/types/types';
 import { getDeviceChannel, getSensorChannel } from '../sseUtils';
+import { trackMetricInDB } from '../contexts/metricsContext';
 
 type SensorsLogBody = {
     sensor_id: string;
@@ -22,6 +23,7 @@ type DeviceLogBody = {
 };
 
 type RedisRequestCache<T = Object> = {
+    userId: string;
     device_id: string;
     group_id: string;
     sensors_ids: string[];
@@ -29,7 +31,6 @@ type RedisRequestCache<T = Object> = {
 };
 
 const CACHE_EXPIRATION = 90; // 90 seconds
-
 export type LogEntry = {
     groupSensorId: string;
     timestamp: Date;
@@ -104,6 +105,7 @@ async function validateRequestFromDB(token: string, device_id: string, group_id:
         groupSensorIdMap.set(groupSensor.sensorId, groupSensor.id);
     });
     const ans: RedisRequestCache<Map<string, string>> = {
+        userId: user.id,
         device_id,
         group_id,
         sensors_ids: sensor_ids,
@@ -236,24 +238,14 @@ export async function processLog(body: DeviceLogBody) {
 
         console.log(`[${device_id}] Starting Promise.all for database/publishing operations`);
         try {
-            // Perform operations one by one for better error reporting
-            console.log(`[${device_id}] Updating device active group`);
-            await updateDeviceActiveGroup(device_id, group_id);
+            await Promise.all([
+                updateDeviceActiveGroup(device_id, group_id),
+                updateDeviceLastValueAt(device_id),
+                createMultipleSensorValues(logs),
+                trackMetricInDB('SENSOR_VALUES_PER_MINUTE', cache.userId, logs.length),
+                publishDeviceStatus(deviceStatus)
+            ]);
 
-            console.log(`[${device_id}] Updating device last value timestamp`);
-            await updateDeviceLastValueAt(device_id);
-
-            console.log(`[${device_id}] Creating sensor values in database`);
-            await createMultipleSensorValues(logs);
-
-            console.log(`[${device_id}] Publishing device status`);
-            try {
-                await publishDeviceStatus(deviceStatus);
-                console.log(`[${device_id}] Successfully published device status`);
-            } catch (publishError: any) {
-                console.error(`[${device_id}] Failed to publish device status: ${publishError.message}`);
-                // Continue with other operations
-            }
             console.log(`[${device_id}] All operations completed successfully`);
             return "Success";
         } catch (processingError: any) {

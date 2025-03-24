@@ -24,6 +24,22 @@ model User {
   Devices          Device[]
   SensorCategories SensorCategory[]
   Tokens           UserTokens[]
+  Metric           Metric[]
+}
+
+enum Metrics {
+  SENSOR_VALUES_PER_MINUTE
+}
+
+model Metric {
+  name      Metrics
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  timestamp DateTime
+  value     Int      @default(0)
+
+  @@id([name, userId, timestamp])
+  @@index([timestamp])
 }
 
 enum DeviceStatus {
@@ -49,10 +65,10 @@ model Device {
 }
 
 model Sensor {
-  id          String         @id @default(uuid())
+  id          String          @id @default(uuid())
   name        String
   unit        String
-  Device      Device         @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  Device      Device          @relation(fields: [deviceId], references: [id], onDelete: Cascade)
   deviceId    String
   GroupSensor GroupSensor[]
   Category    SensorCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
