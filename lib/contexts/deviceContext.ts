@@ -1,5 +1,6 @@
 import { CreateDeviceFormData } from "@/types/types";
 import db from "../prisma";
+import { DeviceStatus } from "@prisma/client";
 // Example usage
 export interface SensorValueQueryResult {
     value: number;
@@ -308,4 +309,34 @@ export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string | null
     }
 
     return diff < ONLINE_DEVICE_THRESHOLD ? "ONLINE" : "OFFLINE";
+}
+export async function getDevicesQty(userId: string) {
+    // First update device statuses based on lastValueAt
+    await updateDevicesStatus(userId);
+
+    // Then get the count grouped by status
+    return await db.device.groupBy({
+        by: ['status'],
+        _count: {
+            id: true
+        },
+        where: {
+            userId
+        }
+    });
+}
+export async function updateDevicesStatus(userId: string) {
+    await db.$executeRaw`
+        UPDATE "Device"
+        SET "status" = CASE
+            WHEN "status" != 'WAITING' AND "lastValueAt" IS NOT NULL 
+                AND (EXTRACT(EPOCH FROM NOW()) - EXTRACT(EPOCH FROM "lastValueAt")) < 90 
+                THEN 'ONLINE'
+            WHEN "status" != 'WAITING' 
+                THEN 'OFFLINE'
+            ELSE "status"
+        END
+        WHERE "userId" = ${userId}
+    `;
+    return
 }
