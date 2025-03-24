@@ -59,8 +59,9 @@ export default async function Dashboard() {
             <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-min">
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-row md:flex-col gap-4">
                     <Metric
+                        className="flex-1"
                         variant="number"
                         title="Total Devices"
                         value={devicesQty}
@@ -74,8 +75,9 @@ export default async function Dashboard() {
                         }
                     />
                     <Metric
+                        className="flex-1"
                         variant="number"
-                        title="Active Sensors"
+                        title="Total Sensors"
                         value={sensorsQty}
                         icon={<Cpu className="h-4 w-4 text-muted-foreground" />}
                     />
