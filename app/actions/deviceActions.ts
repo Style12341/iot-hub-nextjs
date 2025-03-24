@@ -1,6 +1,6 @@
 "use server";
 
-import { createDevice, getDevicesWithActiveSensors, getDeviceWithActiveSensors } from "@/lib/contexts/deviceContext";
+import { createDevice, getDevicesQty, getDevicesWithActiveSensors, getDeviceWithActiveSensors } from "@/lib/contexts/deviceContext";
 import { CreateDeviceFormData, createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
@@ -36,17 +36,29 @@ export async function createDeviceAction(data: CreateDeviceFormData) {
     }
 }
 export async function getDevicesWithActiveSensorsAction(userId: string) {
+    const { userId: currentUserId } = await auth();
+    if (!currentUserId) {
+        return null;
+    }
     return await getDevicesWithActiveSensors(userId);
 }
+export async function getDevicesQtyAction(userId: string) {
+    const { userId: currentUserId } = await auth();
+    if (currentUserId !== userId) {
+        return null
+    }
+
+    return await getDevicesQty(userId);
+}
 export async function getDeviceWithActiveSensorsAction(deviceId: string) {
-    const { userId } = await auth();
-    if (!userId) {
+    const { userId: currentUserId } = await auth();
+    if (!currentUserId) {
         return createErrorResponse(
             ServerActionReason.UNAUTHORIZED,
             "You must be logged in to view this device"
         );
     }
-    const device = await getDeviceWithActiveSensors(userId, deviceId);
+    const device = await getDeviceWithActiveSensors(currentUserId, deviceId);
 
     return createSuccessResponse(ServerActionReason.SUCCESS, "Device retrieved successfully", device);
 }
