@@ -5,15 +5,39 @@ import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
-import DeviceCard from "@/components/devices/DeviceCard";
 import EmptyDevices from "@/components/devices/EmptyDevices";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination"
+import DeviceIndexWrapper from "@/components/devices/DeviceIndexWrapper";
 
-export default async function DevicesIndex() {
+
+export default async function DevicesIndex({
+    searchParams,
+}: {
+    searchParams: Promise<{ page: number }>;
+}) {
     const { userId } = await auth();
     if (!userId) {
         return redirect("/login");
     }
-    const results = await getDevicesWithActiveSensorsAction(userId);
+    const page = (await searchParams).page || 1;
+    const results = await getDevicesWithActiveSensorsAction(userId, page);
+    if (results === null) {
+        return redirect("/login");
+    }
+    console.log(results)
+    const devices = results.devices.map((device) => {
+        return device.device;
+    }
+    );
+    const { maxPage, count, page: currPage } = results;
 
     return (
         <div className="space-y-6">
@@ -31,15 +55,52 @@ export default async function DevicesIndex() {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-min">
-                {results.map((device) => (
-                    <div key={device.device.id}>
-                        <DeviceCard device={device.device} />
-                    </div>
-                ))}
-            </div>
+            <DeviceIndexWrapper initialDevices={devices} key={`devices-page${currPage}`} />
+            {devices.length > 0 && <>
+                <div className="flex justify-center">
+                    <p className="text-sm text-gray-500">
+                        Showing {devices.length} of {count} devices
+                    </p>
+                </div>
+                <Pagination>
+                    <PaginationContent>
+                        {currPage > 1 &&
+                            <PaginationItem>
+                                <PaginationPrevious href={`/dashboard/devices?page=${page - 1}`} />
+                            </PaginationItem>
+                        }
+                        {maxPage > 1 && [...Array(maxPage).keys()].map((i) => {
+                            const pageNumber = i + 1;
+                            const active = pageNumber === currPage;
+                            if (pageNumber === currPage || pageNumber === 1 || pageNumber === maxPage || Math.abs(pageNumber - currPage) < 2) {
+                                return (
+                                    <PaginationItem key={pageNumber}>
+                                        <PaginationLink isActive={active} href={`/dashboard/devices?page=${pageNumber}`} prefetch>
+                                            {pageNumber}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                );
+                            } else if (Math.abs(pageNumber - currPage) === 2) {
+                                return (
+                                    <PaginationItem key={pageNumber}>
+                                        <PaginationEllipsis />
+                                    </PaginationItem>
+                                );
+                            }
+                        })}
+                        {currPage < maxPage &&
+                            <PaginationItem>
+                                <PaginationNext href={`/dashboard/devices?page=${currPage + 1}`} />
+                            </PaginationItem>
+                        }
 
-            {results.length === 0 && <EmptyDevices />}
+                    </PaginationContent>
+                </Pagination>
+
+            </>
+
+            }
+            {devices.length === 0 && <EmptyDevices />}
         </div>
     );
 }

@@ -35,12 +35,12 @@ export async function createDeviceAction(data: CreateDeviceFormData) {
         }
     }
 }
-export async function getDevicesWithActiveSensorsAction(userId: string) {
+export async function getDevicesWithActiveSensorsAction(userId: string, page: number = 1) {
     const { userId: currentUserId } = await auth();
     if (!currentUserId) {
         return null;
     }
-    return await getDevicesWithActiveSensors(userId);
+    return await getDevicesWithActiveSensors(userId, page);
 }
 export async function getDevicesQtyAction(userId: string) {
     const { userId: currentUserId } = await auth();
