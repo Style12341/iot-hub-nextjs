@@ -42,6 +42,13 @@ export type DeviceQueryResult = DeviceHasReceivedData | DeviceHasNotReceivedData
 export interface DevicesQueryResult {
     device: DeviceQueryResult;
 };
+export interface DeviceQueryResultPaginated {
+    devices: DevicesQueryResult[];
+    page: number;
+    maxPage: number;
+    count: number;
+};
+
 
 const ONLINE_DEVICE_THRESHOLD = 90000; // 1 minute
 export const createDevice = async (data: CreateDeviceFormData) => {
@@ -145,7 +152,16 @@ export const getDevice = async (id: string) => {
     device.status = getDeviceStatusFromLastValueAt(device.lastValueAt);
     return device;
 }
-export const getDevicesWithActiveSensors = async (userId: string) => {
+export const getDevicesWithActiveSensors = async (userId: string, page: number = 1): Promise<DeviceQueryResultPaginated> => {
+    const DEVICES_PER_PAGE = 6;
+    const count = await db.device.count({
+        where: {
+            userId,
+        }
+    })
+    let searchPage = Math.max(1, page);
+    const maxPage = Math.ceil(count / DEVICES_PER_PAGE);
+    searchPage = Math.min(searchPage, maxPage);
     // This query gets devices with their active sensors
     // The device holds the active group, joined with groups table, group sensors, 
     // active sensors, last 5 values per sensor, and sensor category
@@ -198,6 +214,8 @@ export const getDevicesWithActiveSensors = async (userId: string) => {
                 WHEN d."status" = 'OFFLINE' THEN 2
                 ELSE 3
             END, d."name" ASC
+        LIMIT ${DEVICES_PER_PAGE}
+        OFFSET ${(searchPage - 1) * DEVICES_PER_PAGE}
     `;
     // Map status accordingly
 
@@ -206,9 +224,10 @@ export const getDevicesWithActiveSensors = async (userId: string) => {
     });
     console.debug(devices[0].device.group)
 
-    return devices;
+    return { devices, page: searchPage, maxPage, count };
 };
 export const getDeviceWithActiveSensors = async (userId: string, deviceId: string) => {
+
     const devices: DevicesQueryResult[] = await db.$queryRaw`
         SELECT jsonb_build_object(
                 'id', d."id",
