@@ -7,23 +7,26 @@ import { NextRequest } from "next/server";
 
 const redis = redisSub;
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ deviceId: string }> }) {
+export async function GET(req: NextRequest) {
     const { userId } = await auth();
     if (!userId) {
         return new Response("Unauthorized", { status: 401 });
     }
-
-    const { deviceId } = await params
+    const searchParams = req.nextUrl.searchParams
+    const deviceIds = searchParams.get("deviceIds")?.split(",");
+    if (!deviceIds) {
+        return new Response("Bad request: No device ids provided", { status: 400 });
+    }
 
     // Verify user has access to this device
-    const hasAccess = await validateDeviceOwnership(userId, deviceId);
+    const hasAccess = Promise.all(deviceIds.map(deviceId => validateDeviceOwnership(userId, deviceId)));
     if (!hasAccess) {
         return new Response("Forbidden: You don't have access to this device", { status: 403 });
     }
 
     // Get channels for all sensors in this device
-    const subscribeChannel = await getDeviceChannel(deviceId);
-
+    const channels = deviceIds.map(deviceId => { return { channel: getDeviceChannel(deviceId), deviceId } });
+    const channelNames = new Set(channels.map(channel => channel.channel));
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
         start(controller) {
@@ -32,17 +35,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ devi
             };
 
             // Subscribe to all sensor channels for this device
-            redis.subscribe(subscribeChannel).then(() => {
-                console.log(`Subscribed to ${subscribeChannel} for device ${deviceId}`);
-                sendEvent({
-                    type: "connected",
-                    message: `Monitoring device ${deviceId}`
-                });
-            })
+            channels.forEach(channel => {
+                redis.subscribe(channel.channel).then(() => {
+                    console.log(`Subscribed to ${channel.channel} for device ${channel.deviceId}`);
+                    sendEvent({
+                        type: "connected",
+                        message: `Monitoring device ${channel.deviceId}`
+                    });
+                })
+            });
+
 
             // Listen for messages on any of the subscribed channels
             const listener = (channel: string, message: string) => {
-                if (subscribeChannel === channel) {
+                if (channelNames.has(channel)) {
                     try {
                         const data: DeviceSSEMessage = JSON.parse(message);
                         const type: DeviceSSEType = data.type;
@@ -61,10 +67,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ devi
 
             // Clean up on client disconnect
             req.signal.addEventListener("abort", () => {
-                redis.unsubscribe(subscribeChannel);
+                channelNames.forEach(channel => {
+                    redis.unsubscribe(channel)
+                })
                 redis.off("message", listener);
                 controller.close();
-                console.log(`Closed SSE connection for device ${deviceId}`);
+
+                console.log(`Closed SSE connection for devices ${channels}`);
             });
         },
     });
