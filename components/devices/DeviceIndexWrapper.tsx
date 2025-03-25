@@ -97,6 +97,9 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
                         );
 
                         if (data.sensors && newSensor) {
+                            if (!sensor.values) {
+                                sensor.values = [];
+                            }
                             const timestamp = newSensor.value.timestamp
                                 ? new Date(newSensor.value.timestamp)
                                 : new Date();
@@ -142,9 +145,9 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
     return (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-min">
             {devices.map(device => (
-                <div>
+                <div key={device.id}>
                     <DeviceCard
-                        key={device.id}
+                        key={device.id + "-card"}
                         device={device}
                         isWrapper={true} // Flag to indicate this is managed by wrapper
                     />
