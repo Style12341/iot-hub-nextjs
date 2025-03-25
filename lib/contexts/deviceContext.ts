@@ -50,7 +50,7 @@ export interface DeviceQueryResultPaginated {
 };
 
 
-const ONLINE_DEVICE_THRESHOLD = 90000; // 1 minute
+export const ONLINE_DEVICE_THRESHOLD = 90000; // 1 minute
 export const createDevice = async (data: CreateDeviceFormData) => {
     const device = await db.device.create({
         data: {

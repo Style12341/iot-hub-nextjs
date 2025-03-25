@@ -1,7 +1,7 @@
 // /lib/workers/logWorker.ts
 import { Worker } from 'bullmq';
 import redis, { redisPub } from '@/lib/redis';
-import { getDevice, updateDeviceActiveGroup, updateDeviceLastValueAt } from '@/lib/contexts/deviceContext';
+import { getDevice, ONLINE_DEVICE_THRESHOLD, updateDeviceActiveGroup, updateDeviceLastValueAt } from '@/lib/contexts/deviceContext';
 import { getGroupSensors } from '@/lib/contexts/groupSensorsContext';
 import { createMultipleSensorValues } from '@/lib/contexts/sensorValuesContext';
 import { getUserFromToken } from '@/lib/contexts/userTokensContext';
@@ -30,7 +30,7 @@ type RedisRequestCache<T = Object> = {
     groupSensorIdMap: T;
 };
 
-const CACHE_EXPIRATION = 90; // 90 seconds
+const CACHE_EXPIRATION = ONLINE_DEVICE_THRESHOLD / 1000; // 90 seconds
 export type LogEntry = {
     groupSensorId: string;
     timestamp: Date;
