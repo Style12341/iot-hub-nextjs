@@ -2,15 +2,39 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Minus, TrendingDown, TrendingUp } from "lucide-react";
-import { LineChart, Line, XAxis, CartesianGrid } from "recharts";
 import { cn } from "@/lib/utils";
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { getMetricValueBetween } from "@/lib/contexts/metricsContext";
 import { Metrics } from "@prisma/client";
-import { ResponsiveContainer } from "recharts";
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    TimeScale,
+    Filler
+} from "chart.js";
+import { Line } from "react-chartjs-2";
+import 'chartjs-adapter-date-fns';
+import { getLineDatasetStyle, getStandardChartOptions } from "@/lib/chartConfig";
 
+// Register ChartJS components
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Filler,
+    Title,
+    Tooltip,
+    Legend,
+    TimeScale
+);
 
 // Types
 type MetricProps = {
@@ -20,6 +44,7 @@ type MetricProps = {
     className?: string;
     icon?: React.ReactNode;
 } & (GraphMetricProps | NumberMetricProps);
+
 type TimeSeries = {
     timestamp: Date | string;
     value: number;
@@ -46,8 +71,8 @@ type NumberMetricProps = {
     previousValue?: number;
     formatValue?: (value: number) => string;
     prefix?: string;
-    unit?: string;  // New unit property that displays alongside the number
-    suffix?: React.ReactNode;  // Changed from string to ReactNode
+    unit?: string;
+    suffix?: React.ReactNode;
     loading?: boolean;
     trendDirection?: 'up' | 'down' | 'neutral';
 };
@@ -75,40 +100,35 @@ export default function Metric(props: MetricProps) {
     );
 }
 
-function GraphMetric({ data, metricName, fetchInterval, loading, timeRangeText, height = 200 }: GraphMetricProps) {
-    // 1. Move all hooks to the top before any conditionals
+function GraphMetric({ data, metricName, fetchInterval, loading, timeRangeText, yAxisLabel, height = 200 }: GraphMetricProps) {
     const { userId } = useAuth();
 
-    // Format the data for Recharts first
-    const formattedData = data?.map(item => ({
-        timestamp: new Date(item.timestamp).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit'
-        }),
-        value: item.value
-    })) || [];
+    // Format the data for Chart.js
+    const formatChartData = (dataPoints: TimeSeries[]) => {
+        return dataPoints.map(item => ({
+            x: new Date(item.timestamp),
+            y: item.value
+        }));
+    };
 
-    // Always declare useState no matter what
-    const [chartData, setChartData] = useState(formattedData);
+    const [chartData, setChartData] = useState(formatChartData(data || []));
 
-    // Always call useEffect
+    useEffect(() => {
+        // Update chart data when props.data changes
+        setChartData(formatChartData(data || []));
+    }, [data]);
+
     useEffect(() => {
         if (metricName && userId) {
             console.log('Starting interval');
             const interval = setInterval(async () => {
                 try {
                     const newData = await getMetricValueBetween(metricName, userId, new Date(Date.now() - fetchInterval * 2), new Date());
-                    const formattedData = newData.map(item => ({
-                        timestamp: new Date(item.timestamp).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        }),
-                        value: item.value
-                    }));
-                    console.log('Old data', chartData);
-                    console.log('New data:', formattedData);
-                    //Append new data to the chart
-                    setChartData(prevData => [...prevData.slice(-4), ...formattedData].slice(-5));
+                    const formattedData = formatChartData(newData);
+                    console.log('New metric data:', formattedData);
+                    // replace last two data points with new data
+                    setChartData([...chartData.slice(-4), ...formattedData]);
+
                 } catch (error) {
                     console.error('Error fetching metric data:', error);
                 }
@@ -117,7 +137,6 @@ function GraphMetric({ data, metricName, fetchInterval, loading, timeRangeText, 
         }
     }, [userId, metricName, fetchInterval]);
 
-    // 2. Now handle conditional returns after all hooks
     if (loading) {
         return <div className="flex justify-center items-center h-[200px]">Loading...</div>;
     }
@@ -126,60 +145,23 @@ function GraphMetric({ data, metricName, fetchInterval, loading, timeRangeText, 
         return <div className="text-center text-muted-foreground py-8">No data available</div>;
     }
 
-    if (!userId) {
-        return <div className="text-center text-muted-foreground py-8">No user ID available</div>;
-    }
+    const chartDataConfig = {
+        datasets: [
+            {
+                label: "Value",
+                data: chartData,
+                ...getLineDatasetStyle() // Using shared style with fill
+            },
+        ],
+    };
 
-    const chartConfig = {
-        value: {
-            label: "Value",
-            color: "var(--color-chart-1)",
-        },
-    } satisfies ChartConfig;
+    // Get standard options with legend disabled and no negative values
+    const options = getStandardChartOptions(yAxisLabel, false, undefined, false);
 
-    // Rest of the component remains the same...
     return (
         <>
-            <div style={{ minHeight: "150px", width: "100%" }}>
-                <ResponsiveContainer width="100%" height="100%" minHeight={height}>
-                    <ChartContainer config={chartConfig}>
-                        <LineChart
-                            data={chartData}
-                            margin={{
-                                left: 5,
-                                right: 5,
-                                top: 5,
-                                bottom: 5,
-                            }}
-                        >
-                            <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-muted/20" />
-                            <XAxis
-                                dataKey="timestamp"
-                                tickLine={false}
-                                axisLine={false}
-                                tickMargin={8}
-                            />
-                            <ChartTooltip
-                                cursor={false}
-                                content={<ChartTooltipContent hideLabel />}
-                            />
-                            <Line
-                                dataKey="value"
-                                type="monotone"
-                                strokeWidth={2}
-                                stroke="var(--color-chart-1)"
-                                dot={{
-                                    fill: "var(--color-chart-1)",
-                                    r: 3,
-                                }}
-                                activeDot={{
-                                    r: 5,
-                                    fill: "var(--color-chart-1)",
-                                }}
-                            />
-                        </LineChart>
-                    </ChartContainer>
-                </ResponsiveContainer>
+            <div style={{ height: `${height}px`, width: '100%' }}>
+                <Line data={chartDataConfig} options={options} />
             </div>
 
             <CardFooter className="flex-col items-start gap-2 text-sm pt-3 px-0">
@@ -192,7 +174,6 @@ function GraphMetric({ data, metricName, fetchInterval, loading, timeRangeText, 
         </>
     );
 }
-
 function NumberMetric({ value, previousValue, formatValue, prefix, unit, suffix, loading, trendDirection }: NumberMetricProps) {
     if (loading) {
         return <div className="h-[120px] flex items-center justify-center">Loading...</div>;
@@ -216,8 +197,8 @@ function NumberMetric({ value, previousValue, formatValue, prefix, unit, suffix,
         <div className="space-y-2">
             <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                    {prefix && <span className="text-3xl font-bold ">{prefix}</span>}
-                    <span className="text-3xl font-bold ">{formattedValue}</span>
+                    {prefix && <span className="text-3xl font-bold">{prefix}</span>}
+                    <span className="text-3xl font-bold">{formattedValue}</span>
                     {unit && <span className="ml-1 text-lg font-normal text-muted-foreground">{unit}</span>}
                 </div>
                 {suffix && <div>{suffix}</div>}

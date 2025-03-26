@@ -187,9 +187,19 @@ function IndexDeviceCard(device: DeviceQueryResult) {
     )
 
 }
-// ...existing code...
-
 function ViewDeviceCard(device: DeviceQueryResult) {
+    // Predefined colors based on categories
+    const categoryColors: Record<string, string> = {
+        "Temperature": "#FF5733", // Red-orange for temperature
+        "Humidity": "#337DFF",    // Blue for humidity
+        "Pressure": "#33FF57",    // Green for pressure
+        "Light": "#FFC733",       // Yellow for light
+        "Velocity": "#D433FF",      // Purple for motion
+    };
+
+    // Default color for unknown categories
+    const defaultColor = "#75C2C6"; // Teal-ish default
+
     return (
         <CardContent className="p-2">
             <div className="space-y-4">
@@ -199,6 +209,8 @@ function ViewDeviceCard(device: DeviceQueryResult) {
                             <SensorGraph
                                 key={sensor.id}
                                 sensor={sensor}
+                                // Get color based on category, or use default if category not found
+                                color={sensor.category ? categoryColors[sensor.category] || defaultColor : defaultColor}
                             />
                         ))}
                     </div>

@@ -24,16 +24,39 @@ async function main() {
         data: {
             defaultViewId: defaultView.id
         }
-    })
-    const category = await db.sensorCategory.create({
-        data: {
-            name: "Temperature",
-            userId: admin_user_id,
-        },
     });
+
+    // Create all sensor categories first
+    const categories = await Promise.all([
+        db.sensorCategory.create({
+            data: { name: "Temperature", userId: admin_user_id }
+        }),
+        db.sensorCategory.create({
+            data: { name: "Humidity", userId: admin_user_id }
+        }),
+        db.sensorCategory.create({
+            data: { name: "Pressure", userId: admin_user_id }
+        }),
+        db.sensorCategory.create({
+            data: { name: "Light", userId: admin_user_id }
+        }),
+        db.sensorCategory.create({
+            data: { name: "Velocity", userId: admin_user_id }
+        })
+    ]);
+
+    // Store categories in an easily accessible object for later use
+    const categoryMap = {
+        "Temperature": categories[0],
+        "Humidity": categories[1],
+        "Pressure": categories[2],
+        "Light": categories[3],
+        "Velocity": categories[4]
+    };
+
     const token = await upsertToken(admin_user_id, LOGTOKEN);
 
-    // First device with 5 sensors
+    // First device with sensors from different categories
     const device1 = await db.device.create({
         data: {
             name: "testDevice",
@@ -42,49 +65,29 @@ async function main() {
             Sensors: {
                 create: [
                     {
-                        name: "testSensor1",
+                        name: "Temperature Sensor",
                         unit: "°C",
-                        Category: {
-                            connect: {
-                                id: category.id
-                            }
-                        }
+                        categoryId: categoryMap["Temperature"].id
                     },
                     {
-                        name: "testSensor2",
-                        unit: "°F",
-                        Category: {
-                            connect: {
-                                id: category.id
-                            }
-                        }
-                    },
-                    {
-                        name: "testSensor3",
-                        unit: "K",
-                        Category: {
-                            connect: {
-                                id: category.id
-                            }
-                        }
-                    },
-                    {
-                        name: "testSensor4",
-                        unit: "hPa",
-                        Category: {
-                            connect: {
-                                id: category.id
-                            }
-                        }
-                    },
-                    {
-                        name: "testSensor5",
+                        name: "Humidity Sensor",
                         unit: "%",
-                        Category: {
-                            connect: {
-                                id: category.id
-                            }
-                        }
+                        categoryId: categoryMap["Humidity"].id
+                    },
+                    {
+                        name: "Pressure Sensor",
+                        unit: "hPa",
+                        categoryId: categoryMap["Pressure"].id
+                    },
+                    {
+                        name: "Light Sensor",
+                        unit: "lux",
+                        categoryId: categoryMap["Light"].id
+                    },
+                    {
+                        name: "Velocity Sensor",
+                        unit: "m/s",
+                        categoryId: categoryMap["Velocity"].id
                     }
                 ]
             },
@@ -120,30 +123,23 @@ async function main() {
         }))
     });
 
-    // Second device with 2 sensors
+    // Second device with different sensor types
     const device2 = await db.device.create({
         data: {
             name: "secondDevice",
+            viewId: defaultView.id,
             userId: user.id,
             Sensors: {
                 create: [
                     {
-                        name: "secondSensor1",
-                        unit: "m/s",
-                        Category: {
-                            connect: {
-                                id: category.id
-                            }
-                        }
+                        name: "Secondary Temperature",
+                        unit: "°F",
+                        categoryId: categoryMap["Temperature"].id
                     },
                     {
-                        name: "secondSensor2",
-                        unit: "lux",
-                        Category: {
-                            connect: {
-                                id: category.id
-                            }
-                        }
+                        name: "Secondary Humidity",
+                        unit: "%",
+                        categoryId: categoryMap["Humidity"].id
                     }
                 ]
             },
@@ -187,7 +183,7 @@ async function main() {
         "fast": true,
         "sensors": device1.Sensors.map(sensor => ({
             "sensor_id": sensor.id,
-            "value": 200
+            "value": Math.floor(Math.random() * 100) // Random values for testing
         }))
     }, null, 2));
 
@@ -198,13 +194,16 @@ async function main() {
         "fast": true,
         "sensors": device2.Sensors.map(sensor => ({
             "sensor_id": sensor.id,
-            "value": 200
+            "value": Math.floor(Math.random() * 100) // Random values for testing
         }))
     }, null, 2));
-
-    console.log("\nDevice: ", device1);
-    console.log("Device: ", device2);
     console.log("Token: ", token);
+
+    // Output category information as well
+    console.log("\nCategories created:");
+    for (const [name, category] of Object.entries(categoryMap)) {
+        console.log(`${name}: ${category.id}`);
+    }
 }
 main()
     .then(async () => {

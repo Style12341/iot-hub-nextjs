@@ -12,12 +12,14 @@ import {
     Title,
     Tooltip,
     Legend,
-    TimeScale
+    TimeScale,
+    Filler
 } from "chart.js";
 import 'chartjs-adapter-date-fns';
 import { SensorQueryResult } from "@/lib/contexts/deviceContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate } from "@/lib/utils";
+import { ChartColorSet, chartColors, generateColorSetFromBase, getLineDatasetStyle, getStandardChartOptions, getTimeScaleOptions } from "@/lib/chartConfig";
 
 // Register ChartJS components
 ChartJS.register(
@@ -26,6 +28,7 @@ ChartJS.register(
     PointElement,
     LineElement,
     Title,
+    Filler,
     Tooltip,
     Legend,
     TimeScale
@@ -44,32 +47,58 @@ const timeRanges = [
 interface SensorGraphProps {
     sensor: SensorQueryResult;
     className?: string;
+    color?: string; // Optional color override
 }
 
-export default function SensorGraph({ sensor, className = "" }: SensorGraphProps) {
+export default function SensorGraph({ sensor, className = "", color }: SensorGraphProps) {
     const [timeRange, setTimeRange] = useState<number>(10); // Default 10 minutes
     const [filteredValues, setFilteredValues] = useState(sensor.values || []);
+
+    // Determine color set to use
+    const colorSet: ChartColorSet = color
+        ? generateColorSetFromBase(color)
+        : chartColors.primary;
 
     useEffect(() => {
         if (!sensor.values || sensor.values.length === 0) {
             setFilteredValues([]);
             return;
         }
-        console.log(`SensorGraph: ${sensor.name} values:`, sensor.values);
 
         const now = new Date();
         const cutoffTime = new Date(now.getTime() - timeRange * 60 * 1000);
 
         // Filter values within the selected time range
-        const filtered = sensor.values.map(v => { return { timestamp: new Date(v.timestamp.toString().endsWith("Z") ? v.timestamp : v.timestamp + "Z"), value: v.value } })
-            .filter(value => {
-                console.debug(value.timestamp, cutoffTime, new Date(value.timestamp).getTime(), cutoffTime.getTime())
-                return new Date(value.timestamp).getTime() > cutoffTime.getTime()
+        const filtered = sensor.values.map(v => {
+            // Ensure we get a proper date object from the timestamp
+            let timestamp;
+            if (v.timestamp instanceof Date) {
+                timestamp = v.timestamp;
+            } else if (typeof v.timestamp === 'string') {
+                // Ensure proper ISO format with Z suffix for UTC
+                timestamp = new Date(v.timestamp.toString().endsWith("Z") ? v.timestamp : v.timestamp + "Z");
+            } else {
+                // Fallback
+                timestamp = new Date(v.timestamp);
             }
-            );
-        filtered
+
+            return {
+                timestamp,
+                value: v.value
+            };
+        }).filter(value => {
+            return value.timestamp.getTime() > cutoffTime.getTime();
+        });
+
         setFilteredValues(filtered);
     }, [sensor.values, timeRange]);
+
+    // Determine appropriate time unit based on range
+    const getTimeUnit = (): 'minute' | 'hour' | 'day' => {
+        if (timeRange <= 60) return 'minute';
+        if (timeRange <= 1440) return 'hour';
+        return 'day';
+    };
 
     const chartData = {
         datasets: [
@@ -79,53 +108,28 @@ export default function SensorGraph({ sensor, className = "" }: SensorGraphProps
                     x: v.timestamp,
                     y: parseFloat(v.value.toString())
                 })),
-                borderColor: 'rgba(75, 192, 192, 1)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderWidth: 2,
-                pointRadius: 3,
-                tension: 0.3,
-                fill: true,
+                ...getLineDatasetStyle(colorSet, true) // Using custom color set with no fill
             },
         ],
     };
 
+    // Create custom options with proper time unit
     const options = {
-        responsive: true,
-        maintainAspectRatio: false,
+        ...getStandardChartOptions(
+            sensor.unit || 'Value',
+            true,
+            (context) => `${context.dataset.label}: ${context.parsed.y} ${sensor.unit || ''}`
+        ),
         scales: {
-            x: {
-                type: 'time' as const,
-                time: {
-                    unit: 'minute' as const,
-                    displayFormats: {
-                        minute: 'HH:mm',
-                    },
-                },
-                title: {
-                    display: true,
-                    text: 'Time',
-                },
-            },
+            x: getTimeScaleOptions(getTimeUnit()),
             y: {
                 title: {
                     display: true,
                     text: sensor.unit || 'Value',
                 },
-            },
-        },
-        plugins: {
-            legend: {
-                display: true,
-                position: 'top' as const,
-            },
-            tooltip: {
-                callbacks: {
-                    label: (context: any) => {
-                        return `${context.dataset.label}: ${context.parsed.y} ${sensor.unit || ''}`;
-                    }
-                }
+                beginAtZero: false,
             }
-        },
+        }
     };
 
     return (
