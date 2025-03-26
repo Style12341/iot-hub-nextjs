@@ -51,13 +51,21 @@ interface SensorGraphProps {
 }
 
 export default function SensorGraph({ sensor, className = "", color }: SensorGraphProps) {
-    const [timeRange, setTimeRange] = useState<number>(10); // Default 10 minutes
+    const [timeRange, setTimeRange] = useState<number>(10);
     const [filteredValues, setFilteredValues] = useState(sensor.values || []);
 
     // Determine color set to use
     const colorSet: ChartColorSet = color
         ? generateColorSetFromBase(color)
         : chartColors.primary;
+
+    // Format the data for Chart.js - ensures consistent Date objects
+    const formatChartData = (dataPoints: any[]) => {
+        return dataPoints.map(item => ({
+            x: new Date(item.timestamp),
+            y: parseFloat(item.value.toString())
+        }));
+    };
 
     useEffect(() => {
         if (!sensor.values || sensor.values.length === 0) {
@@ -104,16 +112,13 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
         datasets: [
             {
                 label: sensor.name,
-                data: filteredValues.map(v => ({
-                    x: v.timestamp,
-                    y: parseFloat(v.value.toString())
-                })),
-                ...getLineDatasetStyle(colorSet, true) // Using custom color set with no fill
+                data: formatChartData(filteredValues),
+                ...getLineDatasetStyle(colorSet, true)
             },
         ],
     };
 
-    // Create custom options with proper time unit
+    // Create custom options with proper time unit and better animations
     const options = {
         ...getStandardChartOptions(
             sensor.unit || 'Value',
@@ -129,6 +134,9 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
                 },
                 beginAtZero: false,
             }
+        },
+        animation: {
+            duration: 0
         }
     };
 
@@ -155,7 +163,10 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
             <CardContent>
                 <div className="h-[200px]">
                     {filteredValues.length > 0 ? (
-                        <Line data={chartData} options={options} />
+                        <Line
+                            data={chartData}
+                            options={options}
+                        />
                     ) : (
                         <div className="h-full flex items-center justify-center text-muted-foreground">
                             No data available for the selected time range
