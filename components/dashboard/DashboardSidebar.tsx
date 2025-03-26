@@ -29,6 +29,9 @@ const data = {
                 {
                     title: "Overview",
                     url: "/dashboard",
+                }, {
+                    title: "Views",
+                    url: "/dashboard/views",
                 }
             ],
         }, {

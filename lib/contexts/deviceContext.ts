@@ -226,6 +226,67 @@ export const getDevicesWithActiveSensors = async (userId: string, page: number =
 
     return { devices, page: searchPage, maxPage, count };
 };
+export const getDevicesViewWithActiveSensorsBetween = async (userId: string, view: string, startDate: Date, endDate: Date) => {
+    const devices: DevicesQueryResult[] = await db.$queryRaw`
+        SELECT jsonb_build_object(
+                'id', d."id",
+                'name', d."name",
+                'status', d."status",
+                'lastValueAt', d."lastValueAt",
+                'group', jsonb_build_object(
+                    'id', g."id",
+                    'name', g."name"
+                ),
+                'sensors', jsonb_agg(
+                    jsonb_build_object(
+                        'groupSensorId', gs."id",
+                        'id', s."id",
+                        'name', s."name",
+                        'unit', s."unit",
+                        'category', c."name",
+                        'values', (
+                            SELECT jsonb_agg(
+                                jsonb_build_object(
+                                    'value', sv_limited."value",
+                                    'timestamp', sv_limited."timestamp"
+                                )
+                                ORDER BY sv_limited."timestamp" DESC
+                            )
+                            FROM (
+                                SELECT sv."value", sv."timestamp"
+                                FROM "SensorValue" sv
+                                WHERE sv."groupSensorId" = gs."id"
+                                AND sv."timestamp" >= ${startDate.toISOString()}::timestamp
+                                AND sv."timestamp" <= ${endDate.toISOString()}::timestamp
+                                ORDER BY sv."timestamp" DESC
+                            ) AS sv_limited
+                        )
+                    )
+                )
+            )
+         AS device
+        FROM "Device" d
+        JOIN "View" v ON d."viewId" = v."id"
+        LEFT JOIN "Group" g ON d."activeGroupId" = g."id"
+        LEFT JOIN "GroupSensor" gs ON g."id" = gs."groupId" AND gs."active" = true
+        LEFT JOIN "Sensor" s ON gs."sensorId" = s."id"
+        LEFT JOIN "SensorCategory" c ON s."categoryId" = c."id"
+        WHERE d."userId" = ${userId}
+        AND v."name" = ${view}
+        GROUP BY d."id", g."id"
+        ORDER BY CASE 
+                WHEN d."status" = 'ONLINE' THEN 1
+                WHEN d."status" = 'OFFLINE' THEN 2
+                ELSE 3
+            END, d."name" ASC
+    `;
+    // Map status accordingly
+    devices.forEach(device => {
+        device.device.status = getDeviceStatusFromLastValueAt(device.device.lastValueAt);
+    });
+
+    return devices;
+}
 export const getDeviceWithActiveSensors = async (userId: string, deviceId: string) => {
 
     const devices: DevicesQueryResult[] = await db.$queryRaw`
@@ -300,7 +361,6 @@ export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string | null
         // If the string doesn't have 'Z' or '+' timezone info, assume it's UTC
         if (!lastValueAt.endsWith('Z') && !lastValueAt.includes('+')) {
             lastValueTime = new Date(`${lastValueAt}Z`).getTime();
-            console.log('Parsed lastValueAt:', new Date(lastValueTime).toISOString());
         } else {
             lastValueTime = new Date(lastValueAt).getTime();
         }
@@ -310,7 +370,6 @@ export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string | null
     }
 
     const now = Date.now();
-    console.log('Current time:', new Date(now).toISOString());
     const diff = now - lastValueTime;
 
     // For debugging

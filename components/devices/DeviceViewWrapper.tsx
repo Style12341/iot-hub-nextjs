@@ -4,22 +4,23 @@ import { useEffect, useState } from "react";
 import { DeviceHasReceivedData, DeviceQueryResult, getDeviceStatusFromLastValueAt } from "@/lib/contexts/deviceContext";
 import { toast } from "sonner";
 import { DeviceSSEMessage } from "@/types/types";
-import { getDeviceWithActiveSensorsAction } from "@/app/actions/deviceActions";
 import DeviceCard from "./DeviceCard";
 import { getDevicesEventSource } from "@/lib/sseUtils";
+import { getDeviceWithActiveSensorsAction } from "@/app/actions/deviceActions";
 
-
-interface DeviceIndexWrapperProps {
+interface DeviceViewWrapperProps {
     initialDevices: DeviceQueryResult[];
 }
 
-export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrapperProps) {
+export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperProps) {
     const [devices, setDevices] = useState<DeviceQueryResult[]>(initialDevices);
     const [refreshKey, setRefreshKey] = useState(false);
+
     useEffect(() => {
         setDevices(initialDevices);
     }, [initialDevices]);
-    // Effect for all devices status checks
+
+    // Effect for device status check
     useEffect(() => {
         // Check all devices' statuses
         const updatedDevices = devices.map(device => {
@@ -46,7 +47,7 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
         setDevices(updatedDevices);
     }, [refreshKey]);
 
-    // Effect for SSE connection for all devices
+    // Effect for SSE connection
     useEffect(() => {
         // Get all device IDs
         const deviceIds = devices.map(device => device.id);
@@ -63,6 +64,7 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
         eventSource.onmessage = async (event) => {
             const data: DeviceSSEMessage = JSON.parse(event.data);
             console.debug("Received SSE message: ", data);
+
             // Skip connection messages
             if (data.type === "connected") {
                 return;
@@ -100,8 +102,7 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
                                 sensor.values = [];
                             }
                             const timestamp = newSensor.value.timestamp
-                                ? new Date(newSensor.value.timestamp)
-                                : new Date();
+                            console.log("newtimestamp", timestamp)
                             return {
                                 ...sensor,
                                 values: [
@@ -109,8 +110,9 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
                                         value: newSensor.value.value,
                                         timestamp: timestamp
                                     },
-                                    ...sensor.values
-                                ].slice(0, 5)
+                                    ...sensor.values,
+
+                                ].slice(0,14400)
                             };
                         }
                         return sensor;
@@ -139,16 +141,17 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
             eventSource.close();
             clearInterval(intervalId);
         };
-    }, []);
+    }, [devices.map(d => d.id).join(',')]); // Dependency on device IDs only
 
     return (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-min">
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6">
             {devices.map(device => (
-                <div key={device.id}>
+                <div key={device.id} className="w-full">
                     <DeviceCard
                         key={device.id + "-card"}
                         device={device}
-                        isWrapper={true} // Flag to indicate this is managed by wrapper
+                        isWrapper={true}
+                        viewMode={true}
                     />
                 </div>
             ))}

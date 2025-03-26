@@ -37,6 +37,7 @@ async function main() {
     const device1 = await db.device.create({
         data: {
             name: "testDevice",
+            viewId: defaultView.id,
             userId: user.id,
             Sensors: {
                 create: [

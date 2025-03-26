@@ -11,14 +11,15 @@ import { DeviceQueryResult } from "@/lib/contexts/deviceContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDate } from "@/lib/utils";
+import SensorGraph from "./sensors/SensorGraph";
 
 interface DeviceCardProps {
     device: DeviceQueryResult;
     isWrapper?: boolean; // Flag to indicate if this card is managed by DeviceIndexWrapper
+    viewMode?: boolean; // Flag to indicate if this card is in view mode
 }
 
-export default function DeviceCard({ device, isWrapper = false }: DeviceCardProps) {
-    const [isExpanded, setIsExpanded] = useState(false);
+export default function DeviceCard({ device, isWrapper = false, viewMode = false }: DeviceCardProps) {
     const [isStatusChanging, setIsStatusChanging] = useState(false);
     useEffect(() => {
         setIsStatusChanging(true)
@@ -26,10 +27,6 @@ export default function DeviceCard({ device, isWrapper = false }: DeviceCardProp
             setIsStatusChanging(false)
         }, 1000);
     }, [device.status])
-
-    // Default number of sensors to show
-    const initialSensorsCount = 3;
-    const hasMoreSensors = device.sensors ? device.sensors.length > initialSensorsCount : false;
 
     // Get animation settings based on status
     const getAnimationProps = () => {
@@ -105,7 +102,18 @@ export default function DeviceCard({ device, isWrapper = false }: DeviceCardProp
                 ) : <></>}
             </CardHeader>
 
-            {device.status != "WAITING" ? (
+            {viewMode ? ViewDeviceCard(device) : IndexDeviceCard(device)}
+        </Card>
+    );
+}
+function IndexDeviceCard(device: DeviceQueryResult) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    // Default number of sensors to show
+    const initialSensorsCount = 3;
+    const hasMoreSensors = device.sensors ? device.sensors.length > initialSensorsCount : false;
+    return (<>
+        {
+            device.status != "WAITING" ? (
                 <CardContent>
                     <div className="space-y-2">
                         <h3 className="text-sm font-medium">
@@ -174,7 +182,32 @@ export default function DeviceCard({ device, isWrapper = false }: DeviceCardProp
                 <CardContent className="flex justify-center items-center">
                     Waiting for data...
                 </CardContent>
-            )}
-        </Card>
+            )
+        }</>
+    )
+
+}
+// ...existing code...
+
+function ViewDeviceCard(device: DeviceQueryResult) {
+    return (
+        <CardContent className="p-2">
+            <div className="space-y-4">
+                {device.sensors && device.sensors.length > 0 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {device.sensors.map((sensor) => (
+                            <SensorGraph
+                                key={sensor.id}
+                                sensor={sensor}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                        No sensor data available
+                    </div>
+                )}
+            </div>
+        </CardContent>
     );
 }

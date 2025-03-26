@@ -1,6 +1,6 @@
 "use server";
 
-import { createDevice, getDevicesQty, getDevicesWithActiveSensors, getDeviceWithActiveSensors } from "@/lib/contexts/deviceContext";
+import { createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors } from "@/lib/contexts/deviceContext";
 import { CreateDeviceFormData, createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
@@ -61,4 +61,12 @@ export async function getDeviceWithActiveSensorsAction(deviceId: string) {
     const device = await getDeviceWithActiveSensors(currentUserId, deviceId);
 
     return createSuccessResponse(ServerActionReason.SUCCESS, "Device retrieved successfully", device);
+}
+export async function getDevicesViewWithActiveSensorsBetweenAction(userId: string, view: string, startDate: Date, endDate: Date) {
+    const { userId: currentUserId } = await auth();
+    if (currentUserId !== userId) {
+        return null;
+    }
+
+    return await getDevicesViewWithActiveSensorsBetween(userId, view, startDate, endDate);
 }

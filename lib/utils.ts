@@ -6,7 +6,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: Date | string, timezone: string = "America/Argentina/Buenos_Aires"): string {
-  console.log("Date to format ", date)
   //Add Z if neccesary
   if (typeof date === "string" && !date.includes("Z")) {
     date += "Z";
