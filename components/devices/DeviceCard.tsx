@@ -20,9 +20,7 @@ interface DeviceCardProps {
 export default function DeviceCard({ device, isWrapper = false }: DeviceCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [isStatusChanging, setIsStatusChanging] = useState(false);
-    const [deviceStatus, setDeviceStatus] = useState(device.status);
     useEffect(() => {
-        setDeviceStatus(device.status)
         setIsStatusChanging(true)
         setTimeout(() => {
             setIsStatusChanging(false)
@@ -52,7 +50,7 @@ export default function DeviceCard({ device, isWrapper = false }: DeviceCardProp
         };
 
         // Add beating animation when online
-        if (deviceStatus === "ONLINE" && !isStatusChanging) {
+        if (device.status === "ONLINE" && !isStatusChanging) {
             return {
                 ...baseAnimation,
                 animate: {
@@ -83,19 +81,19 @@ export default function DeviceCard({ device, isWrapper = false }: DeviceCardProp
                     <CardTitle className="text-lg">{device.name}</CardTitle>
                     <AnimatePresence mode="wait">
                         <motion.div
-                            key={deviceStatus}
+                            key={device.status}
                             initial={animationProps.initial}
                             animate={animationProps.animate}
                             transition={animationProps.transition}
                         >
-                            <Badge variant={deviceStatus === "ONLINE" ? "success" : deviceStatus === "WAITING" ? "outline" : "destructive"}>
-                                {deviceStatus}
+                            <Badge variant={device.status === "ONLINE" ? "success" : device.status === "WAITING" ? "outline" : "destructive"}>
+                                {device.status}
                             </Badge>
                         </motion.div>
                     </AnimatePresence>
                 </div>
 
-                {deviceStatus != "WAITING" ? (
+                {device.status != "WAITING" ? (
                     <>
                         <CardDescription>
                             Group: {device.group.name}
@@ -107,11 +105,11 @@ export default function DeviceCard({ device, isWrapper = false }: DeviceCardProp
                 ) : <></>}
             </CardHeader>
 
-            {deviceStatus != "WAITING" ? (
+            {device.status != "WAITING" ? (
                 <CardContent>
                     <div className="space-y-2">
                         <h3 className="text-sm font-medium">
-                            Active Sensors ({device.sensors?.length})
+                            Active Sensors ({device.sensors.length})
                         </h3>
 
                         <Collapsible
@@ -120,11 +118,11 @@ export default function DeviceCard({ device, isWrapper = false }: DeviceCardProp
                             className="w-full"
                         >
                             <ul className="divide-y pb-2">
-                                {device.sensors ? device.sensors
+                                {device.sensors
                                     .slice(0, initialSensorsCount)
                                     .map((sensor) => (
                                         <SensorListItem key={sensor.id} sensor={sensor} />
-                                    )) : <></>
+                                    ))
                                 }
                             </ul>
 
@@ -133,11 +131,11 @@ export default function DeviceCard({ device, isWrapper = false }: DeviceCardProp
                                 <>
                                     <CollapsibleContent>
                                         <ul className="divide-y border-t pt-2">
-                                            {device.sensors ? device.sensors
+                                            {device.sensors
                                                 .slice(initialSensorsCount)
                                                 .map((sensor) => (
                                                     <SensorListItem key={sensor.id} sensor={sensor} />
-                                                )) : <></>
+                                                ))
                                             }
                                         </ul>
                                     </CollapsibleContent>
@@ -156,7 +154,7 @@ export default function DeviceCard({ device, isWrapper = false }: DeviceCardProp
                                             ) : (
                                                 <>
                                                     <ChevronDown className="h-3 w-3 mr-1" />
-                                                    Show {device.sensors ? (device.sensors.length - initialSensorsCount) : 0} more sensors
+                                                    Show {device.sensors.length - initialSensorsCount} more sensors
                                                 </>
                                             )}
                                         </Button>
