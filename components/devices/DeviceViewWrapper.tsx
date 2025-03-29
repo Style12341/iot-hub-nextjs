@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DeviceHasReceivedData, DeviceQueryResult, getDeviceStatusFromLastValueAt } from "@/lib/contexts/deviceContext";
 import { toast } from "sonner";
 import { DeviceSSEMessage } from "@/types/types";
@@ -25,7 +25,6 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
         // Check all devices' statuses
         const updatedDevices = devices.map(device => {
             const newStatus = getDeviceStatusFromLastValueAt(device.lastValueAt);
-
             if (newStatus !== device.status && newStatus !== "WAITING") {
                 if (newStatus === "OFFLINE" && device.status === "ONLINE") {
                     toast.warning(`Device ${device.name} has gone offline`);
@@ -63,7 +62,7 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
 
         eventSource.onmessage = async (event) => {
             const data: DeviceSSEMessage = JSON.parse(event.data);
-            console.debug("Received SSE message: ", data);
+            console.log("Received SSE message: ", data);
 
             // Skip connection messages
             if (data.type === "connected") {
@@ -87,6 +86,7 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
 
             // Update the specific device with new sensor values
             setDevices(prev => {
+                console.log("Setting devices state", prev, deviceId, data);
                 return prev.map(device => {
                     if (device.id !== deviceId) return device;
 
@@ -111,7 +111,7 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
                                     },
                                     ...sensor.values,
 
-                                ].slice(0,14400)
+                                ].slice(0, 14400)
                             };
                         }
                         return sensor;
@@ -121,6 +121,11 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
                         ? new Date(data.lastValueAt)
                         : new Date();
                     // Return updated device
+                    console.log(device.status)
+                    console.log(device.name)
+                    if (device.status === "WAITING" || device.status === "OFFLINE") {
+                        toast.info(`Device ${device.name} is back online`);
+                    }
                     return {
                         ...device,
                         lastValueAt: lastValueAt,
@@ -140,7 +145,7 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
             eventSource.close();
             clearInterval(intervalId);
         };
-    }, [devices.map(d => d.id).join(',')]); // Dependency on device IDs only
+    }, []); // Dependency on device IDs only
 
     return (
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6">

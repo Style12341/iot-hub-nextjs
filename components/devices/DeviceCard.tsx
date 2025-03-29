@@ -255,6 +255,7 @@ function ViewDeviceCard(device: DeviceQueryResult) {
         };
         if (newDevice.sensors && device.sensors) {
             newDevice.sensors = newDevice.sensors.map((sensor) => {
+                if (!sensor.values) return sensor; // Return original sensor if no values
                 const newSensor = device.sensors.find((s) => s.id === sensor.id);
                 if (!newSensor) return sensor; // Return original sensor if not found
                 if (!newSensor.values) return sensor; // Return original sensor if no values
