@@ -126,8 +126,7 @@ function GraphMetric({ data, metricName, fetchInterval, loading, timeRangeText, 
                     const newData = await getMetricValueBetween(metricName, userId, new Date(Date.now() - fetchInterval * 2), new Date());
                     const formattedData = formatChartData(newData);
                     // replace last two data points with new data
-                    setChartData([...chartData.slice(-4), ...formattedData]);
-
+                    setChartData(prev => [...prev.slice(-4), ...formattedData]);
                 } catch (error) {
                     toast.error("Error fetching metric data", {
                         description: "There was an error fetching the metric data. Please try again later."
