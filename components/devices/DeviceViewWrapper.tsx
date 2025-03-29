@@ -102,7 +102,6 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
                                 sensor.values = [];
                             }
                             const timestamp = newSensor.value.timestamp
-                            console.log("newtimestamp", timestamp)
                             return {
                                 ...sensor,
                                 values: [

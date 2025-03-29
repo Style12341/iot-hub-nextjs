@@ -207,12 +207,10 @@ function ViewDeviceCard(device: DeviceQueryResult) {
     useEffect(() => {
         const fetchData = async () => {
             const timeToFetch = new Date(Date.now() - timeRange * 60 * 1000);
-            console.log("Time to fetch:", timeToFetch);
-            console.log("Oldest value:", oldestValue);
             if (timeToFetch.getTime() < oldestValue.getTime()) {
                 setOldestValue(timeToFetch);
                 const newData = await getDeviceViewWithActiveSensorsBetweenAction(deviceData.id, deviceData.view, timeToFetch, new Date(Date.now()))
-                console.log(newData)
+
                 if (newData) {
                     setDeviceData(newData.device);
                     // Create new Map to update state properly

@@ -22,6 +22,7 @@ import {
 import { Line } from "react-chartjs-2";
 import 'chartjs-adapter-date-fns';
 import { getLineDatasetStyle, getStandardChartOptions } from "@/lib/chartConfig";
+import { toast } from "sonner";
 
 // Register ChartJS components
 ChartJS.register(
@@ -120,16 +121,17 @@ function GraphMetric({ data, metricName, fetchInterval, loading, timeRangeText, 
 
     useEffect(() => {
         if (metricName && userId) {
-            console.log('Starting interval');
             const interval = setInterval(async () => {
                 try {
                     const newData = await getMetricValueBetween(metricName, userId, new Date(Date.now() - fetchInterval * 2), new Date());
                     const formattedData = formatChartData(newData);
-                    console.log('New metric data:', formattedData);
                     // replace last two data points with new data
                     setChartData([...chartData.slice(-4), ...formattedData]);
 
                 } catch (error) {
+                    toast.error("Error fetching metric data", {
+                        description: "There was an error fetching the metric data. Please try again later."
+                    });
                     console.error('Error fetching metric data:', error);
                 }
             }, fetchInterval);
