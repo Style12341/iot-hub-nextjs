@@ -77,21 +77,24 @@ model Device {
   @@unique(name: "activeFirmware", [activeFirmwareId])
   @@unique(name: "assignedFirmware", [assignedFirmwareId])
 }
+
 model Firmware {
   id             String   @id @default(uuid())
-  description    String   // Description of the firmware, e.g., "Firmware for temperature sensor"
-  version        String   // Firmware version, e.g., "1.0.3"
-  fileUrl        String   // Google Cloud Storage URL
-  fileName       String   // Original file name
-  fileSizeBytes  Int      // File size in bytes
-  contentType    String   // MIME type of the file
-  checksum       String?  // SHA256 hash of the file for verification
+  description    String // Description of the firmware, e.g., "Firmware for temperature sensor"
+  version        String // Firmware version, e.g., "1.0.3"
+  fileUrl        String // Google Cloud Storage URL
+  fileName       String // Original file name
+  fileSizeBytes  Int // File size in bytes
+  contentType    String // MIME type of the file
+  checksum       String? // SHA256 hash of the file for verification
   Device         Device   @relation("Firmwares", fields: [deviceId], references: [id])
   ActiveDevice   Device?  @relation("ActiveFirmware")
   AssignedDevice Device?  @relation("AssignedFirmware")
   deviceId       String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@unique([deviceId, version])
 }
 
 model View {

@@ -1,5 +1,4 @@
 import { bucket } from './configs/gcsConfig';
-import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
 import { Firmware } from '@prisma/client';
 import { Readable } from 'stream';
@@ -46,7 +45,7 @@ interface PresignedUrlResult {
 export async function uploadFirmware(file: MulterFile, metadata: FirmwareMetadata): Promise<Firmware> {
     try {
         // Create a unique filename in GCS
-        const filePath = `firmwares/${metadata.deviceId}/${metadata.version}/${uuidv4()}-${file.originalname}`;
+        const filePath = `firmwares/${metadata.deviceId}/${metadata.version}-${file.originalname}`;
 
         // Calculate SHA256 checksum
         const fileBuffer = file.buffer;

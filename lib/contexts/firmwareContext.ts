@@ -55,6 +55,14 @@ export async function getFirmwaresQty(userId: string): Promise<number> {
     });
 }
 
+export async function getFirmwareByDeviceAndVersion(deviceId: string, version: string) {
+    return await db.firmware.findFirst({
+        where: {
+            deviceId,
+            version
+        }
+    });
+}
 /**
  * Get all firmwares for a specific device
  * @param deviceId - The device ID to get firmwares for

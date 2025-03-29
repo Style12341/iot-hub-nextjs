@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadFirmware } from '@/lib/firmwareUtils';
 import { validateDeviceOwnership } from '@/lib/contexts/deviceContext';
-import { getDeviceFirmwares } from '@/lib/contexts/firmwareContext';
+import { getDeviceFirmwares, getFirmwareByDeviceAndVersion } from '@/lib/contexts/firmwareContext';
 import { auth } from '@clerk/nextjs/server';
 
 // Helper function to convert ReadableStream to Buffer
@@ -70,7 +70,7 @@ export async function POST(
         if (!hasAccess) {
             return NextResponse.json({ error: 'Access denied to this device' }, { status: 403 });
         }
-        
+
         // Process the form data
         const formData = await req.formData();
         const file = formData.get('file') as File;
@@ -82,6 +82,17 @@ export async function POST(
             return NextResponse.json(
                 { error: 'Missing required fields: file, description, or version' },
                 { status: 400 }
+            );
+        }
+        // Check if firmware doesn't already exist
+        const existingFirmware = await getFirmwareByDeviceAndVersion(
+            deviceId,
+            version
+        );
+        if (existingFirmware) {
+            return NextResponse.json(
+                { error: 'Firmware with this version already exists' },
+                { status: 409 }
             );
         }
 
