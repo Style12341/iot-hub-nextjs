@@ -59,12 +59,9 @@ export default function DeviceForm({ categories, deviceAction, categoryAction }:
     });
 
     function handleSubmit(data: CreateDeviceFormData) {
-        console.log("Form submitted with data:", data);
         startTransition(async () => {
             try {
-                console.log("Calling server action...");
                 const result = await deviceAction(data);
-                console.log("Server action result:", result);
 
                 if (result.success) {
                     toast.success("Device created successfully");

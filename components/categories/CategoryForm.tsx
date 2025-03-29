@@ -29,16 +29,11 @@ export default function CategoryForm({ addCategory, categoryAction, create }: Ca
     });
 
     function handleSubmit(data: CreateCategoryFormData) {
-        console.log("Form submitted with data:", data);
         startTransition(async () => {
             try {
-                console.log("Calling server action...");
                 const result = await categoryAction(data);
-                console.log("Server action result:", result);
-
                 if (result.success) {
                     toast.success("Category created successfully");
-                    console.log(result.data);
                     formMethods.reset();
                     if (typeof addCategory === "function") {
                         const category = (await result.data) as SensorCategory;
@@ -48,7 +43,6 @@ export default function CategoryForm({ addCategory, categoryAction, create }: Ca
                     toast.error("Failed to create category", { description: result.message });
                 }
             } catch (error) {
-                console.error("Error during form submission:", error);
                 toast.error("An unexpected error occurred", {
                     description: error instanceof Error ? error.message : "Please try again"
                 });

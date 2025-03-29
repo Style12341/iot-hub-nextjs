@@ -15,12 +15,12 @@ export default function Navbar() {
       </Link>
       <nav className="ml-auto flex gap-6">
         <NavbarLink href="/">Home</NavbarLink>
-        <NavbarLink href="/dashboard">Dashboard</NavbarLink>
         <SignedOut>
           <SignInButton />
           <SignUpButton />
         </SignedOut>
         <SignedIn>
+          <NavbarLink href="/dashboard">Dashboard</NavbarLink>
           <UserButton />
         </SignedIn>
       </nav>
