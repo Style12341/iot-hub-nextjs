@@ -12,8 +12,7 @@ import {
     Title,
     Tooltip,
     Legend,
-    TimeScale,
-    Filler
+    TimeScale
 } from "chart.js";
 import 'chartjs-adapter-date-fns';
 import { SensorQueryResult } from "@/lib/contexts/deviceContext";
@@ -28,21 +27,12 @@ ChartJS.register(
     PointElement,
     LineElement,
     Title,
-    Filler,
     Tooltip,
     Legend,
     TimeScale
 );
 
-const timeRanges = [
-    { label: "Last 10 minutes", value: 10 },
-    { label: "Last 30 minutes", value: 30 },
-    { label: "Last hour", value: 60 },
-    { label: "Last 3 hours", value: 180 },
-    { label: "Last 6 hours", value: 360 },
-    { label: "Last 12 hours", value: 720 },
-    { label: "Last 24 hours", value: 1440 },
-];
+
 
 interface SensorGraphProps {
     sensor: SensorQueryResult;
@@ -51,8 +41,7 @@ interface SensorGraphProps {
 }
 
 export default function SensorGraph({ sensor, className = "", color }: SensorGraphProps) {
-    const [timeRange, setTimeRange] = useState<number>(10);
-    const [filteredValues, setFilteredValues] = useState(sensor.values || []);
+    const [values, setValues] = useState(sensor.values || []);
 
     // Determine color set to use
     const colorSet: ChartColorSet = color
@@ -69,13 +58,9 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
 
     useEffect(() => {
         if (!sensor.values || sensor.values.length === 0) {
-            setFilteredValues([]);
+            setValues([]);
             return;
         }
-
-        const now = new Date();
-        const cutoffTime = new Date(now.getTime() - timeRange * 60 * 1000);
-
         // Filter values within the selected time range
         const filtered = sensor.values.map(v => {
             // Ensure we get a proper date object from the timestamp
@@ -94,25 +79,16 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
                 timestamp,
                 value: v.value
             };
-        }).filter(value => {
-            return value.timestamp.getTime() > cutoffTime.getTime();
-        });
+        })
 
-        setFilteredValues(filtered);
-    }, [sensor.values, timeRange]);
-
-    // Determine appropriate time unit based on range
-    const getTimeUnit = (): 'minute' | 'hour' | 'day' => {
-        if (timeRange <= 60) return 'minute';
-        if (timeRange <= 1440) return 'hour';
-        return 'day';
-    };
+        setValues(filtered);
+    }, [sensor.values]);
 
     const chartData = {
         datasets: [
             {
                 label: sensor.name,
-                data: formatChartData(filteredValues),
+                data: formatChartData(values),
                 ...getLineDatasetStyle(colorSet, true)
             },
         ],
@@ -126,7 +102,7 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
             (context) => `${context.dataset.label}: ${context.parsed.y} ${sensor.unit || ''}`
         ),
         scales: {
-            x: getTimeScaleOptions(getTimeUnit()),
+            x: getTimeScaleOptions(),
             y: {
                 title: {
                     display: true,
@@ -144,25 +120,10 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
         <Card className={`${className} h-full`}>
             <CardHeader className="pb-2 flex flex-row justify-between items-center">
                 <CardTitle className="text-sm font-medium">{sensor.name}</CardTitle>
-                <Select
-                    defaultValue={timeRange.toString()}
-                    onValueChange={(value) => setTimeRange(parseInt(value))}
-                >
-                    <SelectTrigger className="w-[180px] h-8 text-xs">
-                        <SelectValue placeholder="Select time range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {timeRanges.map((range) => (
-                            <SelectItem key={range.value} value={range.value.toString()}>
-                                {range.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
             </CardHeader>
             <CardContent>
                 <div className="h-[200px]">
-                    {filteredValues.length > 0 ? (
+                    {values.length > 0 ? (
                         <Line
                             data={chartData}
                             options={options}
@@ -174,10 +135,10 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
                     )}
                 </div>
                 <div className="mt-2 text-xs text-muted-foreground">
-                    {filteredValues.length > 0 ? (
+                    {values.length > 0 ? (
                         <div className="flex justify-between">
-                            <span>Latest: {filteredValues[0]?.value} {sensor.unit}</span>
-                            <span>{formatDate(filteredValues[0]?.timestamp || "")}</span>
+                            <span>Latest: {values[0]?.value} {sensor.unit}</span>
+                            <span>{formatDate(values[0]?.timestamp || "")}</span>
                         </div>
                     ) : null}
                 </div>

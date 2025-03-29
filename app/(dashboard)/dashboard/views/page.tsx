@@ -12,7 +12,7 @@ export default async function Views() {
     }
     const endDate = new Date();
     // start date 24 hours ago
-    const startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+    const startDate = new Date(endDate.getTime() - 10 * 60 * 1000);
     const result = await getDevicesViewWithActiveSensorsBetweenAction(userId, "Default", startDate, endDate);
     if (!result) {
         return redirect('/dashboard/devices');

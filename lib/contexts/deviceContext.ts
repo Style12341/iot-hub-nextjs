@@ -23,6 +23,7 @@ export interface GroupQueryResult {
 export interface DeviceHasReceivedData {
     id: string;
     name: string;
+    view: string;
     status: "ONLINE" | "OFFLINE";
     lastValueAt: Date;
     group: GroupQueryResult;
@@ -31,6 +32,7 @@ export interface DeviceHasReceivedData {
 export interface DeviceHasNotReceivedData {
     id: string;
     name: string;
+    view: string;
     status: "WAITING";
     lastValueAt: null;
     group: GroupQueryResult;
@@ -77,7 +79,7 @@ export const createDevice = async (data: CreateDeviceFormData) => {
         include: {
             Sensors: true,
             Groups: true,
-
+            View: true,
         }
     });
     const group = device.Groups[0];
@@ -143,7 +145,8 @@ export const getDevice = async (id: string) => {
                 }
             },
             Groups: true,
-            User: true
+            User: true,
+            View: true
         }
     });
     if (!device) {
@@ -172,6 +175,7 @@ export const getDevicesWithActiveSensors = async (userId: string, page: number =
         SELECT jsonb_build_object(
                 'id', d."id",
                 'name', d."name",
+                'view', v."name",
                 'status', d."status",
                 'lastValueAt', d."lastValueAt",
                 'group', jsonb_build_object(
@@ -206,12 +210,13 @@ export const getDevicesWithActiveSensors = async (userId: string, page: number =
             )
          AS device
         FROM "Device" d
+        JOIN "View" v ON d."viewId" = v."id"
         LEFT JOIN "Group" g ON d."activeGroupId" = g."id"
         LEFT JOIN "GroupSensor" gs ON g."id" = gs."groupId" AND gs."active" = true
         LEFT JOIN "Sensor" s ON gs."sensorId" = s."id"
         LEFT JOIN "SensorCategory" c ON s."categoryId" = c."id"
         WHERE d."userId" = ${userId}
-        GROUP BY d."id", g."id"
+        GROUP BY d."id",v."id", g."id"
         ORDER BY CASE 
                 WHEN d."status" = 'ONLINE' THEN 1
                 WHEN d."status" = 'OFFLINE' THEN 2
@@ -233,6 +238,7 @@ export const getDevicesViewWithActiveSensorsBetween = async (userId: string, vie
         SELECT jsonb_build_object(
                 'id', d."id",
                 'name', d."name",
+                'view', v."name",
                 'status', d."status",
                 'lastValueAt', d."lastValueAt",
                 'group', jsonb_build_object(
@@ -275,7 +281,7 @@ export const getDevicesViewWithActiveSensorsBetween = async (userId: string, vie
         LEFT JOIN "SensorCategory" c ON s."categoryId" = c."id"
         WHERE d."userId" = ${userId}
         AND v."name" = ${view}
-        GROUP BY d."id", g."id"
+        GROUP BY d."id",v."id", g."id"
         ORDER BY CASE 
                 WHEN d."status" = 'ONLINE' THEN 1
                 WHEN d."status" = 'OFFLINE' THEN 2
@@ -285,9 +291,84 @@ export const getDevicesViewWithActiveSensorsBetween = async (userId: string, vie
     // Map status accordingly
     devices.forEach(device => {
         device.device.status = getDeviceStatusFromLastValueAt(device.device.lastValueAt);
+        if (device.device.sensors) {
+            device.device.sensors.sort((a, b) => a.name.localeCompare(b.name));
+        }
     });
 
     return devices;
+}
+export const getDeviceViewWithActiveSensorsBetween = async (userId: string, deviceId: string, view: string, startDate: Date, endDate: Date) => {
+    console.debug("[getDeviceViewWithActiveSensorsBetween] User ID:", userId, "Device ID:", deviceId, "View:", view, "Start Date:", startDate, "End Date:", endDate);
+    const devices: DevicesQueryResult[] = await db.$queryRaw`
+        SELECT jsonb_build_object(
+                'id', d."id",
+                'name', d."name",
+                'view', v."name",
+                'status', d."status",
+                'lastValueAt', d."lastValueAt",
+                'group', jsonb_build_object(
+                    'id', g."id",
+                    'name', g."name"
+                ),
+                'sensors', jsonb_agg(
+                    jsonb_build_object(
+                        'groupSensorId', gs."id",
+                        'id', s."id",
+                        'name', s."name",
+                        'unit', s."unit",
+                        'category', c."name",
+                        'values', (
+                            SELECT jsonb_agg(
+                                jsonb_build_object(
+                                    'value', sv_limited."value",
+                                    'timestamp', sv_limited."timestamp"
+                                )
+                                ORDER BY sv_limited."timestamp" DESC
+                            )
+                            FROM (
+                                SELECT sv."value", sv."timestamp"
+                                FROM "SensorValue" sv
+                                WHERE sv."groupSensorId" = gs."id"
+                                AND sv."timestamp" >= ${startDate.toISOString()}::timestamp
+                                AND sv."timestamp" <= ${endDate.toISOString()}::timestamp
+                                ORDER BY sv."timestamp" DESC
+                            ) AS sv_limited
+                        )
+                    )
+                )
+            )
+         AS device
+        FROM "Device" d
+        JOIN "View" v ON d."viewId" = v."id"
+        LEFT JOIN "Group" g ON d."activeGroupId" = g."id"
+        LEFT JOIN "GroupSensor" gs ON g."id" = gs."groupId" AND gs."active" = true
+        LEFT JOIN "Sensor" s ON gs."sensorId" = s."id"
+        LEFT JOIN "SensorCategory" c ON s."categoryId" = c."id"
+        WHERE d."userId" = ${userId}
+        AND d."id" = ${deviceId}
+        AND v."name" = ${view}
+        GROUP BY d."id",v."id", g."id"
+        ORDER BY CASE 
+                WHEN d."status" = 'ONLINE' THEN 1
+                WHEN d."status" = 'OFFLINE' THEN 2
+                ELSE 3
+            END, d."name" ASC
+    `;
+    console.debug("Devices:", devices[0].device.sensors)
+    // Check if we got any results
+    if (!devices || devices.length === 0) {
+        return null;
+    }
+
+    // Map status accordingly
+    const device = devices[0];
+    device.device.status = getDeviceStatusFromLastValueAt(device.device.lastValueAt);
+    // Sort sensors by name
+    if (device.device.sensors) {
+        device.device.sensors.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return device;
 }
 export const getDeviceWithActiveSensors = async (userId: string, deviceId: string) => {
 
@@ -295,6 +376,7 @@ export const getDeviceWithActiveSensors = async (userId: string, deviceId: strin
         SELECT jsonb_build_object(
                 'id', d."id",
                 'name', d."name",
+                'view', v."name",
                 'status', d."status",
                 'lastValueAt', d."lastValueAt",
                 'group', jsonb_build_object(
@@ -329,13 +411,14 @@ export const getDeviceWithActiveSensors = async (userId: string, deviceId: strin
             )
          AS device
         FROM "Device" d
+        JOIN "View" v ON d."viewId" = v."id"
         LEFT JOIN "Group" g ON d."activeGroupId" = g."id"
         LEFT JOIN "GroupSensor" gs ON g."id" = gs."groupId" AND gs."active" = true
         LEFT JOIN "Sensor" s ON gs."sensorId" = s."id"
         LEFT JOIN "SensorCategory" c ON s."categoryId" = c."id"
         WHERE d."userId" = ${userId}
         AND d."id" = ${deviceId}
-        GROUP BY d."id", g."id"
+        GROUP BY d."id",v."id", g."id"
         ORDER BY CASE 
                 WHEN d."status" = 'ONLINE' THEN 1
                 WHEN d."status" = 'OFFLINE' THEN 2

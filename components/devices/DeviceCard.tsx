@@ -7,11 +7,15 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import SensorListItem from "./sensors/SensorListItem";
-import { DeviceQueryResult } from "@/lib/contexts/deviceContext";
+import { DeviceQueryResult, SensorValueQueryResult } from "@/lib/contexts/deviceContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDate } from "@/lib/utils";
 import SensorGraph from "./sensors/SensorGraph";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { getDeviceViewWithActiveSensorsBetweenAction } from "@/app/actions/deviceActions";
+import { useUser } from "@clerk/nextjs";
+import { set } from "zod";
 
 interface DeviceCardProps {
     device: DeviceQueryResult;
@@ -188,6 +192,92 @@ function IndexDeviceCard(device: DeviceQueryResult) {
 
 }
 function ViewDeviceCard(device: DeviceQueryResult) {
+    const [timeRange, setTimeRange] = useState<number>(10); // Default time range value
+    const [deviceData, setDeviceData] = useState<DeviceQueryResult>(device); // State to hold fetched data
+    // Convert to useState hooks to persist between renders
+    const [oldestValue, setOldestValue] = useState<Date>(new Date(Date.now() - 10 * 60 * 1000));
+    const [oldestValues, setOldestValues] = useState<Map<string, SensorValueQueryResult[]>>(new Map());
+    useEffect(() => {
+        const initialValues = new Map<string, SensorValueQueryResult[]>();
+        deviceData.sensors?.forEach((sensor) => {
+            initialValues.set(sensor.id, sensor.values);
+        });
+        setOldestValues(initialValues);
+    }, []);  // Empty dependency array means this only runs once
+    useEffect(() => {
+        const fetchData = async () => {
+            const timeToFetch = new Date(Date.now() - timeRange * 60 * 1000);
+            console.log("Time to fetch:", timeToFetch);
+            console.log("Oldest value:", oldestValue);
+            if (timeToFetch.getTime() < oldestValue.getTime()) {
+                setOldestValue(timeToFetch);
+                const newData = await getDeviceViewWithActiveSensorsBetweenAction(deviceData.id, deviceData.view, timeToFetch, new Date(Date.now()))
+                console.log(newData)
+                if (newData) {
+                    setDeviceData(newData.device);
+                    // Create new Map to update state properly
+                    const newOldestValues = new Map(oldestValues);
+                    newData.device.sensors?.forEach((sensor) => {
+                        newOldestValues.set(sensor.id, sensor.values);
+                    });
+                    setOldestValues(newOldestValues);
+                }
+                // Update the oldest values map with the new data
+
+            } else {
+                // If time to fetch is more recent create new filtered values to fit the range
+                const newData = deviceData.sensors?.map((sensor) => {
+                    const filteredValues = sensor.values.filter((value) => {
+                        return new Date(value.timestamp) >= timeToFetch;
+                    });
+                    return {
+                        ...sensor,
+                        values: filteredValues,
+                    };
+                });
+                if (newData && deviceData.status !== "WAITING" && newData.length) {
+                    const newDevice: DeviceQueryResult = {
+                        ...deviceData,
+                        sensors: newData,
+                    };
+                    setDeviceData(newDevice);
+                }
+            }
+        };
+
+        fetchData();
+    }, [timeRange, deviceData.id, deviceData.view]);
+    useEffect(() => {
+        const newDevice = {
+            ...deviceData,
+            status: device.status === "WAITING" ? "OFFLINE" : device.status, // Ensure status is valid
+            group: device.group,
+            lastValueAt: device.lastValueAt || new Date(), // Ensure lastValueAt is valid
+        };
+        if (newDevice.sensors && device.sensors) {
+            newDevice.sensors = newDevice.sensors.map((sensor) => {
+                const newSensor = device.sensors.find((s) => s.id === sensor.id);
+                if (!newSensor) return sensor; // Return original sensor if not found
+                if (!newSensor.values) return sensor; // Return original sensor if no values
+                const newValue = newSensor.values[0];
+                sensor.values = [...sensor.values, newValue]; // Append new value to existing values
+                return sensor;
+            }
+            )
+            setDeviceData(newDevice);
+        }
+    }, [device])
+    const timeRanges = [
+        { label: "Last 10 minutes", value: 10 },
+        { label: "Last 30 minutes", value: 30 },
+        { label: "Last hour", value: 60 },
+        { label: "Last 3 hours", value: 180 },
+        { label: "Last 6 hours", value: 360 },
+        { label: "Last 12 hours", value: 720 },
+        { label: "Last 24 hours", value: 1440 },
+    ];
+    // Oldest value is by default 10 minutes ago
+
     // Predefined colors based on categories
     const categoryColors: Record<string, string> = {
         "Temperature": "#FF5733", // Red-orange for temperature
@@ -201,11 +291,26 @@ function ViewDeviceCard(device: DeviceQueryResult) {
     const defaultColor = "#75C2C6"; // Teal-ish default
 
     return (
-        <CardContent className="p-2">
+        <CardContent className="px-2 space-y-4">
+            <Select
+                defaultValue={timeRange.toString()}
+                onValueChange={(value) => setTimeRange(parseInt(value))}
+            >
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                    <SelectValue placeholder="Select time range" />
+                </SelectTrigger>
+                <SelectContent>
+                    {timeRanges.map((range) => (
+                        <SelectItem key={range.value} value={range.value.toString()}>
+                            {range.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
             <div className="space-y-4">
-                {device.sensors && device.sensors.length > 0 ? (
+                {deviceData.sensors && deviceData.sensors.length > 0 ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {device.sensors.map((sensor) => (
+                        {deviceData.sensors.map((sensor) => (
                             <SensorGraph
                                 key={sensor.id}
                                 sensor={sensor}
