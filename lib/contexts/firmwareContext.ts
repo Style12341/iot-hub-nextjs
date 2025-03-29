@@ -63,6 +63,13 @@ export async function getFirmwareByDeviceAndVersion(deviceId: string, version: s
         }
     });
 }
+export async function deleteFirmwareById(firmwareId: string) {
+    return await db.firmware.delete({
+        where: {
+            id: firmwareId
+        }
+    });
+}
 /**
  * Get all firmwares for a specific device
  * @param deviceId - The device ID to get firmwares for

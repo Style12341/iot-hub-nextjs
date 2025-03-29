@@ -182,3 +182,28 @@ export async function generateFirmwarePresignedUrl(
         throw error;
     }
 }
+export async function deleteFirmwareFileById(firmwareId: string): Promise<void> {
+    try {
+        // Get firmware metadata from the database using context function
+        const firmware = await getFirmwareById(firmwareId);
+
+        if (!firmware) {
+            throw new Error('Firmware not found');
+        }
+
+        // Get file from Google Cloud Storage using stored path directly
+        const file = bucket.file(firmware.fileUrl);
+
+        // Check if file exists
+        const [exists] = await file.exists();
+        if (!exists) {
+            throw new Error('Firmware file not found in storage');
+        }
+
+        // Delete the file from Google Cloud Storage
+        await file.delete();
+    } catch (error) {
+        console.error('Error deleting firmware file:', error);
+        throw error;
+    }
+}
