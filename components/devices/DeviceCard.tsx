@@ -227,6 +227,7 @@ function ViewDeviceCard(device: DeviceQueryResult) {
             } else {
                 // If time to fetch is more recent create new filtered values to fit the range
                 const newData = deviceData.sensors?.map((sensor) => {
+                    if (!sensor.values) return sensor; // Return original sensor if no values
                     const filteredValues = sensor.values.filter((value) => {
                         return new Date(value.timestamp) >= timeToFetch;
                     });

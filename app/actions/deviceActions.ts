@@ -75,7 +75,6 @@ export async function getDeviceViewWithActiveSensorsBetweenAction(deviceId: stri
     if (!currentUserId) {
         return null;
     }
-    console.log("Current user ID:", currentUserId);
 
     return await getDeviceViewWithActiveSensorsBetween(currentUserId, deviceId, view, startDate, endDate);
 }
