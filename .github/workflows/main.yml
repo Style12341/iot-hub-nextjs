@@ -27,16 +27,20 @@ jobs:
 
       - name: Construir y enviar imagen a Artifact Registry
         run: |
-          docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/mi-repo/mi-app .
-          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/mi-repo/mi-app
+          docker build \
+          --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }} \
+          -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/iothubnextjs/mi-app .
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/iothubnextjs/mi-app
+
 
       - name: Desplegar en Cloud Run
         run: |
           gcloud run deploy mi-app \
-            --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/mi-repo/mi-app \
+            --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/iothubnextjs/mi-app \
             --platform managed \
             --region us-central1 \
             --allow-unauthenticated \
+            --vpc-connector iothubnextjs-vpcconnector \
             --service-account github-actions@${{ secrets.GCP_PROJECT }}.iam.gserviceaccount.com \
             --set-env-vars "NODE_ENV=production" \
             --set-env-vars "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" \
@@ -45,8 +49,8 @@ jobs:
             --set-env-vars "SIGNING_SECRET=${{ secrets.SIGNING_SECRET }}" \
             --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }}"
 
-      - name: Ejecutar Migraciones en Cloud SQL
-        run: |
-          gcloud run exec mi-app --region=us-central1 -- npx prisma migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      #- name: Ejecutar Migraciones en Cloud SQL
+      #  run: |
+      #    gcloud run exec mi-app --region=us-central1 -- npx prisma migrate deploy
+      #  env:
+      #   DATABASE_URL: ${{ secrets.DATABASE_URL }}
