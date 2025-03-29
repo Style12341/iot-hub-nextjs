@@ -1,6 +1,7 @@
 "use server";
 
-import { createDevice, getDevicesQty, getDevicesWithActiveSensors, getDeviceWithActiveSensors } from "@/lib/contexts/deviceContext";
+import { createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors } from "@/lib/contexts/deviceContext";
+import { getAllUserViews } from "@/lib/contexts/userContext";
 import { CreateDeviceFormData, createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
@@ -50,6 +51,13 @@ export async function getDevicesQtyAction(userId: string) {
 
     return await getDevicesQty(userId);
 }
+export async function getAllUserViewsAction() {
+    const { userId: currentUserId } = await auth();
+    if (!currentUserId) {
+        return null;
+    }
+    return await getAllUserViews(currentUserId);
+}
 export async function getDeviceWithActiveSensorsAction(deviceId: string) {
     const { userId: currentUserId } = await auth();
     if (!currentUserId) {
@@ -61,4 +69,19 @@ export async function getDeviceWithActiveSensorsAction(deviceId: string) {
     const device = await getDeviceWithActiveSensors(currentUserId, deviceId);
 
     return createSuccessResponse(ServerActionReason.SUCCESS, "Device retrieved successfully", device);
+}
+export async function getDevicesViewWithActiveSensorsBetweenAction(view: string, startDate: Date, endDate: Date) {
+    const { userId: currentUserId } = await auth();
+    if (!currentUserId) {
+        return null;
+    }
+    return await getDevicesViewWithActiveSensorsBetween(currentUserId, view, startDate, endDate);
+}
+export async function getDeviceViewWithActiveSensorsBetweenAction(deviceId: string, view: string, startDate: Date, endDate: Date) {
+    const { userId: currentUserId } = await auth();
+    if (!currentUserId) {
+        return null;
+    }
+
+    return await getDeviceViewWithActiveSensorsBetween(currentUserId, deviceId, view, startDate, endDate);
 }

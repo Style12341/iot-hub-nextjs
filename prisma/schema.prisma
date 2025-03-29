@@ -25,6 +25,11 @@ model User {
   SensorCategories SensorCategory[]
   Tokens           UserTokens[]
   Metric           Metric[]
+  View             View[]
+  DefaultView      View?            @relation("DefaultView", fields: [defaultViewId], references: [id])
+  defaultViewId    String?
+
+  @@unique([defaultViewId])
 }
 
 enum Metrics {
@@ -59,9 +64,22 @@ model Device {
   status        DeviceStatus @default(WAITING)
   ActiveGroup   Group?       @relation("ActiveGroup", fields: [activeGroupId], references: [id], onDelete: SetNull)
   activeGroupId String?
+  View          View?        @relation(fields: [viewId], references: [id], onDelete: SetNull)
+  viewId        String?
 
   @@unique([activeGroupId])
   @@unique(name: "usersDevices", [name, userId])
+}
+
+model View {
+  id             String   @id @default(uuid())
+  name           String
+  User           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  Devices        Device[]
+  DefaultForUser User?    @relation("DefaultView")
+
+  @@unique([name, userId])
 }
 
 model Sensor {

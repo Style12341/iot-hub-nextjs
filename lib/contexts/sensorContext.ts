@@ -13,3 +13,13 @@ export async function validateSensorOwnership(userId: string, sensorId: string):
     });
     return !!sensor
 }
+export async function getSensorsQty(userId: string) {
+    return db.sensor.count({
+        where: {
+            Device: {
+                userId
+            }
+        }
+    });
+}
+

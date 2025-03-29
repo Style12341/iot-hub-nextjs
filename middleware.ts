@@ -7,7 +7,6 @@ const isProtectedRoute = createRouteMatcher(['/dashboard(.*)'])
 export default clerkMiddleware(async (auth, req) => {
   // Protect all routes starting with `/admin`
   if (isAdminRoute(req) && (await auth()).sessionClaims?.metadata?.role !== 'ADMIN') {
-    console.log((await auth()).sessionClaims?.metadata?.role)
     const url = new URL('/', req.url)
     return NextResponse.redirect(url)
   }

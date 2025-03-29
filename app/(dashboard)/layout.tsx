@@ -20,8 +20,8 @@ export default function RootLayout({
                         enableSystem
                         disableTransitionOnChange
                     >
-                        <SidebarProvider>
-                            <ClerkProvider>
+                        <ClerkProvider>
+                            <SidebarProvider>
                                 <BreadcrumbProvider>
                                     <DashboardSidebar />
                                     <SidebarInset>
@@ -29,11 +29,11 @@ export default function RootLayout({
                                         <div className="p-4 lg:p-6">
                                             {children}
                                         </div>
-                                        <Toaster richColors={true} closeButton/>
+                                        <Toaster richColors={true} closeButton />
                                     </SidebarInset>
                                 </BreadcrumbProvider>
-                            </ClerkProvider>
-                        </SidebarProvider>
+                            </SidebarProvider>
+                        </ClerkProvider>
                     </ThemeProvider>
                 </body>
             </html>
