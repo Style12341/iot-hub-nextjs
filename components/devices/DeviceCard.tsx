@@ -208,6 +208,7 @@ function ViewDeviceCard(device: DeviceQueryResult) {
         const fetchData = async () => {
             const timeToFetch = new Date(Date.now() - timeRange * 60 * 1000);
             if (timeToFetch.getTime() < oldestValue.getTime()) {
+                console.log("fetching new data", timeToFetch, oldestValue);
                 setOldestValue(timeToFetch);
                 const newData = await getDeviceViewWithActiveSensorsBetweenAction(deviceData.id, deviceData.view, timeToFetch, new Date(Date.now()))
 

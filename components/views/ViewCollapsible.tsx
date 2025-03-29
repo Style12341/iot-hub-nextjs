@@ -15,32 +15,51 @@ interface ViewCollapsibleProps {
     defaultExpanded?: boolean;
     deviceCount: number;
 }
+
 const defaultFetchDate = new Date(Date.now() - 1000 * 60 * 10); // Default to 10 minutes ago
+
 export default function ViewCollapsible({ viewName, deviceCount, defaultExpanded = false }: ViewCollapsibleProps) {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-    const [hasInitialized, setHasInitialized] = useState(false);
     const [devices, setDevices] = useState<DeviceQueryResult[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [dataFetched, setDataFetched] = useState(false);
 
-    // Only initialize SSE connections when expanded for the first time
+    // Fetch data when expanded and data hasn't been fetched yet
     useEffect(() => {
-        if (isExpanded && !hasInitialized) {
-            setHasInitialized(true);
+        if (isExpanded && !dataFetched && !isLoading) {
             const fetchData = async () => {
-                const response = await getDevicesViewWithActiveSensorsBetweenAction(viewName, defaultFetchDate, new Date(Date.now()));
-                if (response) {
-                    setDevices(response.map((device) => {
-                        return device.device
-                    }));
+                try {
+                    setIsLoading(true);
+                    console.log(`Fetching data for ${viewName} view`);
+
+                    const response = await getDevicesViewWithActiveSensorsBetweenAction(
+                        viewName,
+                        defaultFetchDate,
+                        new Date(Date.now())
+                    );
+
+                    if (response) {
+                        const deviceData = response.map(item => item.device);
+                        setDevices(deviceData);
+                        setDataFetched(true);
+                    } else {
+                        toast.error(`Failed to fetch devices for ${viewName} view`);
+                    }
+                } catch (error) {
+                    console.error("Error fetching devices:", error);
+                    toast.error("Error fetching devices. Please try again later.");
+                } finally {
+                    setIsLoading(false);
                 }
-            }
-            fetchData().catch((error) => {
-                console.error("Error fetching devices:", error);
-                toast.error("Error fetching devices. Please try again later.");
-            });
-        } else {
-            setHasInitialized(false);
+            };
+
+            fetchData();
         }
-    }, [isExpanded]);
+        if (!isExpanded) {
+            setDataFetched(false);
+            setDevices([]);
+        }
+    }, [isExpanded, viewName]);
 
     return (
         <Card className="mb-6">
@@ -71,11 +90,19 @@ export default function ViewCollapsible({ viewName, deviceCount, defaultExpanded
                         transition={{ duration: 0.3 }}
                     >
                         <CardContent className="pt-0">
-                            {(hasInitialized || isExpanded) && (
+                            {isLoading ? (
+                                <div className="py-12 flex justify-center">
+                                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                                </div>
+                            ) : dataFetched ? (
                                 <DeviceViewWrapper
                                     initialDevices={devices}
                                     isExpanded={isExpanded}
                                 />
+                            ) : (
+                                <div className="py-12 text-center text-muted-foreground">
+                                    No devices to display
+                                </div>
                             )}
                         </CardContent>
                     </motion.div>

@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { DeviceHasReceivedData, DeviceQueryResult, getDeviceStatusFromLastValueAt } from "@/lib/contexts/deviceContext";
 import { toast } from "sonner";
 import { DeviceSSEMessage } from "@/types/types";
 import DeviceCard from "./DeviceCard";
 import { getDevicesEventSource } from "@/lib/sseUtils";
 import { getDeviceWithActiveSensorsAction } from "@/app/actions/deviceActions";
-import { set } from "zod";
 
 interface DeviceViewWrapperProps {
     initialDevices: DeviceQueryResult[];
@@ -17,31 +16,46 @@ interface DeviceViewWrapperProps {
 export default function DeviceViewWrapper({ initialDevices, isExpanded = true }: DeviceViewWrapperProps) {
     const [devices, setDevices] = useState<DeviceQueryResult[]>(initialDevices);
     const [refreshKey, setRefreshKey] = useState(false);
-    const [sseSetup, setSseSetup] = useState(false);
+    const [eventSource, setEventSource] = useState<EventSource | null>(null);
 
+    // Update devices when props change
     useEffect(() => {
         setDevices(initialDevices);
+    }, [initialDevices]);
+
+    // Effect for SSE connection - will run when isExpanded changes
+    useEffect(() => {
+        // Clean up any existing event source first
+        if (eventSource) {
+            console.log("Cleaning up existing SSE connection");
+            eventSource.close();
+            setEventSource(null);
+        }
+
+        // Only set up SSE when expanded and we have devices
+        if (!isExpanded || initialDevices.length === 0) {
+            return;
+        }
+
+        console.log("Setting up new SSE connection");
         const deviceIds = initialDevices.map(device => device.id);
-        if (!isExpanded || sseSetup || deviceIds.length === 0) return;
 
         // Set up interval to check status every 10 seconds
         const intervalId = setInterval(() => {
             setRefreshKey(prev => !prev);
         }, 10000);
 
-        // Set up a single SSE connection for all devices
-        const eventSource = getDevicesEventSource(deviceIds);
-        setSseSetup(true);
-        eventSource.onmessage = async (event) => {
+        // Set up a new SSE connection
+        const newEventSource = getDevicesEventSource(deviceIds);
+        setEventSource(newEventSource);
+
+        newEventSource.onmessage = async (event) => {
             const data: DeviceSSEMessage = JSON.parse(event.data);
-            // Skip connection messages
             if (data.type === "connected") return;
 
-            // Get the device ID from the message
             const deviceId = data.id;
 
             if (data.type === "new sensors" && data.lastValueAt) {
-                // Find the device
                 const deviceIndex = devices.findIndex(d => d.id === deviceId);
                 if (deviceIndex !== -1 && devices[deviceIndex].status === "WAITING") {
                     const response = await getDeviceWithActiveSensorsAction(deviceId);
@@ -59,7 +73,6 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
 
                     // Create a new sensors array with updated values
                     const updatedSensors = device.sensors ? device.sensors.map((sensor) => {
-                        // Check if this sensor has updated data in the message
                         const newSensor = data.sensors.find(
                             (s) => s.groupSensorId === sensor.groupSensorId
                         );
@@ -83,7 +96,6 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
                         return sensor;
                     }) : [];
 
-                    // Ensure lastValueAt is always a proper Date object
                     const lastValueAt = data.lastValueAt
                         ? new Date(data.lastValueAt)
                         : new Date();
@@ -102,19 +114,25 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
             });
         };
 
-        eventSource.onerror = () => {
+        newEventSource.onerror = () => {
             console.error("SSE connection lost");
-            setSseSetup(false);
-            eventSource.close();
+            if (newEventSource) {
+                newEventSource.close();
+                setEventSource(null);
+            }
         };
 
         return () => {
-            eventSource.close();
-            setSseSetup(false);
+            console.log("Cleaning up SSE connection and interval");
             clearInterval(intervalId);
+            if (newEventSource) {
+                newEventSource.close();
+                setEventSource(null);
+            }
         };
-    }, [initialDevices]);
+    }, [isExpanded, initialDevices]);
 
+    // Status check effect
     useEffect(() => {
         if (!isExpanded) return;
 
@@ -140,7 +158,7 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
         });
 
         setDevices(updatedDevices);
-    }, [refreshKey]);
+    }, [refreshKey, isExpanded]);
 
     return (
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6">
