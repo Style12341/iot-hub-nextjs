@@ -48,6 +48,7 @@ jobs:
             --set-env-vars "REDIS_URL=${{ secrets.REDIS_URL }}" \
             --set-env-vars "SIGNING_SECRET=${{ secrets.SIGNING_SECRET }}" \
             --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }}"
+            --set-env-vars "GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}" \
 
       #- name: Ejecutar Migraciones en Cloud SQL
       #  run: |

@@ -1,3 +1,4 @@
+import { Firmware } from '@prisma/client';
 import z from 'zod';
 
 
@@ -153,3 +154,5 @@ export interface DeviceSSEMessage {
     lastValueAt: Date;
     sensors: SensorSSEMessage[];
 }
+// Type of firmware except id,createdAt,updatedAt
+export type FirmwareCreate = Omit<Firmware, "id" | "createdAt" | "updatedAt">;
