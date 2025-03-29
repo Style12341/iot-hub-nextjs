@@ -62,8 +62,6 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
 
         eventSource.onmessage = async (event) => {
             const data: DeviceSSEMessage = JSON.parse(event.data);
-            console.log("Received SSE message: ", data);
-
             // Skip connection messages
             if (data.type === "connected") {
                 return;
@@ -86,7 +84,6 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
 
             // Update the specific device with new sensor values
             setDevices(prev => {
-                console.log("Setting devices state", prev, deviceId, data);
                 return prev.map(device => {
                     if (device.id !== deviceId) return device;
 
@@ -120,9 +117,6 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
                     const lastValueAt = data.lastValueAt
                         ? new Date(data.lastValueAt)
                         : new Date();
-                    // Return updated device
-                    console.log(device.status)
-                    console.log(device.name)
                     if (device.status === "WAITING" || device.status === "OFFLINE") {
                         toast.info(`Device ${device.name} is back online`);
                     }
