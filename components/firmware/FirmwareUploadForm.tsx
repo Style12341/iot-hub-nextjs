@@ -7,7 +7,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from 'sonner';
 
@@ -57,7 +56,6 @@ export function FirmwareUploadForm({ deviceId, onUploadSuccess }: FirmwareUpload
             const response = await fetch(`/api/v1/devices/${deviceId}/firmwares`, {
                 method: "POST",
                 body: formData,
-                // Don't set Content-Type header when using FormData
             });
 
             const result = await response.json();
@@ -102,104 +100,103 @@ export function FirmwareUploadForm({ deviceId, onUploadSuccess }: FirmwareUpload
     };
 
     return (
-        <Card className="w-full max-w-lg">
-            <CardHeader>
-                <CardTitle>Upload Firmware</CardTitle>
-                <CardDescription>
+        <div className="w-full">
+            <div className="mb-6">
+                <h2 className="text-xl font-semibold">Upload Firmware</h2>
+                <p className="text-sm text-muted-foreground">
                     Upload a new firmware version for this device.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="description"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Description</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="Enter firmware description"
-                                            className="resize-none"
-                                            disabled={isUploading}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        Briefly describe the purpose of this firmware update.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                </p>
+            </div>
 
-                        <FormField
-                            control={form.control}
-                            name="version"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Version</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="1.0.0"
-                                            disabled={isUploading}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        Use semantic versioning (e.g., 1.0.0)
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Description</FormLabel>
+                                <FormControl>
+                                    <Textarea
+                                        placeholder="Enter firmware description"
+                                        className="resize-none min-h-[100px]"
+                                        disabled={isUploading}
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormDescription>
+                                    Briefly describe the purpose of this firmware update.
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                        <FormField
-                            control={form.control}
-                            name="file"
-                            render={() => (
-                                <FormItem>
-                                    <FormLabel>Firmware File</FormLabel>
-                                    <FormControl>
-                                        <div className="grid w-full items-center gap-1.5">
-                                            <div className="flex items-center gap-3">
-                                                <Input
-                                                    id="firmware-file"
-                                                    type="file"
-                                                    className="w-full"
-                                                    onChange={handleFileChange}
-                                                    disabled={isUploading}
-                                                    accept=".bin,.hex,.uf2"
-                                                />
-                                            </div>
-                                            {selectedFileName && (
-                                                <p className="text-sm text-gray-500">
-                                                    Selected: {selectedFileName}
-                                                </p>
-                                            )}
+                    <FormField
+                        control={form.control}
+                        name="version"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Version</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder="1.0.0"
+                                        disabled={isUploading}
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormDescription>
+                                    Use semantic versioning (e.g., 1.0.0)
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="file"
+                        render={() => (
+                            <FormItem>
+                                <FormLabel>Firmware File</FormLabel>
+                                <FormControl>
+                                    <div className="grid w-full items-center gap-1.5">
+                                        <div className="flex items-center gap-3">
+                                            <Input
+                                                id="firmware-file"
+                                                type="file"
+                                                className="w-full"
+                                                onChange={handleFileChange}
+                                                disabled={isUploading}
+                                                accept=".bin,.hex,.uf2"
+                                            />
                                         </div>
-                                    </FormControl>
-                                    <FormDescription>
-                                        Upload the firmware binary file (max 10MB).
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                        {selectedFileName && (
+                                            <p className="text-sm text-gray-500">
+                                                Selected: {selectedFileName}
+                                            </p>
+                                        )}
+                                    </div>
+                                </FormControl>
+                                <FormDescription>
+                                    Upload the firmware binary file (max 10MB).
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                        <CardFooter className="flex justify-end px-0 pb-0 pt-4">
-                            <Button
-                                type="submit"
-                                disabled={isUploading}
-                                className="w-full sm:w-auto"
-                            >
-                                {isUploading ? "Uploading..." : "Upload Firmware"}
-                            </Button>
-                        </CardFooter>
-                    </form>
-                </Form>
-            </CardContent>
-        </Card>
+                    <div className="flex justify-end pt-4">
+                        <Button
+                            type="submit"
+                            disabled={isUploading}
+                            className="w-full sm:w-auto"
+                        >
+                            {isUploading ? "Uploading..." : "Upload Firmware"}
+                        </Button>
+                    </div>
+                </form>
+            </Form>
+        </div>
     );
 }
