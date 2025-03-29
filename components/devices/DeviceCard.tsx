@@ -249,24 +249,39 @@ function ViewDeviceCard(device: DeviceQueryResult) {
     useEffect(() => {
         const newDevice = {
             ...deviceData,
-            status: device.status === "WAITING" ? "OFFLINE" : device.status, // Ensure status is valid
+            status: device.status === "WAITING" ? "OFFLINE" : device.status,
             group: device.group,
-            lastValueAt: device.lastValueAt || new Date(), // Ensure lastValueAt is valid
+            lastValueAt: device.lastValueAt || new Date(),
         };
+
         if (newDevice.sensors && device.sensors) {
             newDevice.sensors = newDevice.sensors.map((sensor) => {
-                if (!sensor.values) return sensor; // Return original sensor if no values
+                if (!sensor.values) return sensor;
                 const newSensor = device.sensors.find((s) => s.id === sensor.id);
-                if (!newSensor) return sensor; // Return original sensor if not found
-                if (!newSensor.values) return sensor; // Return original sensor if no values
+                if (!newSensor || !newSensor.values || !newSensor.values[0]) return sensor;
+
                 const newValue = newSensor.values[0];
-                sensor.values = [...sensor.values, newValue]; // Append new value to existing values
+                const newValueTimestamp = new Date(newValue.timestamp).getTime();
+
+                // Check if this timestamp already exists in the values array
+                const valueExists = sensor.values.some(v =>
+                    new Date(v.timestamp).getTime() === newValueTimestamp
+                );
+
+                // Only add if it's a new value
+                if (!valueExists) {
+                    return {
+                        ...sensor,
+                        values: [newValue, ...sensor.values] // Add to beginning for chronological order
+                    };
+                }
+
                 return sensor;
-            }
-            )
+            });
+
             setDeviceData(newDevice);
         }
-    }, [device])
+    }, [device]); // Add deviceData to dependencies
     const timeRanges = [
         { label: "Last 10 minutes", value: 10 },
         { label: "Last 30 minutes", value: 30 },
