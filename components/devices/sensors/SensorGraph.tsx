@@ -89,7 +89,7 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
             {
                 label: sensor.name,
                 data: formatChartData(values),
-                ...getLineDatasetStyle(colorSet, true)
+                ...getLineDatasetStyle(colorSet, false)
             },
         ],
     };

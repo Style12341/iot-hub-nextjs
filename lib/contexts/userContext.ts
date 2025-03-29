@@ -22,3 +22,25 @@ export async function createUserFromClerk(data: UserJSON): Promise<User> {
     });
     return user;
 }
+export async function getAllUserViews(userId: string) {
+    const views = await db.view.findMany({
+        where: {
+            userId: userId
+        },
+        select: {
+            name: true,
+            _count: {
+                select: {
+                    Devices: true
+                }
+            }
+        }
+    });
+    return views.map((view) => {
+        return {
+            name: view.name,
+            devicesCount: view._count.Devices
+        }
+    }
+    );
+}

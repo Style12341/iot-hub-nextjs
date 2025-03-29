@@ -7,50 +7,22 @@ import { DeviceSSEMessage } from "@/types/types";
 import DeviceCard from "./DeviceCard";
 import { getDevicesEventSource } from "@/lib/sseUtils";
 import { getDeviceWithActiveSensorsAction } from "@/app/actions/deviceActions";
+import { set } from "zod";
 
 interface DeviceViewWrapperProps {
     initialDevices: DeviceQueryResult[];
+    isExpanded?: boolean;
 }
 
-export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperProps) {
+export default function DeviceViewWrapper({ initialDevices, isExpanded = true }: DeviceViewWrapperProps) {
     const [devices, setDevices] = useState<DeviceQueryResult[]>(initialDevices);
     const [refreshKey, setRefreshKey] = useState(false);
+    const [sseSetup, setSseSetup] = useState(false);
 
     useEffect(() => {
         setDevices(initialDevices);
-    }, [initialDevices]);
-
-    // Effect for device status check
-    useEffect(() => {
-        // Check all devices' statuses
-        const updatedDevices = devices.map(device => {
-            const newStatus = getDeviceStatusFromLastValueAt(device.lastValueAt);
-            if (newStatus !== device.status && newStatus !== "WAITING") {
-                if (newStatus === "OFFLINE" && device.status === "ONLINE") {
-                    toast.warning(`Device ${device.name} has gone offline`);
-                } else if (newStatus === "ONLINE" && device.status === "OFFLINE") {
-                    toast.info(`Device ${device.name} is back online`);
-                }
-                if (!device.lastValueAt) {
-                    return device;
-                }
-                const newDevice: DeviceHasReceivedData = {
-                    ...device,
-                    status: newStatus
-                }
-                return newDevice;
-            }
-            return device;
-        });
-
-        setDevices(updatedDevices);
-    }, [refreshKey]);
-
-    // Effect for SSE connection
-    useEffect(() => {
-        // Get all device IDs
-        const deviceIds = devices.map(device => device.id);
-        if (deviceIds.length === 0) return;
+        const deviceIds = initialDevices.map(device => device.id);
+        if (!isExpanded || sseSetup || deviceIds.length === 0) return;
 
         // Set up interval to check status every 10 seconds
         const intervalId = setInterval(() => {
@@ -59,13 +31,11 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
 
         // Set up a single SSE connection for all devices
         const eventSource = getDevicesEventSource(deviceIds);
-
+        setSseSetup(true);
         eventSource.onmessage = async (event) => {
             const data: DeviceSSEMessage = JSON.parse(event.data);
             // Skip connection messages
-            if (data.type === "connected") {
-                return;
-            }
+            if (data.type === "connected") return;
 
             // Get the device ID from the message
             const deviceId = data.id;
@@ -107,19 +77,21 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
                                         timestamp: timestamp
                                     },
                                     ...sensor.values,
-
                                 ].slice(0, 14400)
                             };
                         }
                         return sensor;
                     }) : [];
+
                     // Ensure lastValueAt is always a proper Date object
                     const lastValueAt = data.lastValueAt
                         ? new Date(data.lastValueAt)
                         : new Date();
+
                     if (device.status === "WAITING" || device.status === "OFFLINE") {
                         toast.info(`Device ${device.name} is back online`);
                     }
+
                     return {
                         ...device,
                         lastValueAt: lastValueAt,
@@ -132,14 +104,43 @@ export default function DeviceViewWrapper({ initialDevices }: DeviceViewWrapperP
 
         eventSource.onerror = () => {
             console.error("SSE connection lost");
+            setSseSetup(false);
             eventSource.close();
         };
 
         return () => {
             eventSource.close();
+            setSseSetup(false);
             clearInterval(intervalId);
         };
-    }, []); // Dependency on device IDs only
+    }, [initialDevices]);
+
+    useEffect(() => {
+        if (!isExpanded) return;
+
+        // Check all devices' statuses
+        const updatedDevices = devices.map(device => {
+            const newStatus = getDeviceStatusFromLastValueAt(device.lastValueAt);
+            if (newStatus !== device.status && newStatus !== "WAITING") {
+                if (newStatus === "OFFLINE" && device.status === "ONLINE") {
+                    toast.warning(`Device ${device.name} has gone offline`);
+                } else if (newStatus === "ONLINE" && device.status === "OFFLINE") {
+                    toast.info(`Device ${device.name} is back online`);
+                }
+                if (!device.lastValueAt) {
+                    return device;
+                }
+                const newDevice: DeviceHasReceivedData = {
+                    ...device,
+                    status: newStatus
+                }
+                return newDevice;
+            }
+            return device;
+        });
+
+        setDevices(updatedDevices);
+    }, [refreshKey]);
 
     return (
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6">

@@ -1,7 +1,7 @@
 "use server"
-import { getDevicesViewWithActiveSensorsBetweenAction, getDevicesWithActiveSensorsAction } from "@/app/actions/deviceActions";
+import { getAllUserViewsAction } from "@/app/actions/deviceActions";
 import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
-import DeviceViewWrapper from "@/components/devices/DeviceViewWrapper";
+import ViewCollapsible from "@/components/views/ViewCollapsible";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
@@ -10,17 +10,13 @@ export default async function Views() {
     if (!userId) {
         redirect('/login');
     }
-    const endDate = new Date();
-    // start date 24 hours ago
-    const startDate = new Date(endDate.getTime() - 10 * 60 * 1000);
-    const result = await getDevicesViewWithActiveSensorsBetweenAction(userId, "Default", startDate, endDate);
-    if (!result) {
+
+    // Get all views with their devices (you'll need to implement this server action)
+    const views = await getAllUserViewsAction();
+
+    if (!views || views.length === 0) {
         return redirect('/dashboard/devices');
     }
-    const devices = result.map((device) => {
-        return device.device;
-    }
-    );
 
     return (
         <>
@@ -28,7 +24,16 @@ export default async function Views() {
                 breadcrumbs={[{ href: '/dashboard', name: 'Dashboard' }]}
                 page="Views"
             />
-            <DeviceViewWrapper initialDevices={devices} />
+            <div className="space-y-4">
+                {views.map((view) => (
+                    <ViewCollapsible
+                        key={view.name}
+                        viewName={view.name}
+                        deviceCount={view.devicesCount}
+                        defaultExpanded={view.name === "Default"} // Default view is expanded by default
+                    />
+                ))}
+            </div>
         </>
-    )
+    );
 }

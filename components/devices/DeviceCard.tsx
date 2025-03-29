@@ -223,11 +223,10 @@ function ViewDeviceCard(device: DeviceQueryResult) {
                 // Update the oldest values map with the new data
 
             } else {
-                // If time to fetch is more recent create new filtered values to fit the range
                 const newData = deviceData.sensors?.map((sensor) => {
-                    if (!sensor.values) return sensor; // Return original sensor if no values
-                    const filteredValues = sensor.values.filter((value) => {
-                        return new Date(value.timestamp) >= timeToFetch;
+                    const values = oldestValues.get(sensor.id) || []; // Get the values from the map or an empty array
+                    const filteredValues = values.filter((value) => {
+                        return value.timestamp >= timeToFetch;
                     });
                     return {
                         ...sensor,
