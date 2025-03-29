@@ -4,13 +4,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Create device api
 export async function POST(req: NextRequest) {
-    if (!req.json) {
+    let body: CreateDeviceFormData;
+    try {
+        body = await req.json();
+    } catch (error) {
         return new NextResponse('Error: bad request', {
             status: 400,
-        })
+        });
     }
-    const body: CreateDeviceFormData = await req.json();
-
     const response = await createDeviceAction(body);
     if (!response.success) {
         return new NextResponse(response.message, {
