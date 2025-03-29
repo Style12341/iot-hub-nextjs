@@ -159,6 +159,9 @@ export const getDevicesWithActiveSensors = async (userId: string, page: number =
             userId,
         }
     })
+    if (count === 0) {
+        return { devices: [], page: 1, maxPage: 1, count: 0 };
+    }
     let searchPage = Math.max(1, page);
     const maxPage = Math.ceil(count / DEVICES_PER_PAGE);
     searchPage = Math.min(searchPage, maxPage);
@@ -215,14 +218,13 @@ export const getDevicesWithActiveSensors = async (userId: string, page: number =
                 ELSE 3
             END, d."name" ASC
         LIMIT ${DEVICES_PER_PAGE}
-        OFFSET ${(searchPage - 1) * DEVICES_PER_PAGE}
+        OFFSET ${Math.max(0, (searchPage - 1) * DEVICES_PER_PAGE)}
     `;
     // Map status accordingly
 
     devices.forEach(device => {
         device.device.status = getDeviceStatusFromLastValueAt(device.device.lastValueAt);
     });
-    console.debug(devices[0].device.group)
 
     return { devices, page: searchPage, maxPage, count };
 };
