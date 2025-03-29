@@ -19,9 +19,9 @@ export async function GET(req: NextRequest) {
     }
 
     // Verify user has access to this device
-    const hasAccess = Promise.all(deviceIds.map(deviceId => validateDeviceOwnership(userId, deviceId)));
-    if (!hasAccess) {
-        return new Response("Forbidden: You don't have access to this device", { status: 403 });
+    const hasAccess = await Promise.all(deviceIds.map(deviceId => validateDeviceOwnership(userId, deviceId)));
+    if (!hasAccess.every(access => access)) {
+        return new Response("Forbidden: You don't have access to these devices", { status: 403 });
     }
 
     // Get channels for all sensors in this device
