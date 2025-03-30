@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import BreadcrumbHandler from '@/components/dashboard/BreadcrumbHandler';
 import DeviceMenu from '@/components/devices/DeviceMenu';
+import { FirmwareType } from '@/lib/contexts/firmwareContext';
 
 export default async function FirmwarePage({
     params
@@ -53,8 +54,8 @@ export default async function FirmwarePage({
                     <FirmwareTable
                         firmwares={data.firmwares}
                         deviceId={deviceId}
-                        assignedFirmware={data.deviceData.AssignedFirmware ?? undefined}
-                        activeFirmware={data.deviceData.ActiveFirmware ?? undefined}
+                        assignedFirmware={data.deviceData.AssignedFirmware as FirmwareType ?? undefined}
+                        activeFirmware={data.deviceData.ActiveFirmware as FirmwareType ?? undefined}
                     />
                 ) : (
                     <div className="rounded-md bg-muted p-8 text-center">

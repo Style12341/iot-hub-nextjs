@@ -20,9 +20,10 @@ export async function createFirmware(data: FirmwareCreate) {
  * @param firmwareId - The ID of the firmware to find
  */
 export async function getFirmwareById(firmwareId: string) {
-    return db.firmware.findUnique({
+    const res = await db.firmware.findUnique({
         where: { id: firmwareId }
     });
+    return await mapFirmwareType(res as PrismaFirmware);
 }
 
 /**
@@ -172,6 +173,12 @@ export type EmbeddedFirmware = {
 // For downloadable firmware (all fields)
 export type DownloadableFirmware = PrismaFirmware & {
     embedded: false;
+    fileUrl: string;
+    fileName: string;
+    fileSizeBytes: number;
+    contentType: string;
+    checksum: string;
+
 };
 
 // Combined type - use this throughout your application
@@ -198,11 +205,20 @@ export async function mapFirmwareType(firmware: PrismaFirmware): Promise<Firmwar
         })
     } else {
         // Return all fields for downloadable firmware
-        return new Promise<DownloadableFirmware>((resolve) => {
-            resolve({
-                ...firmware,
-                embedded: false,
-            });
-        })
+        if (firmware.fileUrl && firmware.fileName && firmware.fileSizeBytes && firmware.contentType && firmware.checksum) {
+            return new Promise<DownloadableFirmware>((resolve) => {
+                resolve({
+                    ...firmware,
+                    embedded: false,
+                    fileUrl: firmware.fileUrl as string,
+                    fileName: firmware.fileName as string,
+                    fileSizeBytes: firmware.fileSizeBytes as number,
+                    contentType: firmware.contentType as string,
+                    checksum: firmware.checksum as string,
+                });
+            })
+        } else {
+            throw new Error("Invalid firmware data: Missing fields for downloadable firmware");
+        }
     }
 }

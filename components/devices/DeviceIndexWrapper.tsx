@@ -79,54 +79,55 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
                         return;
                     }
                 }
-            }
 
-            // Update the specific device with new sensor values
-            setDevices(prev => {
-                return prev.map(device => {
-                    if (device.id !== deviceId) return device;
 
-                    // Create a new sensors array with updated values
-                    const updatedSensors = device.sensors ? device.sensors.map((sensor) => {
-                        // Check if this sensor has updated data in the message
-                        const newSensor = data.sensors?.find(
-                            (s) => s.groupSensorId === sensor.groupSensorId
-                        );
+                // Update the specific device with new sensor values
+                setDevices(prev => {
+                    return prev.map(device => {
+                        if (device.id !== deviceId) return device;
 
-                        if (data.sensors && newSensor) {
-                            if (!sensor.values) {
-                                sensor.values = [];
+                        // Create a new sensors array with updated values
+                        const updatedSensors = device.sensors ? device.sensors.map((sensor) => {
+                            // Check if this sensor has updated data in the message
+                            const newSensor = data.sensors?.find(
+                                (s) => s.groupSensorId === sensor.groupSensorId
+                            );
+
+                            if (data.sensors && newSensor) {
+                                if (!sensor.values) {
+                                    sensor.values = [];
+                                }
+                                const timestamp = newSensor.value.timestamp
+                                    ? new Date(newSensor.value.timestamp)
+                                    : new Date();
+                                return {
+                                    ...sensor,
+                                    values: [
+                                        {
+                                            value: newSensor.value.value,
+                                            timestamp: timestamp
+                                        },
+                                        ...sensor.values
+                                    ].slice(0, 5)
+                                };
                             }
-                            const timestamp = newSensor.value.timestamp
-                                ? new Date(newSensor.value.timestamp)
-                                : new Date();
-                            return {
-                                ...sensor,
-                                values: [
-                                    {
-                                        value: newSensor.value.value,
-                                        timestamp: timestamp
-                                    },
-                                    ...sensor.values
-                                ].slice(0, 5)
-                            };
-                        }
-                        return sensor;
-                    }) : [];
-                    // Ensure lastValueAt is always a proper Date object
-                    const lastValueAt = data.lastValueAt
-                        ? new Date(data.lastValueAt)
-                        : new Date();
-                    // Return updated device
-                    return {
-                        ...device,
-                        activeFirmwareVersion: data.activeFirmwareVersion,
-                        lastValueAt: lastValueAt,
-                        sensors: updatedSensors,
-                        status: "ONLINE"
-                    };
+                            return sensor;
+                        }) : [];
+                        // Ensure lastValueAt is always a proper Date object
+                        const lastValueAt = data.lastValueAt
+                            ? new Date(data.lastValueAt)
+                            : new Date();
+                        // Return updated device
+                        return {
+                            ...device,
+                            activeFirmwareVersion: data.activeFirmwareVersion,
+                            lastValueAt: lastValueAt,
+                            sensors: updatedSensors,
+                            status: "ONLINE"
+                        };
+                    });
                 });
-            });
+            }
         });
 
         return () => {

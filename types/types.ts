@@ -171,4 +171,4 @@ type StatusDeviceSSEMessage = {
 
 export type DeviceSSEMessage = ConnectedDeviceSSEMessage | NewSensorsDeviceSSEMessage | StatusDeviceSSEMessage;
 // Type of firmware except id,createdAt,updatedAt
-export type FirmwareCreate = Omit<Firmware, "id" | "createdAt" | "updatedAt">;
+export type FirmwareCreate = Omit<Firmware, "id" | "createdAt" | "updatedAt" | "embedded">;
