@@ -175,10 +175,14 @@ export default function DeviceDetailGraphs({
 
                                 if (!valueExists) {
                                     // Also update the cache
-                                    const cachedValues = oldestValues.get(sensor.id) || [];
-                                    const newCache = new Map(oldestValues);
-                                    newCache.set(sensor.id, [newValue, ...cachedValues]);
-                                    setOldestValues(newCache);
+
+                                    setOldestValues(prev => {
+                                        const cachedValues = prev.get(sensor.id) || [];
+                                        const newCachedValues = [...cachedValues, newValue]
+                                            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+                                        return new Map(prev).set(sensor.id, newCachedValues);
+                                    })
 
                                     return {
                                         ...sensor,
