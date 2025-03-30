@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { InfoIcon, ServerIcon, TagIcon, ClockIcon, ListOrderedIcon, EyeIcon, MicrochipIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DeviceStatusBadge from "./DeviceStatusBadge";
+import DeviceLastValueAt from "./DeviceLastValueAt";
 
 interface DeviceOverviewProps {
     device: DeviceQueryResult;
@@ -43,8 +44,10 @@ export default function DeviceOverview({ device, firmware }: DeviceOverviewProps
                             </li>
                             <li className="flex items-center text-muted-foreground">
                                 <ClockIcon className="h-3.5 w-3.5 mr-2" />
-                                <span className="font-medium mr-1">Last activity:</span>
-                                {device.lastValueAt ? formatDate(device.lastValueAt) : "Never"}
+                                <DeviceLastValueAt
+                                    deviceId={device.id}
+                                    initialLastValueAt={device.lastValueAt}
+                                />
                             </li>
                         </ul>
                     </div>
