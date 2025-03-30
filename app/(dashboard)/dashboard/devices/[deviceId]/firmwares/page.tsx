@@ -1,11 +1,11 @@
 import { getDeviceFirmwaresAction } from '@/app/actions/firmwareActions';
-import { getDeviceWithActiveSensorsAction } from '@/app/actions/deviceActions';
 import { FirmwareTable } from '@/components/firmware/FirmwareTable';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import BreadcrumbHandler from '@/components/dashboard/BreadcrumbHandler';
+import DeviceMenu from '@/components/devices/DeviceMenu';
 
 export default async function FirmwarePage({
     params
@@ -32,6 +32,7 @@ export default async function FirmwarePage({
     ];
     return (
         <div className="space-y-6">
+            <DeviceMenu deviceId={deviceId} activeTab="firmwares" variant="responsive" />
             <BreadcrumbHandler
                 breadcrumbs={breadcrumbs}
                 page="Firmwares"

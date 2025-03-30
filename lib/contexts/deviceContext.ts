@@ -1,6 +1,6 @@
 import { CreateDeviceFormData } from "@/types/types";
 import db from "../prisma";
-import { DeviceStatus } from "@prisma/client";
+import { DeviceStatus, Firmware } from "@prisma/client";
 // Example usage
 export interface SensorValueQueryResult {
     value: number;
@@ -524,6 +524,14 @@ export async function assignFirmwareToDevice(deviceId: string, firmwareId: strin
         }
     });
     return device;
+}
+// Add this to your existing types file
+
+export interface DeviceFirmwareState {
+    id: string;
+    name: string;
+    AssignedFirmware: Firmware | null;
+    ActiveFirmware: Firmware | null;
 }
 export async function getDeviceFirmwareState(deviceId: string) {
     const device = await db.device.findUnique({

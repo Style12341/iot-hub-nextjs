@@ -14,8 +14,6 @@ import { formatDate } from "@/lib/utils";
 import SensorGraph from "./sensors/SensorGraph";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { getDeviceViewWithActiveSensorsBetweenAction } from "@/app/actions/deviceActions";
-import { useUser } from "@clerk/nextjs";
-import { set } from "zod";
 
 interface DeviceCardProps {
     device: DeviceQueryResult;
