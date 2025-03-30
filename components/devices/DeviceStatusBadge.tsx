@@ -6,15 +6,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { subscribeToDeviceEvents } from "@/lib/sseUtils";
 import { getDeviceStatusFromLastValueAt } from "@/lib/contexts/deviceContext";
 import { DeviceSSEMessage } from "@/types/types";
+import { toast } from "sonner";
 
 interface DeviceStatusBadgeProps {
     deviceId: string;
+    deviceName?: string;
     initialStatus: "ONLINE" | "OFFLINE" | "WAITING";
     initialLastValueAt?: Date | string | null;
 }
 
 export default function DeviceStatusBadge({
     deviceId,
+    deviceName,
     initialStatus,
     initialLastValueAt
 }: DeviceStatusBadgeProps) {
@@ -36,6 +39,16 @@ export default function DeviceStatusBadge({
                 // If status should change based on time
                 if (newStatus !== status) {
                     setStatus(newStatus);
+                    if (newStatus === "OFFLINE") {
+                        toast.warning(`Device ${deviceName} is now OFFLINE`, {
+                            description: "Device has not sent data for a while."
+                        });
+                    } else {
+                        toast.info(`Device ${deviceName} is now ONLINE`, {
+                            description: "Device is now connected and receiving data."
+                        });
+                    }
+
                     setIsAnimating(true);
                     setTimeout(() => setIsAnimating(false), 1000);
                 }
@@ -52,6 +65,17 @@ export default function DeviceStatusBadge({
         // Subscribe to events using the new function
         const unsubscribe = subscribeToDeviceEvents([deviceId], (data: DeviceSSEMessage) => {
             try {
+                if (data.type === "status") {
+                    if (status !== "ONLINE") {
+                        setStatus("ONLINE");
+                        toast.info(`Device ${deviceId} is now ONLINE`, {
+                            description: "Device is now connected and receiving data."
+                        }
+                        )
+                        setIsAnimating(true);
+                        setTimeout(() => setIsAnimating(false), 1000);
+                    }
+                }
                 // Update lastValueAt and status when we get new sensor data
                 if (data.type === "new sensors" && data.sensors && data.sensors.length > 0) {
                     // Update lastValueAt timestamp
@@ -64,6 +88,10 @@ export default function DeviceStatusBadge({
                     // Set status to ONLINE
                     if (status !== "ONLINE") {
                         setStatus("ONLINE");
+                        toast.info(`Device ${deviceId} is now ONLINE`, {
+                            description: "Device is now connected and receiving data."
+                        }
+                        )
                         setIsAnimating(true);
                         setTimeout(() => setIsAnimating(false), 1000);
                     }

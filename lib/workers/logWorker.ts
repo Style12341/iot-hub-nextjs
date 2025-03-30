@@ -263,7 +263,7 @@ export async function processLog(body: DeviceLogBody) {
 }
 
 // Improve the publishDeviceStatus function with more detailed logging
-async function publishDeviceStatus(deviceStatus: DeviceSSEMessage) {
+export async function publishDeviceStatus(deviceStatus: DeviceSSEMessage) {
     const deviceId = deviceStatus.id;
     try {
         const payload = JSON.stringify(deviceStatus);

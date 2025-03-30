@@ -45,23 +45,26 @@ import {
 import { formatDate } from '@/lib/utils';
 import { assignFirmwareAction, deleteFirmwareAction } from '@/app/actions/firmwareActions';
 import { FirmwareType } from '@/lib/contexts/firmwareContext';
+import { DeviceSSEMessage } from '@/types/types';
+import { subscribeToDeviceEvents } from '@/lib/sseUtils';
 
 interface FirmwareTableProps {
     firmwares: FirmwareType[];
     deviceId: string;
-    assignedFirmwareId?: string | null;
-    activeFirmwareId?: string | null;
+    assignedFirmware?: FirmwareType
+    activeFirmware?: FirmwareType
     onFirmwareDeleted?: () => void;
 }
 
 export function FirmwareTable({
     firmwares: passedFirmwares,
     deviceId,
-    assignedFirmwareId,
-    activeFirmwareId,
+    assignedFirmware,
+    activeFirmware,
     onFirmwareDeleted
 }: FirmwareTableProps) {
-    const [localAssignedId, setLocalAssignedId] = useState<string | null>(assignedFirmwareId || null);
+    const [localAssignedId, setLocalAssignedId] = useState<string | null>(assignedFirmware?.id || null);
+    const [localActiveFirmware, setActiveFirmware] = useState(activeFirmware || null);
     const [firmwares, setFirmwares] = useState<FirmwareType[]>(passedFirmwares);
     // Add state to track which firmware is pending deletion
     const [pendingDeletionId, setPendingDeletionId] = useState<string | null>(null);
@@ -69,8 +72,31 @@ export function FirmwareTable({
 
     // Update local state if prop changes (e.g. from revalidation)
     useEffect(() => {
-        setLocalAssignedId(assignedFirmwareId || null);
-    }, [assignedFirmwareId]);
+        setLocalAssignedId(assignedFirmware?.id || null);
+    }, [assignedFirmware?.id]);
+    useEffect(() => {
+        const handleFirmwareUpdate = (data: DeviceSSEMessage) => {
+            console.log("Received firmware update:", data);
+            if (data.type === "connected") {
+                return;
+            }
+            setActiveFirmware(prev => {
+                if (data.activeFirmwareVersion && prev) {
+                    return {
+                        ...prev,
+                        version: data.activeFirmwareVersion,
+                    };
+                }
+                return prev;
+            });
+        };
+
+        // Subscribe to events using the function
+        const unsubscribe = subscribeToDeviceEvents([deviceId], handleFirmwareUpdate);
+
+        // Clean up subscription on unmount
+        return () => unsubscribe();
+    }, [])
 
     // Function to handle assignment changes
     async function handleAssignmentToggle(firmwareId: string) {
@@ -88,7 +114,7 @@ export function FirmwareTable({
 
             if (!response.success) {
                 // Revert optimistic update if failed
-                setLocalAssignedId(assignedFirmwareId || null);
+                setLocalAssignedId(assignedFirmware?.id || null);
                 throw new Error('Failed to update firmware assignment');
             }
 
@@ -113,7 +139,7 @@ export function FirmwareTable({
     async function deleteFirmware(firmwareId: string) {
         try {
             // Don't allow deleting assigned or active firmware
-            if (firmwareId === localAssignedId || firmwareId === activeFirmwareId) {
+            if (firmwareId === localAssignedId || firmwareId === localActiveFirmware?.id) {
                 toast.error("Cannot delete a firmware that is assigned or active");
                 return;
             }
@@ -209,8 +235,8 @@ export function FirmwareTable({
                                 {/* Active Firmware Column - Display Only */}
                                 <TableCell className="flex justify-center">
                                     <FirmwareStatusIndicator
-                                        isActive={firmware.id === activeFirmwareId}
-                                        tooltipText={firmware.id === activeFirmwareId
+                                        isActive={firmware.version === localActiveFirmware?.version}
+                                        tooltipText={firmware.version === localActiveFirmware?.version
                                             ? 'Currently running on device'
                                             : 'Not currently active'}
                                         interactive={false}
@@ -272,7 +298,7 @@ export function FirmwareTable({
                                                 {/* Delete Option - now just marks for deletion */}
                                                 <DropdownMenuItem
                                                     className="text-destructive focus:text-destructive"
-                                                    disabled={firmware.id === localAssignedId || firmware.id === activeFirmwareId}
+                                                    disabled={firmware.id === localAssignedId || firmware.version === localActiveFirmware?.version}
                                                     onSelect={(e) => {
                                                         e.preventDefault();
                                                         markForDeletion(firmware.id);

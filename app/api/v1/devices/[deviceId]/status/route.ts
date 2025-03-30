@@ -1,6 +1,8 @@
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
 import { validateDeviceOwnership } from "@/lib/contexts/deviceContext";
 import { getFirmwareIdForUpdate, updateActiveFirmware } from "@/lib/contexts/firmwareContext";
+import { publishDeviceStatus } from "@/lib/workers/logWorker";
+import { DeviceSSEMessage } from "@/types/types";
 import { NextRequest, NextResponse } from "next/server"
 
 interface DeviceStatusBody {
@@ -31,8 +33,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ dev
             status: 400,
         })
     }
+    const deviceStatus: DeviceSSEMessage = {
+        activeFirmwareVersion: firmware_version,
+        type: "status",
+        id: deviceId,
+    }
+
+
     // Update active firmware
-    await updateActiveFirmware(deviceId, firmware_version as string)
+    await Promise.all([updateActiveFirmware(deviceId, firmware_version as string), publishDeviceStatus(deviceStatus)])
     // Should update firmware
     const firmware_id = await getFirmwareIdForUpdate(deviceId)
     if (!firmware_id) {

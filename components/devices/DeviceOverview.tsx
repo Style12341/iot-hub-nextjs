@@ -5,6 +5,7 @@ import { InfoIcon, ServerIcon, TagIcon, ClockIcon, ListOrderedIcon, EyeIcon, Mic
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DeviceStatusBadge from "./DeviceStatusBadge";
 import DeviceLastValueAt from "./DeviceLastValueAt";
+import { FirmwareInformation } from "../firmware/FirmwareInformation";
 
 interface DeviceOverviewProps {
     device: DeviceQueryResult;
@@ -20,7 +21,7 @@ export default function DeviceOverview({ device, firmware }: DeviceOverviewProps
                         <CardTitle className="text-2xl font-bold">{device.name}</CardTitle>
                         <CardDescription>Device ID: {device.id}</CardDescription>
                     </div>
-                    <DeviceStatusBadge deviceId={device.id} initialStatus={device.status} initialLastValueAt={device.lastValueAt} />
+                    <DeviceStatusBadge deviceId={device.id} deviceName={device.name} initialStatus={device.status} initialLastValueAt={device.lastValueAt} />
                 </div>
             </CardHeader>
             <CardContent>
@@ -68,24 +69,7 @@ export default function DeviceOverview({ device, firmware }: DeviceOverviewProps
                     </div>
 
                     {/* Firmware Information */}
-                    <div className="space-y-2">
-                        <h3 className="text-sm font-medium flex items-center">
-                            <MicrochipIcon className="h-4 w-4 mr-2" />
-                            Firmware Information
-                        </h3>
-                        <ul className="text-sm space-y-1">
-                            <li className="flex items-center text-muted-foreground">
-                                <TagIcon className="h-3.5 w-3.5 mr-2" />
-                                <span className="font-medium mr-1">Active firmware:</span>
-                                {firmware.ActiveFirmware ? "v" + (firmware.ActiveFirmware?.version || "Unknown") : "None"}
-                            </li>
-                            <li className="flex items-center text-muted-foreground">
-                                <TagIcon className="h-3.5 w-3.5 mr-2" />
-                                <span className="font-medium mr-1">Assigned firmware:</span>
-                                {firmware.AssignedFirmware ? "v" + (firmware.AssignedFirmware?.version || "Unknown") : "None"}
-                            </li>
-                        </ul>
-                    </div>
+                    <FirmwareInformation deviceId={device.id} firmware={firmware} />
                 </div>
             </CardContent>
         </Card>

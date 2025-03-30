@@ -21,10 +21,6 @@ export default async function FirmwarePage({
         return redirect('/login');
     }
     const data = firmwaresResult.data;
-
-    // Get assigned firmware ID if it exists
-    const assignedFirmwareId = data.deviceData.AssignedFirmware?.id
-    const activeFirmwareId = data.deviceData.ActiveFirmware?.id
     const breadcrumbs = [
         { href: '/dashboard', name: 'Dashboard' },
         { href: '/dashboard/devices', name: 'Devices' },
@@ -57,8 +53,8 @@ export default async function FirmwarePage({
                     <FirmwareTable
                         firmwares={data.firmwares}
                         deviceId={deviceId}
-                        activeFirmwareId={activeFirmwareId}
-                        assignedFirmwareId={assignedFirmwareId}
+                        assignedFirmware={data.deviceData.AssignedFirmware ?? undefined}
+                        activeFirmware={data.deviceData.ActiveFirmware ?? undefined}
                     />
                 ) : (
                     <div className="rounded-md bg-muted p-8 text-center">
