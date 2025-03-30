@@ -11,6 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
 import { uploadDeviceFirmwareAction } from '@/app/actions/firmwareActions';
+import { Firmware } from '@prisma/client';
 
 // Define the schema for firmware upload
 const firmwareUploadSchema = z.object({
@@ -31,7 +32,7 @@ type FirmwareUploadFormValues = z.infer<typeof firmwareUploadSchema>;
 interface FirmwareUploadFormProps {
     deviceId: string;
     currentAssignedFirmwareVersion?: string;
-    onUploadSuccess?: (firmware: any) => void;
+    onUploadSuccess?: (firmware: Firmware) => void;
 }
 
 export function FirmwareUploadForm({ deviceId, currentAssignedFirmwareVersion, onUploadSuccess }: FirmwareUploadFormProps) {
