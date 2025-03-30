@@ -106,14 +106,14 @@ export default function DeviceDetailGraphs({
             } else {
                 // Just filter existing data based on new time range
                 console.log("Filtering existing data for time range:", timeToFetch);
-
+                console.log("Oldest values:", oldestValues);
                 // Create updated sensors with filtered values
                 const newData = deviceData.sensors?.map(sensor => {
                     // Get all historical values from cache
                     const allValues = oldestValues.get(sensor.id) || [];
                     // Filter values based on selected time range
                     const filteredValues = allValues.filter(value => {
-                        return new Date(value.timestamp).getTime() >= timeToFetch.getTime()
+                        return new Date(value.timestamp + "Z").getTime() >= timeToFetch.getTime()
                     }
                     );
 
