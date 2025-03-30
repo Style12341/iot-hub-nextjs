@@ -21,7 +21,7 @@ export default function DeviceStatusBadge({
     const [status, setStatus] = useState<"ONLINE" | "OFFLINE" | "WAITING">(initialStatus);
     const [isAnimating, setIsAnimating] = useState(false);
     const [lastValueAt, setLastValueAt] = useState<Date | null>(
-        initialLastValueAt ? new Date(initialLastValueAt) : null
+        initialLastValueAt ? new Date(initialLastValueAt + "Z") : null
     );
 
     // Use interval timer for status checks
@@ -29,7 +29,8 @@ export default function DeviceStatusBadge({
         // Set up interval to check status every 10 seconds
         const intervalId = setInterval(() => {
             // Only check timeout-based status if we have a lastValueAt timestamp
-            if (lastValueAt) {
+            if (lastValueAt && status === "ONLINE") {
+                console.log("Checking device status based on time...");
                 const newStatus = getDeviceStatusFromLastValueAt(lastValueAt);
 
                 // If status should change based on time
@@ -55,9 +56,9 @@ export default function DeviceStatusBadge({
                 if (data.type === "new sensors" && data.sensors && data.sensors.length > 0) {
                     // Update lastValueAt timestamp
                     if (data.lastValueAt) {
-                        setLastValueAt(new Date(data.lastValueAt));
+                        setLastValueAt(data.lastValueAt);
                     } else {
-                        setLastValueAt(new Date());
+                        setLastValueAt(new Date(Date.now()));
                     }
 
                     // Set status to ONLINE

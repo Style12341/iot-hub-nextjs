@@ -1,6 +1,6 @@
 "use client";
 
-import { DeviceQueryResult } from "@/lib/contexts/deviceContext";
+import { DeviceQueryResult, SensorValueQueryResult } from "@/lib/contexts/deviceContext";
 import { useEffect, useState } from "react";
 import { getDeviceViewWithActiveSensorsBetweenAction } from "@/app/actions/deviceActions";
 import { subscribeToDeviceEvents } from "@/lib/sseUtils";
@@ -22,7 +22,20 @@ export default function DeviceDetailGraphs({
 }: DeviceDetailGraphsProps) {
     const [timeRange, setTimeRange] = useState<number>(10); // Default: 10 minutes
     const [deviceData, setDeviceData] = useState<DeviceQueryResult>(initialData);
-    const [oldestValue, setOldestValue] = useState<Date>(new Date(Date.now() - 10 * 60 * 1000));
+
+    // Add cache states for historical data like in DeviceCard
+    const [oldestValue, setOldestValue] = useState<Date>(new Date(Date.now() - 15 * 60 * 1000)); // Default: 15 minutes ago
+    const [oldestValues, setOldestValues] = useState<Map<string, SensorValueQueryResult[]>>(new Map());
+
+    // Initialize the cache with initial data
+    useEffect(() => {
+        const initialValues = new Map<string, SensorValueQueryResult[]>();
+        initialData.sensors?.forEach((sensor) => {
+            console.log(sensor.values)
+            initialValues.set(sensor.id, sensor.values || []);
+        });
+        setOldestValues(initialValues);
+    }, [initialData]);
 
     // Time ranges for dropdown
     const timeRanges = [
@@ -50,28 +63,66 @@ export default function DeviceDetailGraphs({
         const fetchData = async () => {
             const timeToFetch = new Date(Date.now() - timeRange * 60 * 1000);
             // Only fetch if we need older data than what we have
-            if (timeToFetch < oldestValue) {
+            if (timeToFetch.getTime() < oldestValue.getTime()) {
+                console.log("Fetching new data for time range:", timeToFetch);
                 setOldestValue(timeToFetch);
                 const response = await getDeviceViewWithActiveSensorsBetweenAction(
                     deviceId,
                     view,
                     timeToFetch,
-                    new Date()
+                    new Date(Date.now())
                 );
 
                 if (response.success && response.data) {
+                    // Update device data
                     setDeviceData(response.data.device);
+
+                    // Update cached values
+                    const newOldestValues = new Map(oldestValues);
+                    response.data.device.sensors?.forEach((sensor) => {
+                        // Merge with existing values if we have them
+                        const existingValues = oldestValues.get(sensor.id) || [];
+
+                        // Create a set of existing timestamps for quick lookup
+                        const existingTimestamps = new Set(
+                            existingValues.map(v => new Date(v.timestamp).getTime())
+                        );
+
+                        // Add only new values that don't already exist
+                        const newValues = sensor.values?.filter(v =>
+                            !existingTimestamps.has(new Date(v.timestamp).getTime())
+                        ) || [];
+
+                        // Combine and sort by timestamp (newest first)
+                        const combinedValues = [...existingValues, ...newValues]
+                            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+                        // Store in cache
+                        newOldestValues.set(sensor.id, combinedValues);
+                    });
+
+                    setOldestValues(newOldestValues);
                 }
             } else {
-                // Filter existing data based on new time range
+                // Just filter existing data based on new time range
+                console.log("Filtering existing data for time range:", timeToFetch);
+
+                // Create updated sensors with filtered values
                 const newData = deviceData.sensors?.map(sensor => {
+                    // Get all historical values from cache
+                    const allValues = oldestValues.get(sensor.id) || [];
+                    // Filter values based on selected time range
+                    const filteredValues = allValues.filter(value => {
+                        return new Date(value.timestamp).getTime() >= timeToFetch.getTime()
+                    }
+                    );
+
                     return {
                         ...sensor,
-                        values: sensor.values?.filter(value =>
-                            new Date(value.timestamp) >= timeToFetch
-                        ) || []
+                        values: filteredValues
                     };
                 });
+
                 if (newData && deviceData.status !== "WAITING" && newData.length) {
                     const newDevice: DeviceQueryResult = {
                         ...deviceData,
@@ -83,11 +134,9 @@ export default function DeviceDetailGraphs({
         };
 
         fetchData();
-    }, [timeRange, deviceId, view]);
+    }, [timeRange, deviceId, view, oldestValues]);
 
     // Effect for SSE to get real-time updates
-    // In the useEffect for SSE connection:
-
     useEffect(() => {
         if (!deviceId) return;
 
@@ -98,14 +147,18 @@ export default function DeviceDetailGraphs({
 
             if (data.type === "new sensors" && data.sensors && data.sensors.length > 0) {
                 setDeviceData(prev => {
-                    // Create a deep copy of the current device data
+                    // Create updated device data
                     const updatedDevice = { ...prev };
+
+                    // Update status and lastValueAt
+                    updatedDevice.status = "ONLINE";
+                    updatedDevice.lastValueAt = new Date(data.lastValueAt || new Date());
 
                     // Update sensors with new values
                     if (updatedDevice.sensors) {
                         updatedDevice.sensors = updatedDevice.sensors.map(sensor => {
                             // Find if this sensor has new data
-                            const newSensorData = data.sensors.find(
+                            const newSensorData = data.sensors?.find(
                                 s => s.groupSensorId === sensor.groupSensorId
                             );
 
@@ -115,19 +168,27 @@ export default function DeviceDetailGraphs({
                                     timestamp: new Date(newSensorData.value.timestamp || new Date())
                                 };
 
-                                // Add the new value at the beginning
-                                return {
-                                    ...sensor,
-                                    values: [newValue, ...(sensor.values || [])]
-                                };
+                                // Check if this value already exists
+                                const valueExists = sensor.values?.some(v =>
+                                    new Date(v.timestamp).getTime() === newValue.timestamp.getTime()
+                                );
+
+                                if (!valueExists) {
+                                    // Also update the cache
+                                    const cachedValues = oldestValues.get(sensor.id) || [];
+                                    const newCache = new Map(oldestValues);
+                                    newCache.set(sensor.id, [newValue, ...cachedValues]);
+                                    setOldestValues(newCache);
+
+                                    return {
+                                        ...sensor,
+                                        values: [newValue, ...(sensor.values || [])]
+                                    };
+                                }
                             }
                             return sensor;
                         });
                     }
-
-                    // Update status and lastValueAt
-                    updatedDevice.status = "ONLINE";
-                    updatedDevice.lastValueAt = new Date(data.lastValueAt || new Date());
 
                     return updatedDevice;
                 });
