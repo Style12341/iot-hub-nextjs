@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
+import { uploadDeviceFirmwareAction } from '@/app/actions/firmwareActions';
 
 // Define the schema for firmware upload
 const firmwareUploadSchema = z.object({
@@ -52,27 +53,23 @@ export function FirmwareUploadForm({ deviceId, currentAssignedFirmwareVersion, o
         setIsUploading(true);
 
         try {
-            const formData = new FormData();
-            formData.append("file", data.file);
-            formData.append("description", data.description);
-            formData.append("version", data.version);
-            formData.append("autoAssign", data.autoAssign.toString());
+            const formData = {
+                file: data.file,
+                description: data.description,
+                version: data.version,
+                autoAssign: data.autoAssign
+            }
 
             // Make API request to upload firmware
-            const response = await fetch(`/api/v1/devices/${deviceId}/firmwares`, {
-                method: "POST",
-                body: formData,
-            });
+            const response = await uploadDeviceFirmwareAction(deviceId, formData);
 
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || "Failed to upload firmware");
+            if (!response.success) {
+                throw new Error(response.message || "Failed to upload firmware");
             }
 
             // Show success message
             toast.info("Upload successful", {
-                description: `Firmware ${result.version} uploaded successfully!${data.autoAssign ? ' Device firmware assignment updated.' : ''}`,
+                description: `Firmware ${response.data.version} uploaded successfully!${data.autoAssign ? ' Device firmware assignment updated.' : ''}`,
             })
 
             // Reset form after successful upload
@@ -85,7 +82,7 @@ export function FirmwareUploadForm({ deviceId, currentAssignedFirmwareVersion, o
 
             // Call success callback if provided
             if (onUploadSuccess) {
-                onUploadSuccess(result);
+                onUploadSuccess(response.data);
             }
         } catch (error) {
             console.error("Error uploading firmware:", error);

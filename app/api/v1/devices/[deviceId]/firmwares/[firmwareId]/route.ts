@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteFirmwareFileById, getFirmwareForDownload } from '@/lib/firmwareUtils';
-import { validateDeviceOwnership } from '@/lib/contexts/deviceContext';
-import { deleteFirmwareById, validateFirmwareOwnership } from '@/lib/contexts/firmwareContext';
+import { downloadFirmwareAction, deleteFirmwareAction } from '@/app/actions/firmwareActions';
 import { auth } from '@clerk/nextjs/server';
-import { getUserFromToken } from '@/lib/contexts/userTokensContext';
-import { LOGTOKEN } from '@/types/types';
+import getUserIdFromAuthOrToken from '@/lib/authUtils';
+import { ServerActionReason } from '@/types/types';
 
 /**
  * GET handler for firmware direct download
@@ -14,20 +12,21 @@ export async function GET(
     { params }: { params: Promise<{ deviceId: string, firmwareId: string }> }
 ): Promise<Response> {
     try {
-
-        const { userId } = await auth();
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        // Get authenticated user ID
+        const token = req.headers.get('Authorization');
         const { deviceId, firmwareId } = await params;
+        // Use the server action to download the firmware
+        const result = await downloadFirmwareAction(deviceId, firmwareId, token);
 
-        const response = await validateAccess(userId, deviceId, firmwareId);
-        if (response !== true) {
-            return response;
+        if (!result.success) {
+            return new Response(JSON.stringify({ error: result.message }), {
+                status: result.statusCode,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
 
-        // Get the firmware file for download
-        const { stream, fileName, contentType, fileSizeBytes } = await getFirmwareForDownload(firmwareId);
+        // Extract download result data
+        const { stream, fileName, contentType, fileSizeBytes } = result.data;
 
         // Create a ReadableStream from the Node.js Readable stream
         const readableStream = new ReadableStream({
@@ -54,78 +53,45 @@ export async function GET(
             }
         });
     } catch (error) {
-        console.error('Error downloading firmware:', error);
-
-        if (error instanceof Error) {
-            if (error.message === 'Firmware not found' || error.message === 'Firmware file not found in storage') {
-                return new Response(JSON.stringify({ error: error.message }), {
-                    status: 404,
-                    headers: { 'Content-Type': 'application/json' }
-                });
-            }
-        }
-
+        console.error('Error in firmware download route:', error);
         return new Response(JSON.stringify({ error: 'Failed to download firmware' }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
         });
     }
 }
+
+/**
+ * DELETE handler for firmware deletion
+ */
 export async function DELETE(
     req: NextRequest,
     { params }: { params: Promise<{ deviceId: string, firmwareId: string }> }
 ): Promise<Response> {
-    let { userId } = await auth();
-    const token = req.headers.get('Authorization')
-    if (!userId && !token) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (!token) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const user = await getUserFromToken(token, LOGTOKEN);
-    if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    userId = user.id;
-    const { deviceId, firmwareId } = await params;
-    const response = await validateAccess(userId, deviceId, firmwareId);
-    if (response !== true) {
-        return response;
-    }
     try {
-        await deleteFirmwareFileById(firmwareId);
-        // If delete is succesfull it doesnt throw an error, so we can delete the firmware from the database
-        await deleteFirmwareById(firmwareId);
-    } catch {
+        // Get user ID from auth or token
+        const token = req.headers.get('Authorization');
+        const { deviceId, firmwareId } = await params;
+        // Use the server action to delete the firmware
+        const result = await deleteFirmwareAction(deviceId, firmwareId, token);
+
+        if (!result.success) {
+
+            return new Response(JSON.stringify({ error: result.message }), {
+                status: result.statusCode,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+        // Return success response
+        return new Response(JSON.stringify({ message: result.message }), {
+            status: result.statusCode,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (error) {
+        console.error('Error in firmware delete route:', error);
         return new Response(JSON.stringify({ error: 'Failed to delete firmware' }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
         });
     }
-    return new Response(JSON.stringify({ message: 'Firmware deleted successfully' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-    });
-}
-async function validateAccess(userId: string, deviceId: string, firmwareId: string) {
-    // Validate user has access to this device
-    const [hasDeviceAccess, hasFirmwareAccess] = await Promise.all([
-        validateDeviceOwnership(userId, deviceId),
-        validateFirmwareOwnership(userId, firmwareId)
-    ]);
-    if (!hasDeviceAccess) {
-        return new Response(JSON.stringify({ error: 'Access denied to this device' }), {
-            status: 403,
-            headers: { 'Content-Type': 'application/json' }
-        });
-    }
-
-    if (!hasFirmwareAccess) {
-        return new Response(JSON.stringify({ error: 'Access denied to this firmware' }), {
-            status: 403,
-            headers: { 'Content-Type': 'application/json' }
-        });
-    }
-    return true;
 }
