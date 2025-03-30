@@ -29,6 +29,7 @@ jobs:
         run: |
           docker build \
           --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }} \
+          --build-arg GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }} \
           -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/iothubnextjs/mi-app .
           docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/iothubnextjs/mi-app
 
@@ -47,7 +48,7 @@ jobs:
             --set-env-vars "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" \
             --set-env-vars "REDIS_URL=${{ secrets.REDIS_URL }}" \
             --set-env-vars "SIGNING_SECRET=${{ secrets.SIGNING_SECRET }}" \
-            --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }}"
+            --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }}" \
             --set-env-vars "GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}" \
 
       #- name: Ejecutar Migraciones en Cloud SQL

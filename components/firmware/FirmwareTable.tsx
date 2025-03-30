@@ -185,6 +185,7 @@ export function FirmwareTable({
                 <TableBody>
                     {firmwares.map((firmware) => {
                         const isPendingDeletion = firmware.id === pendingDeletionId;
+                        console.log(firmware)
 
                         return (
                             <TableRow
@@ -282,16 +283,31 @@ export function FirmwareTable({
                                                     </DropdownMenuItem>
                                                 </Link>
 
-                                                {/* Download Option */}
-                                                <DropdownMenuItem asChild>
-                                                    <a
-                                                        href={`/api/v1/devices/${deviceId}/firmwares/${firmware.id}`}
-                                                        download={`${firmware.version}-firmware.bin`}
-                                                    >
-                                                        <DownloadIcon className="mr-2 h-4 w-4" />
-                                                        <span>Download binary</span>
-                                                    </a>
-                                                </DropdownMenuItem>
+                                                {firmware.embedded ? (
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
+                                                                    <DownloadIcon className="mr-2 h-4 w-4" />
+                                                                    <span>Download binary</span>
+                                                                </DropdownMenuItem>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="left">
+                                                                <p className="text-sm">Cannot download local embedded firmwares</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                ) : (
+                                                    <DropdownMenuItem asChild>
+                                                        <a
+                                                            href={`/api/v1/devices/${deviceId}/firmwares/${firmware.id}`}
+                                                            download={`${firmware.version}-firmware.bin`}
+                                                        >
+                                                            <DownloadIcon className="mr-2 h-4 w-4" />
+                                                            <span>Download binary</span>
+                                                        </a>
+                                                    </DropdownMenuItem>
+                                                )}
 
                                                 <DropdownMenuSeparator />
 

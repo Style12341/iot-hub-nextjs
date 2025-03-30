@@ -31,11 +31,12 @@ import { SensorCategory } from "@prisma/client";
 // Props type for the component
 type DeviceFormProps = {
     categories: { id: string; name: string }[];
+    views: { id: string; name: string }[];
     deviceAction: (formData: CreateDeviceFormData) => Promise<ServerActionResponse>;
     categoryAction: (formData: CreateCategoryFormData) => Promise<ServerActionResponse>;
 }
 
-export default function DeviceForm({ categories, deviceAction, categoryAction }: DeviceFormProps) {
+export default function DeviceForm({ views, categories, deviceAction, categoryAction }: DeviceFormProps) {
     const { user } = useUser();
     const userId = user?.id
     const [isPending, startTransition] = useTransition();
@@ -49,7 +50,8 @@ export default function DeviceForm({ categories, deviceAction, categoryAction }:
             name: "",
             userId: userId || "default",
             sensors: [{ name: "", unit: "", categoryId: "" }],
-            group: { name: "Default" }
+            group: { name: "Default" },
+            view: { id: views.find(v => v.name === "Default")?.id || "" },
         }
     });
 
@@ -120,6 +122,46 @@ export default function DeviceForm({ categories, deviceAction, categoryAction }:
                                 </FormItem>
                             )}
                         />
+
+                        {/* View Selection Dropdown */}
+                        <FormField
+                            control={form.control}
+                            name="view.id"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>View</FormLabel>
+                                    <Select
+                                        onValueChange={(value) => {
+                                            // Find the selected view to get its name
+                                            const selectedView = views.find(v => v.id === value);
+                                            field.onChange(value);
+                                            // Update the view name as well
+                                            if (selectedView) {
+                                                form.setValue("view.id", selectedView.id);
+                                            }
+                                        }}
+                                        defaultValue={field.value || views.find(v => v.name === "Default")?.id || ""}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a view" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {views.map((view) => (
+                                                <SelectItem key={view.id} value={view.id}>
+                                                    {view.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>
+                                        Choose which view this device should appear in
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </div>
 
                     <div className="space-y-4">
@@ -136,17 +178,20 @@ export default function DeviceForm({ categories, deviceAction, categoryAction }:
                             </Button>
                         </div>
 
+                        {/* Rest of the form remains unchanged */}
                         <div className={`flex flex-wrap ${fields.length === 1 ? 'flex-col' : ''} gap-4`}>
                             {fields.map((field, index) => (
+                                // Sensor fields remain the same
                                 <div
                                     key={field.id}
                                     className={`p-4 border rounded-md flex flex-col ${fields.length === 1
-                                            ? 'w-full'
-                                            : fields.length === 2
-                                                ? 'w-full sm:w-[calc(50%-8px)]'
-                                                : 'w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]'
+                                        ? 'w-full'
+                                        : fields.length === 2
+                                            ? 'w-full sm:w-[calc(50%-8px)]'
+                                            : 'w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]'
                                         }`}
                                 >
+                                    {/* Sensor field content remains the same */}
                                     <div className="flex items-center justify-between mb-3">
                                         <h4 className="font-medium">Sensor {index + 1}</h4>
                                         {fields.length > 1 && (
@@ -162,6 +207,7 @@ export default function DeviceForm({ categories, deviceAction, categoryAction }:
                                     </div>
 
                                     <div className="space-y-3 flex-grow">
+                                        {/* Rest of sensor fields remain unchanged */}
                                         <FormField
                                             control={form.control}
                                             name={`sensors.${index}.name`}

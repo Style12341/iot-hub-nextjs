@@ -29,6 +29,7 @@ export async function getAllUserViews(userId: string) {
         },
         select: {
             name: true,
+            id: true,
             _count: {
                 select: {
                     Devices: true
@@ -38,6 +39,7 @@ export async function getAllUserViews(userId: string) {
     });
     return views.map((view) => {
         return {
+            id: view.id,
             name: view.name,
             devicesCount: view._count.Devices
         }

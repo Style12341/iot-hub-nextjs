@@ -14,6 +14,7 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
  */
 export async function createDeviceAction(data: CreateDeviceFormData) {
     try {
+        console.log(data)
         // Server side validations
         const { userId } = await auth();
         if (!userId) {
@@ -29,6 +30,7 @@ export async function createDeviceAction(data: CreateDeviceFormData) {
         return createSuccessResponse(ServerActionReason.CREATED, "Device created successfully", device);
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
+            console.error(error);
             let message: string = "";
             if (error.code === "P2002") {
                 message = "Device name must be unique";

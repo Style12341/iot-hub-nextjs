@@ -19,7 +19,13 @@ interface DownloadResult {
     contentType: string;
     fileSizeBytes: number;
 }
-
+// Add this interface at the top of your file
+export interface UploadFileData {
+    buffer: ArrayBuffer;
+    name: string;
+    type: string;
+    size: number;
+}
 /**
  * Get all firmwares for a device
  */
@@ -68,14 +74,14 @@ export async function getDeviceFirmwaresAction(
 export async function uploadDeviceFirmwareAction(
     deviceId: string,
     data: {
-        file: File | Blob,
+        file: UploadFileData, // Replace File | Blob with our custom interface
         description: string,
         version: string,
         autoAssign: boolean
     },
     token?: string | null,
     context?: string
-): Promise<ServerActionResponse<Firmware>> {
+) {
     try {
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
@@ -108,13 +114,12 @@ export async function uploadDeviceFirmwareAction(
             );
         }
 
-        // Convert File to MulterFile-like object
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
+        // Convert File data to Buffer
+        const buffer = Buffer.from(file.buffer);
 
         const multerFile = {
             fieldname: 'file',
-            originalname: file instanceof File ? file.name : 'unknown',
+            originalname: file.name || 'firmware.bin',
             encoding: '7bit',
             mimetype: file.type,
             size: file.size,
@@ -127,6 +132,9 @@ export async function uploadDeviceFirmwareAction(
             version,
             deviceId,
         });
+        if (!firmware) {
+            return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to upload firmware');
+        }
 
         // If autoAssign is true, assign firmware to device
         if (autoAssign) {

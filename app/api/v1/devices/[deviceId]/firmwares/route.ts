@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDeviceFirmwaresAction, uploadDeviceFirmwareAction } from '@/app/actions/firmwareActions';
+import { getDeviceFirmwaresAction, uploadDeviceFirmwareAction, UploadFileData } from '@/app/actions/firmwareActions';
 import { auth } from '@clerk/nextjs/server';
 /**
  * GET all firmwares for a specific device
@@ -35,7 +35,19 @@ export async function POST(
         const { deviceId } = await params;
         // Process the form data
         const formData = await req.formData();
-        const file = formData.get('file') as File;
+        const file = formData.get('file');
+        if (!(file instanceof File)) {
+            return NextResponse.json(
+                { error: 'Invalid file format' },
+                { status: 400 }
+            );
+        }
+        const fileData: UploadFileData = {
+            buffer: await file.arrayBuffer(),
+            name: file.name,
+            type: file.type,
+            size: file.size
+        };
         const description = formData.get('description') as string;
         const version = formData.get('version') as string;
         const autoAssign = formData.get('autoAssign') === 'true';
@@ -48,7 +60,7 @@ export async function POST(
         }
         // Use server action to upload firmware
         const result = await uploadDeviceFirmwareAction(deviceId, {
-            file,
+            file: fileData,
             description,
             version,
             autoAssign

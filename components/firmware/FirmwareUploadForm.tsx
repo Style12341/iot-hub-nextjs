@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
 import { uploadDeviceFirmwareAction } from '@/app/actions/firmwareActions';
 import { Firmware } from '@prisma/client';
+import { FirmwareType } from '@/lib/contexts/firmwareContext';
 
 // Define the schema for firmware upload
 const firmwareUploadSchema = z.object({
@@ -32,7 +33,7 @@ type FirmwareUploadFormValues = z.infer<typeof firmwareUploadSchema>;
 interface FirmwareUploadFormProps {
     deviceId: string;
     currentAssignedFirmwareVersion?: string;
-    onUploadSuccess?: (firmware: Firmware) => void;
+    onUploadSuccess?: (firmware: FirmwareType) => void;
 }
 
 export function FirmwareUploadForm({ deviceId, currentAssignedFirmwareVersion, onUploadSuccess }: FirmwareUploadFormProps) {
@@ -52,10 +53,15 @@ export function FirmwareUploadForm({ deviceId, currentAssignedFirmwareVersion, o
     // Handle form submission
     async function onSubmit(data: FirmwareUploadFormValues) {
         setIsUploading(true);
-
+        const buffer = await data.file.arrayBuffer();
         try {
             const formData = {
-                file: data.file,
+                file: {
+                    name: data.file.name,
+                    type: data.file.type,
+                    size: data.file.size,
+                    buffer: buffer
+                },
                 description: data.description,
                 version: data.version,
                 autoAssign: data.autoAssign

@@ -2,7 +2,7 @@ import { bucket } from './configs/gcsConfig';
 import { createHash } from 'crypto';
 import { Firmware } from '@prisma/client';
 import { Readable } from 'stream';
-import { createFirmware, getFirmwareById } from './contexts/firmwareContext';
+import { createFirmware, FirmwareType, getFirmwareById } from './contexts/firmwareContext';
 import { GetSignedUrlConfig } from '@google-cloud/storage';
 import { FirmwareCreate } from '@/types/types';
 
@@ -42,7 +42,7 @@ interface PresignedUrlResult {
  * @param file - The file object from multer
  * @param metadata - Firmware metadata
  */
-export async function uploadFirmware(file: MulterFile, metadata: FirmwareMetadata): Promise<Firmware> {
+export async function uploadFirmware(file: MulterFile, metadata: FirmwareMetadata) {
     try {
         // Create a unique filename in GCS
         const filePath = `firmwares/${metadata.deviceId}/${metadata.version}-${file.originalname}`;
@@ -65,7 +65,7 @@ export async function uploadFirmware(file: MulterFile, metadata: FirmwareMetadat
             }
         });
 
-        return new Promise<Firmware>((resolve, reject) => {
+        return new Promise<FirmwareType>((resolve, reject) => {
             blobStream.on('error', (err: Error) => reject(err));
 
             blobStream.on('finish', async () => {
@@ -82,6 +82,9 @@ export async function uploadFirmware(file: MulterFile, metadata: FirmwareMetadat
                         deviceId: metadata.deviceId,
                     }
                     const firmware = await createFirmware(firmwareData);
+                    if (!firmware) {
+                        throw new Error('Failed to create firmware record in DB');
+                    }
 
                     resolve(firmware);
                 } catch (error) {
@@ -196,7 +199,7 @@ export async function deleteFirmwareFileById(firmwareId: string): Promise<void> 
             throw new Error('Firmware not found');
         }
         if (firmware.embedded) {
-            throw new Error('Firmware is embedded, cannot be deleted');
+            return ; // No need to delete embedded firmware
         }
         // Get file from Google Cloud Storage using stored path directly
         const file = bucket.file(firmware.fileUrl);

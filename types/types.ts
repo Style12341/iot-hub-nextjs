@@ -118,6 +118,9 @@ export const createDeviceFormSchema = z.object({
     }),
     group: z.object({
         name: z.string().optional(),
+    }),
+    view: z.object({
+        id: z.string()
     })
 });
 export type CreateDeviceFormData = z.infer<typeof createDeviceFormSchema>;

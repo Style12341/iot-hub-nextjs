@@ -22,6 +22,9 @@ export default async function FirmwarePage({
         return redirect('/login');
     }
     const data = firmwaresResult.data;
+    if (!data.firmwares) {
+        return redirect('/dashboard/devices/new');
+    }
     const breadcrumbs = [
         { href: '/dashboard', name: 'Dashboard' },
         { href: '/dashboard/devices', name: 'Devices' },
@@ -52,7 +55,7 @@ export default async function FirmwarePage({
             {
                 data.firmwares.length > 0 ? (
                     <FirmwareTable
-                        firmwares={data.firmwares}
+                        firmwares={data.firmwares as FirmwareType[]}
                         deviceId={deviceId}
                         assignedFirmware={data.deviceData.AssignedFirmware as FirmwareType ?? undefined}
                         activeFirmware={data.deviceData.ActiveFirmware as FirmwareType ?? undefined}

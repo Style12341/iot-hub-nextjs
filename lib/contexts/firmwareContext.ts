@@ -10,9 +10,9 @@ import { map } from "zod";
  * @param data - The firmware data to create
  */
 export async function createFirmware(data: FirmwareCreate) {
-    return db.firmware.create({
+    return await mapFirmwareType(await db.firmware.create({
         data
-    });
+    }));
 }
 
 /**
@@ -64,6 +64,7 @@ export async function getFirmwareByDeviceAndVersion(deviceId: string, version: s
             version
         }
     });
+
     return await mapFirmwareType(response as PrismaFirmware);
 }
 export async function deleteFirmwareById(firmwareId: string) {
@@ -189,7 +190,10 @@ export type FirmwareType = EmbeddedFirmware | DownloadableFirmware;
  * @param firmware The firmware from Prisma
  * @returns Properly typed firmware with only the relevant fields
  */
-export async function mapFirmwareType(firmware: PrismaFirmware): Promise<FirmwareType> {
+export async function mapFirmwareType(firmware: PrismaFirmware): Promise<FirmwareType | null> {
+    if (!firmware) {
+        return null
+    }
     if (firmware.embedded) {
         // Return only the permitted fields for embedded firmware
         return new Promise<EmbeddedFirmware>((resolve) => {

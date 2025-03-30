@@ -1,5 +1,5 @@
 import DeviceForm from "@/components/devices/DeviceForm";
-import { createDeviceAction } from "@/app/actions/deviceActions";
+import { createDeviceAction, getAllUserViewsAction } from "@/app/actions/deviceActions";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { createCategoryAction } from "@/app/actions/categoryActions";
@@ -13,6 +13,11 @@ export default async function NewDevicePage() {
     }
     // Get categories for the current user
     const categories = await getUserCategories(userId);
+    const res = await getAllUserViewsAction();
+    if (!res.success) {
+        return redirect("/dashboard/devices/new");
+    }
+    const views = res.data;
     const breadcrumbs = [
         { href: '/dashboard', name: 'Dashboard' },
         { href: '/dashboard/devices', name: 'Devices' },
@@ -24,6 +29,7 @@ export default async function NewDevicePage() {
                 page="New"></BreadcrumbHandler>
             <div className="container mx-auto py-8 px-8">
                 <DeviceForm
+                    views={views}
                     categories={categories}
                     deviceAction={createDeviceAction}
                     categoryAction={createCategoryAction}
