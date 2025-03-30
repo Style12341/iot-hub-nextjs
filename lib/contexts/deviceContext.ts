@@ -447,7 +447,6 @@ export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string | null
     if (!lastValueAt) {
         return "WAITING";
     }
-
     if (typeof lastValueAt === 'string') {
         // For strings, make sure we handle both formats correctly
         // If the string doesn't have 'Z' or '+' timezone info, assume it's UTC
@@ -457,10 +456,8 @@ export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string | null
             lastValueTime = new Date(lastValueAt).getTime();
         }
     } else {
-        // Already a Date object
         lastValueTime = lastValueAt.getTime();
     }
-
     const now = Date.now();
     const diff = now - lastValueTime;
 

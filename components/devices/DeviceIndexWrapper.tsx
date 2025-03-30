@@ -6,8 +6,7 @@ import { toast } from "sonner";
 import { DeviceSSEMessage } from "@/types/types";
 import { getDeviceWithActiveSensorsAction } from "@/app/actions/deviceActions";
 import DeviceCard from "./DeviceCard";
-import { getDevicesEventSource } from "@/lib/sseUtils";
-
+import { subscribeToDeviceEvents } from "@/lib/sseUtils";
 
 interface DeviceIndexWrapperProps {
     initialDevices: DeviceQueryResult[];
@@ -16,9 +15,11 @@ interface DeviceIndexWrapperProps {
 export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrapperProps) {
     const [devices, setDevices] = useState<DeviceQueryResult[]>(initialDevices);
     const [refreshKey, setRefreshKey] = useState(false);
+
     useEffect(() => {
         setDevices(initialDevices);
     }, [initialDevices]);
+
     // Effect for all devices status checks
     useEffect(() => {
         // Check all devices' statuses
@@ -46,7 +47,7 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
         setDevices(updatedDevices);
     }, [refreshKey]);
 
-    // Effect for SSE connection for all devices
+    // Effect for SSE connection for all devices - UPDATED to use subscribeToDeviceEvents
     useEffect(() => {
         // Get all device IDs
         const deviceIds = devices.map(device => device.id);
@@ -57,11 +58,8 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
             setRefreshKey(prev => !prev);
         }, 10000);
 
-        // Set up a single SSE connection for all devices
-        const eventSource = getDevicesEventSource(deviceIds);
-
-        eventSource.onmessage = async (event) => {
-            const data: DeviceSSEMessage = JSON.parse(event.data);
+        // Subscribe to events for all devices
+        const unsubscribe = subscribeToDeviceEvents(deviceIds, async (data: DeviceSSEMessage) => {
             console.debug("Received SSE message: ", data);
             // Skip connection messages
             if (data.type === "connected") {
@@ -91,7 +89,7 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
                     // Create a new sensors array with updated values
                     const updatedSensors = device.sensors ? device.sensors.map((sensor) => {
                         // Check if this sensor has updated data in the message
-                        const newSensor = data.sensors.find(
+                        const newSensor = data.sensors?.find(
                             (s) => s.groupSensorId === sensor.groupSensorId
                         );
 
@@ -128,15 +126,10 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
                     };
                 });
             });
-        };
-
-        eventSource.onerror = () => {
-            console.error("SSE connection lost");
-            eventSource.close();
-        };
+        });
 
         return () => {
-            eventSource.close();
+            unsubscribe(); // Clean up subscription
             clearInterval(intervalId);
         };
     }, []);
