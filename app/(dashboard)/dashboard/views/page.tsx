@@ -11,6 +11,7 @@ export default async function Views() {
     }
     const views = response.data;
 
+
     if (!views || views.length === 0) {
         return redirect('/dashboard/devices');
     }

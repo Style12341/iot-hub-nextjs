@@ -294,6 +294,7 @@ export const getDevicesViewWithActiveSensorsBetween = async (userId: string, vie
         WHERE d."userId" = ${userId}
         AND v."name" = ${view}
         GROUP BY d."id",v."id", g."id", f."id"
+        GROUP BY d."id",v."id", g."id"
         ORDER BY CASE 
                 WHEN d."status" = 'ONLINE' THEN 1
                 WHEN d."status" = 'OFFLINE' THEN 2

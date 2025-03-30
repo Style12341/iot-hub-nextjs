@@ -196,10 +196,10 @@ function IndexDeviceCard(device: DeviceQueryResult) {
 function ViewDeviceCard(device: DeviceQueryResult) {
     const [timeRange, setTimeRange] = useState<number>(10); // Default time range value
     const [deviceData, setDeviceData] = useState<DeviceQueryResult>(device); // State to hold fetched data
-
+  
     const [oldestValue, setOldestValue] = useState<Date>(new Date(Date.now() - 10 * 60 * 1000));
     const [oldestValues, setOldestValues] = useState<Map<string, SensorValueQueryResult[]>>(new Map());
-
+  
     useEffect(() => {
         const initialValues = new Map<string, SensorValueQueryResult[]>();
         deviceData.sensors?.forEach((sensor) => {
@@ -207,7 +207,6 @@ function ViewDeviceCard(device: DeviceQueryResult) {
         });
         setOldestValues(initialValues);
     }, []);  // Empty dependency array means this only runs once
-
     useEffect(() => {
         const fetchData = async () => {
             const timeToFetch = new Date(Date.now() - timeRange * 60 * 1000);

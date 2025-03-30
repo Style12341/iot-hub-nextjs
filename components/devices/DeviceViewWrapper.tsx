@@ -37,8 +37,6 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
         if (!isExpanded || initialDevices.length === 0) {
             return;
         }
-
-        console.log("Setting up new SSE subscription");
         const deviceIds = initialDevices.map(device => device.id);
 
         // Set up interval to check status every 10 seconds
@@ -46,7 +44,6 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
             setRefreshKey(prev => !prev);
         }, 10000);
 
-        // Subscribe to events for all devices
         const unsubscribe = subscribeToDeviceEvents(deviceIds, async (data: DeviceSSEMessage) => {
             if (data.type === "connected") return;
 
