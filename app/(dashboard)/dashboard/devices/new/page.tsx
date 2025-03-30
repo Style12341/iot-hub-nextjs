@@ -13,11 +13,14 @@ export default async function NewDevicePage() {
     }
     // Get categories for the current user
     const categories = await getUserCategories(userId);
-
+    const breadcrumbs = [
+        { href: '/dashboard', name: 'Dashboard' },
+        { href: '/dashboard/devices', name: 'Devices' },
+    ];
     return (
         <>
             <BreadcrumbHandler
-                breadcrumbs={[{ href: '/dashboard/devices', name: 'Devices' }]}
+                breadcrumbs={breadcrumbs}
                 page="New"></BreadcrumbHandler>
             <div className="container mx-auto py-8 px-8">
                 <DeviceForm

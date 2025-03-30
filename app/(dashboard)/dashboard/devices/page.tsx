@@ -33,12 +33,14 @@ export default async function DevicesIndex({
     }
     );
     const { maxPage, count, page: currPage } = results;
-
+    const breadcrumbs = [
+        { href: '/dashboard', name: 'Dashboard' }
+    ];
     return (
         <div className="space-y-6">
             <BreadcrumbHandler
-                breadcrumbs={[{ href: '/dashboard/devices', name: 'Devices' }]}
-                page="All"
+                breadcrumbs={breadcrumbs}
+                page="Devices"
             />
 
             <div className="flex justify-between items-center">
