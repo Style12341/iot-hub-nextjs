@@ -1,6 +1,5 @@
 import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
 import TokenGenerator from "@/components/tokens/TokenGenerator";
-import { useBreadcrumbsEffect } from "@/lib/useBreadcrumbsEffect";
 import { LOGTOKEN } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";

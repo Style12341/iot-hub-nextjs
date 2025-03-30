@@ -1,5 +1,4 @@
 import { getDevicesWithActiveSensorsAction } from "@/app/actions/deviceActions";
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,27 +22,25 @@ export default async function DevicesIndex({
 }: {
     searchParams: Promise<{ page: number }>;
 }) {
-    const { userId } = await auth();
-    if (!userId) {
-        return redirect("/login");
-    }
     const page = (await searchParams).page || 1;
-    const results = await getDevicesWithActiveSensorsAction(userId, page);
-    if (results === null) {
+    const response = await getDevicesWithActiveSensorsAction(page);
+    if (!response.success) {
         return redirect("/login");
     }
-    console.log(results)
+    const results = response.data;
     const devices = results.devices.map((device) => {
         return device.device;
     }
     );
     const { maxPage, count, page: currPage } = results;
-
+    const breadcrumbs = [
+        { href: '/dashboard', name: 'Dashboard' }
+    ];
     return (
         <div className="space-y-6">
             <BreadcrumbHandler
-                breadcrumbs={[{ href: '/dashboard/devices', name: 'Devices' }]}
-                page="All"
+                breadcrumbs={breadcrumbs}
+                page="Devices"
             />
 
             <div className="flex justify-between items-center">

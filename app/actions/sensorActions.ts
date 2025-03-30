@@ -1,12 +1,18 @@
 "use server"
 
+import getUserIdFromAuthOrToken from "@/lib/authUtils";
 import { getSensorsQty } from "@/lib/contexts/sensorContext";
-import { auth } from "@clerk/nextjs/server";
+import { createErrorResponse, createSuccessResponse, ServerActionReason } from "@/types/types";
 
-export async function getSensorsQtyAction(passedUserId: string) {
-    const { userId } = await auth();
-    if (userId !== passedUserId) {
-        return null
+
+export async function getSensorsQtyAction(token?: string | null, context?: string) {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+        return createErrorResponse(
+            ServerActionReason.UNAUTHORIZED,
+            "Unauthorized access"
+        );
     }
-    return await getSensorsQty(userId);
+    const res = await getSensorsQty(userId);
+    return createSuccessResponse(ServerActionReason.SUCCESS, "Sensors retrieved successfully", res);
 }

@@ -38,8 +38,8 @@ export default function ViewCollapsible({ viewName, deviceCount, defaultExpanded
                         new Date(Date.now())
                     );
 
-                    if (response) {
-                        const deviceData = response.map(item => item.device);
+                    if (response.success) {
+                        const deviceData = response.data.map(item => item.device);
                         setDevices(deviceData);
                         setDataFetched(true);
                     } else {
