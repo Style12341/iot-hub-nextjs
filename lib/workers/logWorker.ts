@@ -19,6 +19,7 @@ type DeviceLogBody = {
     token: string;
     device_id: string;
     group_id: string;
+    firmware_version?: string;
     sensors: SensorsLogBody[];
 };
 
@@ -131,7 +132,7 @@ function isCacheValid(
 
 export async function processLog(body: DeviceLogBody) {
     try {
-        const { token, device_id, group_id, sensors } = body;
+        const { token, device_id, group_id, sensors, firmware_version } = body;
         const sensor_ids = sensors.map(sensor => sensor.sensor_id);
 
         console.log(`[${device_id}] Starting log processing with ${sensors.length} sensors`);
@@ -226,6 +227,7 @@ export async function processLog(body: DeviceLogBody) {
         const deviceStatus: DeviceSSEMessage = {
             id: device_id,
             lastValueAt: new Date(),
+            activeFirmwareVersion: firmware_version || "unknown",
             type: "new sensors",
             sensors: logs.map(log => ({
                 groupSensorId: log.groupSensorId,

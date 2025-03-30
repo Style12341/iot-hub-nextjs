@@ -120,6 +120,7 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
                     // Return updated device
                     return {
                         ...device,
+                        activeFirmwareVersion: data.activeFirmwareVersion,
                         lastValueAt: lastValueAt,
                         sensors: updatedSensors,
                         status: "ONLINE"

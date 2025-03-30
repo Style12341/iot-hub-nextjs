@@ -44,9 +44,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatDate } from '@/lib/utils';
 import { assignFirmwareAction, deleteFirmwareAction } from '@/app/actions/firmwareActions';
+import { FirmwareType } from '@/lib/contexts/firmwareContext';
 
 interface FirmwareTableProps {
-    firmwares: Firmware[];
+    firmwares: FirmwareType[];
     deviceId: string;
     assignedFirmwareId?: string | null;
     activeFirmwareId?: string | null;
@@ -61,7 +62,7 @@ export function FirmwareTable({
     onFirmwareDeleted
 }: FirmwareTableProps) {
     const [localAssignedId, setLocalAssignedId] = useState<string | null>(assignedFirmwareId || null);
-    const [firmwares, setFirmwares] = useState<Firmware[]>(passedFirmwares);
+    const [firmwares, setFirmwares] = useState<FirmwareType[]>(passedFirmwares);
     // Add state to track which firmware is pending deletion
     const [pendingDeletionId, setPendingDeletionId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -196,10 +197,11 @@ export function FirmwareTable({
                                     <div className={"flex justify-center"}>
                                         <FirmwareStatusIndicator
                                             isActive={firmware.id === localAssignedId}
+                                            isEmbedded={firmware.embedded}
                                             onClick={() => handleAssignmentToggle(firmware.id)}
                                             tooltipText={firmware.id === localAssignedId
                                                 ? 'Assigned to device'
-                                                : isPendingDeletion ? 'Cannot assign while pending deletion' : 'Click to assign firmware'}
+                                                : isPendingDeletion ? 'Cannot assign while pending deletion' : firmware.embedded ? 'Cannot assign embedded firmware' : 'Click to assign firmware'}
                                             interactive={!isPendingDeletion}
                                         />
                                     </div>

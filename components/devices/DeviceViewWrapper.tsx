@@ -103,6 +103,7 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
 
                     return {
                         ...device,
+                        activeFirmwareVersion: data.activeFirmwareVersion,
                         lastValueAt: lastValueAt,
                         sensors: updatedSensors,
                         status: "ONLINE"

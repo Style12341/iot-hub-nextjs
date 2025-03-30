@@ -12,6 +12,7 @@ type SensorsLogBody = {
 }
 type DeviceLogBody = {
     fast: boolean,
+    firmware_version?: string
     device_id: string
     group_id: string
     sensors: SensorsLogBody[]
@@ -28,8 +29,8 @@ export async function POST(req: Request) {
     }
 
     const body: DeviceLogBody = await req.json()
-    const { device_id, group_id, sensors, fast } = body;
-    const requestData = { token, device_id, group_id, sensors };
+    const { device_id, group_id, sensors, fast, firmware_version } = body;
+    const requestData = { token, device_id, group_id, sensors, firmware_version };
 
     if (fast) {
         // Enqueue the job and return immediately

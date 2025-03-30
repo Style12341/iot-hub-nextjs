@@ -152,6 +152,7 @@ export interface DeviceSSEMessage {
     id: string;
     type: DeviceSSEType;
     lastValueAt: Date;
+    activeFirmwareVersion: string;
     sensors: SensorSSEMessage[];
 }
 // Type of firmware except id,createdAt,updatedAt

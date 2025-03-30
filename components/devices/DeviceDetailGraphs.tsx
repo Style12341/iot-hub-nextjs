@@ -148,7 +148,7 @@ export default function DeviceDetailGraphs({
             if (data.type === "new sensors" && data.sensors && data.sensors.length > 0) {
                 setDeviceData(prev => {
                     // Create updated device data
-                    const updatedDevice = { ...prev };
+                    const updatedDevice = { ...prev};
 
                     // Update status and lastValueAt
                     updatedDevice.status = "ONLINE";

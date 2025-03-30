@@ -11,6 +11,7 @@ import {
 
 interface FirmwareStatusIndicatorProps {
     isActive: boolean;
+    isEmbedded?: boolean;
     tooltipText: string;
     interactive?: boolean;
     onClick?: () => void;
@@ -18,10 +19,12 @@ interface FirmwareStatusIndicatorProps {
 
 export function FirmwareStatusIndicator({
     isActive,
+    isEmbedded,
     tooltipText,
     interactive = false,
     onClick
 }: FirmwareStatusIndicatorProps) {
+    interactive = interactive && !isEmbedded; // Disable interaction if embedded
     const Wrapper = interactive ? Button : 'div';
     const wrapperProps = interactive
         ? {

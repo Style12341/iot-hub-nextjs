@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Firmware" ALTER COLUMN "fileUrl" DROP NOT NULL,
+ALTER COLUMN "fileName" DROP NOT NULL,
+ALTER COLUMN "fileSizeBytes" DROP NOT NULL,
+ALTER COLUMN "contentType" DROP NOT NULL;
