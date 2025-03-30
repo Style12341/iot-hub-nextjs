@@ -21,7 +21,7 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import 'chartjs-adapter-date-fns';
-import { getLineDatasetStyle, getStandardChartOptions } from "@/lib/chartConfig";
+import { getLineDatasetStyle, getStandardChartOptions } from "@/lib/configs/chartConfig";
 import { toast } from "sonner";
 
 // Register ChartJS components

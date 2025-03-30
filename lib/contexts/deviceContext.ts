@@ -1,6 +1,6 @@
 import { CreateDeviceFormData } from "@/types/types";
 import db from "../prisma";
-import { DeviceStatus } from "@prisma/client";
+import { DeviceStatus, Firmware } from "@prisma/client";
 // Example usage
 export interface SensorValueQueryResult {
     value: number;
@@ -28,6 +28,7 @@ export interface DeviceHasReceivedData {
     lastValueAt: Date;
     group: GroupQueryResult;
     sensors: SensorQueryResult[];
+    activeFirmwareVersion: string | null;
 };
 export interface DeviceHasNotReceivedData {
     id: string;
@@ -146,7 +147,14 @@ export const getDevice = async (id: string) => {
             },
             Groups: true,
             User: true,
-            View: true
+            View: true,
+            AssignedFirmware: {
+                select: {
+                    id: true,
+                    version: true,
+                    description: true,
+                }
+            }
         }
     });
     if (!device) {
@@ -178,6 +186,7 @@ export const getDevicesWithActiveSensors = async (userId: string, page: number =
                 'view', v."name",
                 'status', d."status",
                 'lastValueAt', d."lastValueAt",
+                'activeFirmwareVersion', f."version",
                 'group', jsonb_build_object(
                     'id', g."id",
                     'name', g."name"
@@ -211,12 +220,13 @@ export const getDevicesWithActiveSensors = async (userId: string, page: number =
          AS device
         FROM "Device" d
         JOIN "View" v ON d."viewId" = v."id"
+        LEFT JOIN "Firmware" f ON d."activeFirmwareId" = f."id"
         LEFT JOIN "Group" g ON d."activeGroupId" = g."id"
         LEFT JOIN "GroupSensor" gs ON g."id" = gs."groupId" AND gs."active" = true
         LEFT JOIN "Sensor" s ON gs."sensorId" = s."id"
         LEFT JOIN "SensorCategory" c ON s."categoryId" = c."id"
         WHERE d."userId" = ${userId}
-        GROUP BY d."id",v."id", g."id"
+        GROUP BY d."id",v."id", g."id", f."id"
         ORDER BY CASE 
                 WHEN d."status" = 'ONLINE' THEN 1
                 WHEN d."status" = 'OFFLINE' THEN 2
@@ -241,6 +251,7 @@ export const getDevicesViewWithActiveSensorsBetween = async (userId: string, vie
                 'view', v."name",
                 'status', d."status",
                 'lastValueAt', d."lastValueAt",
+                'activeFirmwareVersion', f."version",
                 'group', jsonb_build_object(
                     'id', g."id",
                     'name', g."name"
@@ -275,13 +286,14 @@ export const getDevicesViewWithActiveSensorsBetween = async (userId: string, vie
          AS device
         FROM "Device" d
         JOIN "View" v ON d."viewId" = v."id"
+        LEFT JOIN "Firmware" f ON d."activeFirmwareId" = f."id"
         LEFT JOIN "Group" g ON d."activeGroupId" = g."id"
         LEFT JOIN "GroupSensor" gs ON g."id" = gs."groupId" AND gs."active" = true
         LEFT JOIN "Sensor" s ON gs."sensorId" = s."id"
         LEFT JOIN "SensorCategory" c ON s."categoryId" = c."id"
         WHERE d."userId" = ${userId}
         AND v."name" = ${view}
-        GROUP BY d."id",v."id", g."id"
+        GROUP BY d."id",v."id", g."id", f."id"
         ORDER BY CASE 
                 WHEN d."status" = 'ONLINE' THEN 1
                 WHEN d."status" = 'OFFLINE' THEN 2
@@ -307,6 +319,7 @@ export const getDeviceViewWithActiveSensorsBetween = async (userId: string, devi
                 'view', v."name",
                 'status', d."status",
                 'lastValueAt', d."lastValueAt",
+                'activeFirmwareVersion', f."version",
                 'group', jsonb_build_object(
                     'id', g."id",
                     'name', g."name"
@@ -341,6 +354,7 @@ export const getDeviceViewWithActiveSensorsBetween = async (userId: string, devi
          AS device
         FROM "Device" d
         JOIN "View" v ON d."viewId" = v."id"
+        LEFT JOIN "Firmware" f ON d."activeFirmwareId" = f."id"
         LEFT JOIN "Group" g ON d."activeGroupId" = g."id"
         LEFT JOIN "GroupSensor" gs ON g."id" = gs."groupId" AND gs."active" = true
         LEFT JOIN "Sensor" s ON gs."sensorId" = s."id"
@@ -348,7 +362,7 @@ export const getDeviceViewWithActiveSensorsBetween = async (userId: string, devi
         WHERE d."userId" = ${userId}
         AND d."id" = ${deviceId}
         AND v."name" = ${view}
-        GROUP BY d."id",v."id", g."id"
+        GROUP BY d."id",v."id", g."id", f."id"
         ORDER BY CASE 
                 WHEN d."status" = 'ONLINE' THEN 1
                 WHEN d."status" = 'OFFLINE' THEN 2
@@ -379,6 +393,7 @@ export const getDeviceWithActiveSensors = async (userId: string, deviceId: strin
                 'view', v."name",
                 'status', d."status",
                 'lastValueAt', d."lastValueAt",
+                'activeFirmwareVersion', f."version",
                 'group', jsonb_build_object(
                     'id', g."id",
                     'name', g."name"
@@ -412,13 +427,14 @@ export const getDeviceWithActiveSensors = async (userId: string, deviceId: strin
          AS device
         FROM "Device" d
         JOIN "View" v ON d."viewId" = v."id"
+        LEFT JOIN "Firmware" f ON d."activeFirmwareId" = f."id"
         LEFT JOIN "Group" g ON d."activeGroupId" = g."id"
         LEFT JOIN "GroupSensor" gs ON g."id" = gs."groupId" AND gs."active" = true
         LEFT JOIN "Sensor" s ON gs."sensorId" = s."id"
         LEFT JOIN "SensorCategory" c ON s."categoryId" = c."id"
         WHERE d."userId" = ${userId}
         AND d."id" = ${deviceId}
-        GROUP BY d."id",v."id", g."id"
+        GROUP BY d."id",v."id", g."id", f."id"
         ORDER BY CASE 
                 WHEN d."status" = 'ONLINE' THEN 1
                 WHEN d."status" = 'OFFLINE' THEN 2
@@ -440,7 +456,6 @@ export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string | null
     if (!lastValueAt) {
         return "WAITING";
     }
-
     if (typeof lastValueAt === 'string') {
         // For strings, make sure we handle both formats correctly
         // If the string doesn't have 'Z' or '+' timezone info, assume it's UTC
@@ -450,10 +465,8 @@ export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string | null
             lastValueTime = new Date(lastValueAt).getTime();
         }
     } else {
-        // Already a Date object
         lastValueTime = lastValueAt.getTime();
     }
-
     const now = Date.now();
     const diff = now - lastValueTime;
 
@@ -502,4 +515,53 @@ export async function updateDevicesStatus(userId: string) {
         WHERE "userId" = ${userId}
     `;
     return
+}
+export async function assignFirmwareToDevice(deviceId: string, firmwareId: string) {
+    const device = await db.device.update({
+        where: {
+            id: deviceId
+        },
+        data: {
+            AssignedFirmware: {
+                connect: {
+                    id: firmwareId
+                }
+            }
+        }
+    });
+    return device;
+}
+// Add this to your existing types file
+
+export interface DeviceFirmwareState {
+    id: string;
+    name: string;
+    AssignedFirmware: Firmware | null;
+    ActiveFirmware: Firmware | null;
+}
+export async function getDeviceFirmwareState(deviceId: string) {
+    const device = await db.device.findUnique({
+        where: {
+            id: deviceId
+        },
+        select: {
+            id: true,
+            name: true,
+            AssignedFirmware: true,
+            ActiveFirmware: true,
+        }
+    });
+    return device;
+}
+export async function getDeviceActiveView(userId: string, deviceId: string) {
+    const device = await db.device.findUnique({
+        where: {
+            userId,
+            id: deviceId
+        },
+        select: {
+            View: true,
+        }
+    });
+    return device?.View
 }

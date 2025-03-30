@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { DeviceHasReceivedData, DeviceQueryResult, getDeviceStatusFromLastValueAt } from "@/lib/contexts/deviceContext";
 import { toast } from "sonner";
 import { DeviceSSEMessage } from "@/types/types";
 import DeviceCard from "./DeviceCard";
-import { getDevicesEventSource } from "@/lib/sseUtils";
 import { getDeviceWithActiveSensorsAction } from "@/app/actions/deviceActions";
+import { subscribeToDeviceEvents } from "@/lib/sseUtils";
 
 interface DeviceViewWrapperProps {
     initialDevices: DeviceQueryResult[];
@@ -16,7 +16,8 @@ interface DeviceViewWrapperProps {
 export default function DeviceViewWrapper({ initialDevices, isExpanded = true }: DeviceViewWrapperProps) {
     const [devices, setDevices] = useState<DeviceQueryResult[]>(initialDevices);
     const [refreshKey, setRefreshKey] = useState(false);
-    const [eventSource, setEventSource] = useState<EventSource | null>(null);
+    // Reference to store unsubscribe function
+    const unsubscribeRef = useRef<(() => void) | null>(null);
 
     // Update devices when props change
     useEffect(() => {
@@ -25,11 +26,11 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
 
     // Effect for SSE connection - will run when isExpanded changes
     useEffect(() => {
-        // Clean up any existing event source first
-        if (eventSource) {
-            console.log("Cleaning up existing SSE connection");
-            eventSource.close();
-            setEventSource(null);
+        // Clean up any existing subscription first
+        if (unsubscribeRef.current) {
+            console.log("Cleaning up existing SSE subscription");
+            unsubscribeRef.current();
+            unsubscribeRef.current = null;
         }
 
         // Only set up SSE when expanded and we have devices
@@ -37,7 +38,7 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
             return;
         }
 
-        console.log("Setting up new SSE connection");
+        console.log("Setting up new SSE subscription");
         const deviceIds = initialDevices.map(device => device.id);
 
         // Set up interval to check status every 10 seconds
@@ -45,12 +46,8 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
             setRefreshKey(prev => !prev);
         }, 10000);
 
-        // Set up a new SSE connection
-        const newEventSource = getDevicesEventSource(deviceIds);
-        setEventSource(newEventSource);
-
-        newEventSource.onmessage = async (event) => {
-            const data: DeviceSSEMessage = JSON.parse(event.data);
+        // Subscribe to events for all devices
+        const unsubscribe = subscribeToDeviceEvents(deviceIds, async (data: DeviceSSEMessage) => {
             if (data.type === "connected") return;
 
             const deviceId = data.id;
@@ -73,7 +70,7 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
 
                     // Create a new sensors array with updated values
                     const updatedSensors = device.sensors ? device.sensors.map((sensor) => {
-                        const newSensor = data.sensors.find(
+                        const newSensor = data.sensors?.find(
                             (s) => s.groupSensorId === sensor.groupSensorId
                         );
 
@@ -81,7 +78,7 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
                             if (!sensor.values) {
                                 sensor.values = [];
                             }
-                            const timestamp = newSensor.value.timestamp
+                            const timestamp = newSensor.value.timestamp;
                             return {
                                 ...sensor,
                                 values: [
@@ -106,28 +103,24 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
 
                     return {
                         ...device,
+                        activeFirmwareVersion: data.activeFirmwareVersion,
                         lastValueAt: lastValueAt,
                         sensors: updatedSensors,
                         status: "ONLINE"
                     };
                 });
             });
-        };
+        });
 
-        newEventSource.onerror = () => {
-            console.error("SSE connection lost");
-            if (newEventSource) {
-                newEventSource.close();
-                setEventSource(null);
-            }
-        };
+        // Store the unsubscribe function for cleanup
+        unsubscribeRef.current = unsubscribe;
 
         return () => {
-            console.log("Cleaning up SSE connection and interval");
+            console.log("Cleaning up SSE subscription and interval");
             clearInterval(intervalId);
-            if (newEventSource) {
-                newEventSource.close();
-                setEventSource(null);
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+                unsubscribeRef.current = null;
             }
         };
     }, [isExpanded, initialDevices]);

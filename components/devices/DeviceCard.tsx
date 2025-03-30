@@ -14,8 +14,7 @@ import { formatDate } from "@/lib/utils";
 import SensorGraph from "./sensors/SensorGraph";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { getDeviceViewWithActiveSensorsBetweenAction } from "@/app/actions/deviceActions";
-import { useUser } from "@clerk/nextjs";
-import { set } from "zod";
+import DeviceMenu from "./DeviceMenu";
 
 interface DeviceCardProps {
     device: DeviceQueryResult;
@@ -80,18 +79,21 @@ export default function DeviceCard({ device, isWrapper = false, viewMode = false
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{device.name}</CardTitle>
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={device.status}
-                            initial={animationProps.initial}
-                            animate={animationProps.animate}
-                            transition={animationProps.transition}
-                        >
-                            <Badge variant={device.status === "ONLINE" ? "success" : device.status === "WAITING" ? "outline" : "destructive"}>
-                                {device.status}
-                            </Badge>
-                        </motion.div>
-                    </AnimatePresence>
+                    <div className="flex items-center translate-x-4">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={device.status}
+                                initial={animationProps.initial}
+                                animate={animationProps.animate}
+                                transition={animationProps.transition}
+                            >
+                                <Badge variant={device.status === "ONLINE" ? "success" : device.status === "WAITING" ? "outline" : "destructive"}>
+                                    {device.status}
+                                </Badge>
+                            </motion.div>
+                        </AnimatePresence>
+                        <DeviceMenu className="" deviceId={device.id} variant="dropdown" dropdownButtonVariant="ghost" dropdownButtonSize="sm"/>
+                    </div>
                 </div>
 
                 {device.status != "WAITING" ? (
@@ -194,9 +196,10 @@ function IndexDeviceCard(device: DeviceQueryResult) {
 function ViewDeviceCard(device: DeviceQueryResult) {
     const [timeRange, setTimeRange] = useState<number>(10); // Default time range value
     const [deviceData, setDeviceData] = useState<DeviceQueryResult>(device); // State to hold fetched data
-    // Convert to useState hooks to persist between renders
+
     const [oldestValue, setOldestValue] = useState<Date>(new Date(Date.now() - 10 * 60 * 1000));
     const [oldestValues, setOldestValues] = useState<Map<string, SensorValueQueryResult[]>>(new Map());
+
     useEffect(() => {
         const initialValues = new Map<string, SensorValueQueryResult[]>();
         deviceData.sensors?.forEach((sensor) => {
@@ -204,14 +207,19 @@ function ViewDeviceCard(device: DeviceQueryResult) {
         });
         setOldestValues(initialValues);
     }, []);  // Empty dependency array means this only runs once
+
     useEffect(() => {
         const fetchData = async () => {
             const timeToFetch = new Date(Date.now() - timeRange * 60 * 1000);
             if (timeToFetch.getTime() < oldestValue.getTime()) {
                 console.log("fetching new data", timeToFetch, oldestValue);
                 setOldestValue(timeToFetch);
-                const newData = await getDeviceViewWithActiveSensorsBetweenAction(deviceData.id, deviceData.view, timeToFetch, new Date(Date.now()))
-
+                const response = await getDeviceViewWithActiveSensorsBetweenAction(deviceData.id, deviceData.view, timeToFetch, new Date(Date.now()))
+                if (!response.success) {
+                    console.error("Error fetching device data:", response.message);
+                    return;
+                }
+                const newData = response.data;
                 if (newData) {
                     setDeviceData(newData.device);
                     // Create new Map to update state properly

@@ -1,3 +1,4 @@
+import { Firmware } from '@prisma/client';
 import z from 'zod';
 
 
@@ -146,10 +147,28 @@ export interface SensorSSEMessage {
     groupSensorId: string;
     value: SensorValueSSEMessage;
 }
-export type DeviceSSEType = "connected" | "new sensors";
-export interface DeviceSSEMessage {
+export type DeviceSSEType = "connected" | "new sensors" | "status";
+type BaseDeviceSSEMessage = {
     id: string;
-    type: DeviceSSEType;
-    lastValueAt: Date;
-    sensors: SensorSSEMessage[];
+
+};
+type ConnectedDeviceSSEMessage = {
+    id: string;
+    type: "connected";
 }
+type NewSensorsDeviceSSEMessage = {
+    id: string;
+    type: "new sensors";
+    lastValueAt: Date;
+    activeFirmwareVersion: string;
+    sensors: SensorSSEMessage[];
+};
+type StatusDeviceSSEMessage = {
+    id: string;
+    type: "status";
+    activeFirmwareVersion: string;
+};
+
+export type DeviceSSEMessage = ConnectedDeviceSSEMessage | NewSensorsDeviceSSEMessage | StatusDeviceSSEMessage;
+// Type of firmware except id,createdAt,updatedAt
+export type FirmwareCreate = Omit<Firmware, "id" | "createdAt" | "updatedAt">;
