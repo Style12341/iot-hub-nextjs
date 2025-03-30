@@ -53,7 +53,7 @@ export function FirmwareInformation({ deviceId, firmware }: { deviceId: string, 
             {activeFirmware?.version !== firmware.AssignedFirmware?.version && (
                 <div className="text-sm mt-2 text-yellow-300">
                     <p className="font-medium">Warning:</p>
-                    <p>Device pending update</p>
+                    {firmware.AssignedFirmware ? <p>Device pending update</p> : <p>Device is running local firmware</p>}
                 </div>)
             }
         </div>
