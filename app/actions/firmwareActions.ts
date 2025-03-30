@@ -1,7 +1,7 @@
 "use server";
 
 import { uploadFirmware, deleteFirmwareFileById, getFirmwareForDownload } from '@/lib/firmwareUtils';
-import { assignFirmwareToDevice, validateDeviceOwnership } from '@/lib/contexts/deviceContext';
+import { assignFirmwareToDevice, getDeviceFirmwareState, validateDeviceOwnership } from '@/lib/contexts/deviceContext';
 import {
     deleteFirmwareById,
     validateFirmwareOwnership,
@@ -27,7 +27,7 @@ export async function getDeviceFirmwaresAction(
     deviceId: string,
     token?: string | null,
     context?: string
-): Promise<ServerActionResponse<Firmware[]>> {
+) {
     try {
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
@@ -42,11 +42,19 @@ export async function getDeviceFirmwaresAction(
 
         // Get all firmwares for the device
         const firmwares = await getFirmwares(deviceId);
+        const deviceData = await getDeviceFirmwareState(deviceId);
+        if (!deviceData) {
+            return createErrorResponse(ServerActionReason.NOT_FOUND, 'Device not found');
+        }
+        const response = {
+            firmwares,
+            deviceData,
+        }
 
         return createSuccessResponse(
             ServerActionReason.SUCCESS,
             'Firmwares retrieved successfully',
-            firmwares
+            response
         );
     } catch (error) {
         console.error('Error fetching firmware list:', error);
@@ -251,4 +259,34 @@ export async function deleteFirmwareAction(
         console.error('Error deleting firmware:', error);
         return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to delete firmware');
     }
+}
+/**
+ * Assign firmware to a device
+ */
+export async function assignFirmwareAction(deviceId: string, firmwareId: string, token?: string | null, context?: string) {
+    try {
+        const userId = await getUserIdFromAuthOrToken(token, context);
+        if (!userId) {
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access');
+        }
+
+        // Validate user owns the device
+        const hasAccess = await validateDeviceOwnership(userId, deviceId);
+        if (!hasAccess) {
+            return createErrorResponse(ServerActionReason.FORBIDDEN, 'Access denied to this device');
+        }
+
+        // Assign firmware to device
+        const firmware = await assignFirmwareToDevice(deviceId, firmwareId);
+
+        return createSuccessResponse(
+            ServerActionReason.SUCCESS,
+            'Firmware assigned successfully',
+            firmware
+        );
+    } catch (error) {
+        console.error('Error assigning firmware:', error);
+        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to assign firmware');
+    }
+
 }

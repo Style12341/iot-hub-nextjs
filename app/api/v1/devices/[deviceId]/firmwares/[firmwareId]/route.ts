@@ -77,19 +77,19 @@ export async function DELETE(
 
         if (!result.success) {
 
-            return new Response(JSON.stringify({ error: result.message }), {
+            return new NextResponse(JSON.stringify({ error: result.message }), {
                 status: result.statusCode,
                 headers: { 'Content-Type': 'application/json' }
             });
         }
         // Return success response
-        return new Response(JSON.stringify({ message: result.message }), {
+        return new NextResponse(JSON.stringify({ message: result.message }), {
             status: result.statusCode,
             headers: { 'Content-Type': 'application/json' }
         });
     } catch (error) {
         console.error('Error in firmware delete route:', error);
-        return new Response(JSON.stringify({ error: 'Failed to delete firmware' }), {
+        return new NextResponse(JSON.stringify({ error: 'Failed to delete firmware' }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
         });

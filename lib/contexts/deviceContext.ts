@@ -525,3 +525,17 @@ export async function assignFirmwareToDevice(deviceId: string, firmwareId: strin
     });
     return device;
 }
+export async function getDeviceFirmwareState(deviceId: string) {
+    const device = await db.device.findUnique({
+        where: {
+            id: deviceId
+        },
+        select: {
+            id: true,
+            name: true,
+            AssignedFirmware: true,
+            ActiveFirmware: true,
+        }
+    });
+    return device;
+}
