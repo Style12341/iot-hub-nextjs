@@ -14,6 +14,7 @@ import { formatDate } from "@/lib/utils";
 import SensorGraph from "./sensors/SensorGraph";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { getDeviceViewWithActiveSensorsBetweenAction } from "@/app/actions/deviceActions";
+import DeviceMenu from "./DeviceMenu";
 
 interface DeviceCardProps {
     device: DeviceQueryResult;
@@ -78,18 +79,21 @@ export default function DeviceCard({ device, isWrapper = false, viewMode = false
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{device.name}</CardTitle>
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={device.status}
-                            initial={animationProps.initial}
-                            animate={animationProps.animate}
-                            transition={animationProps.transition}
-                        >
-                            <Badge variant={device.status === "ONLINE" ? "success" : device.status === "WAITING" ? "outline" : "destructive"}>
-                                {device.status}
-                            </Badge>
-                        </motion.div>
-                    </AnimatePresence>
+                    <div className="flex items-center translate-x-4">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={device.status}
+                                initial={animationProps.initial}
+                                animate={animationProps.animate}
+                                transition={animationProps.transition}
+                            >
+                                <Badge variant={device.status === "ONLINE" ? "success" : device.status === "WAITING" ? "outline" : "destructive"}>
+                                    {device.status}
+                                </Badge>
+                            </motion.div>
+                        </AnimatePresence>
+                        <DeviceMenu className="" deviceId={device.id} variant="dropdown" dropdownButtonVariant="ghost" dropdownButtonSize="sm"/>
+                    </div>
                 </div>
 
                 {device.status != "WAITING" ? (
@@ -203,7 +207,7 @@ function ViewDeviceCard(device: DeviceQueryResult) {
         });
         setOldestValues(initialValues);
     }, []);  // Empty dependency array means this only runs once
-    
+
     useEffect(() => {
         const fetchData = async () => {
             const timeToFetch = new Date(Date.now() - timeRange * 60 * 1000);
