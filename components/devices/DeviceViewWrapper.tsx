@@ -58,55 +58,56 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
                         return;
                     }
                 }
-            }
 
-            // Update the specific device with new sensor values
-            setDevices(prev => {
-                return prev.map(device => {
-                    if (device.id !== deviceId) return device;
 
-                    // Create a new sensors array with updated values
-                    const updatedSensors = device.sensors ? device.sensors.map((sensor) => {
-                        const newSensor = data.sensors?.find(
-                            (s) => s.groupSensorId === sensor.groupSensorId
-                        );
+                // Update the specific device with new sensor values
+                setDevices(prev => {
+                    return prev.map(device => {
+                        if (device.id !== deviceId) return device;
 
-                        if (data.sensors && newSensor) {
-                            if (!sensor.values) {
-                                sensor.values = [];
+                        // Create a new sensors array with updated values
+                        const updatedSensors = device.sensors ? device.sensors.map((sensor) => {
+                            const newSensor = data.sensors?.find(
+                                (s) => s.groupSensorId === sensor.groupSensorId
+                            );
+
+                            if (data.sensors && newSensor) {
+                                if (!sensor.values) {
+                                    sensor.values = [];
+                                }
+                                const timestamp = newSensor.value.timestamp;
+                                return {
+                                    ...sensor,
+                                    values: [
+                                        {
+                                            value: newSensor.value.value,
+                                            timestamp: timestamp
+                                        },
+                                        ...sensor.values,
+                                    ].slice(0, 14400)
+                                };
                             }
-                            const timestamp = newSensor.value.timestamp;
-                            return {
-                                ...sensor,
-                                values: [
-                                    {
-                                        value: newSensor.value.value,
-                                        timestamp: timestamp
-                                    },
-                                    ...sensor.values,
-                                ].slice(0, 14400)
-                            };
+                            return sensor;
+                        }) : [];
+
+                        const lastValueAt = data.lastValueAt
+                            ? new Date(data.lastValueAt)
+                            : new Date();
+
+                        if (device.status === "WAITING" || device.status === "OFFLINE") {
+                            toast.info(`Device ${device.name} is back online`);
                         }
-                        return sensor;
-                    }) : [];
 
-                    const lastValueAt = data.lastValueAt
-                        ? new Date(data.lastValueAt)
-                        : new Date();
-
-                    if (device.status === "WAITING" || device.status === "OFFLINE") {
-                        toast.info(`Device ${device.name} is back online`);
-                    }
-
-                    return {
-                        ...device,
-                        activeFirmwareVersion: data.activeFirmwareVersion,
-                        lastValueAt: lastValueAt,
-                        sensors: updatedSensors,
-                        status: "ONLINE"
-                    };
+                        return {
+                            ...device,
+                            activeFirmwareVersion: data.activeFirmwareVersion,
+                            lastValueAt: lastValueAt,
+                            sensors: updatedSensors,
+                            status: "ONLINE"
+                        };
+                    });
                 });
-            });
+            }
         });
 
         // Store the unsubscribe function for cleanup

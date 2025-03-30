@@ -109,17 +109,6 @@ model View {
   @@unique([name, userId])
 }
 
-model View {
-  id             String   @id @default(uuid())
-  name           String
-  User           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId         String
-  Devices        Device[]
-  DefaultForUser User?    @relation("DefaultView")
-
-  @@unique([name, userId])
-}
-
 model Sensor {
   id          String          @id @default(uuid())
   name        String

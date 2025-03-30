@@ -109,7 +109,9 @@ export async function getFirmwareForDownload(firmwareId: string): Promise<Downlo
         if (!firmware) {
             throw new Error('Firmware not found');
         }
-
+        if (firmware.embedded) {
+            throw new Error('Firmware is embedded, cannot be downloaded');
+        }
         // Get file from Google Cloud Storage using stored path directly
         const file = bucket.file(firmware.fileUrl);
 
@@ -149,6 +151,9 @@ export async function generateFirmwarePresignedUrl(
 
         if (!firmware) {
             throw new Error('Firmware not found');
+        }
+        if (firmware.embedded) {
+            throw new Error('Firmware is embedded, cannot be downloaded');
         }
 
         // Get file from Google Cloud Storage using stored path directly
@@ -190,7 +195,9 @@ export async function deleteFirmwareFileById(firmwareId: string): Promise<void> 
         if (!firmware) {
             throw new Error('Firmware not found');
         }
-
+        if (firmware.embedded) {
+            throw new Error('Firmware is embedded, cannot be deleted');
+        }
         // Get file from Google Cloud Storage using stored path directly
         const file = bucket.file(firmware.fileUrl);
 
