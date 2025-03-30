@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getDeviceWithActiveSensorsAction } from "@/app/actions/deviceActions";
+import { getDeviceActiveViewWithActiveSensorsBetweenAction, getDeviceWithActiveSensorsAction } from "@/app/actions/deviceActions";
 import { notFound } from "next/navigation";
 import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
 import DeviceMenu from "@/components/devices/DeviceMenu";
@@ -14,14 +14,14 @@ export default async function DeviceDetailsPage({
     params: Promise<{ deviceId: string }>
 }) {
     const { deviceId } = await params;
-    const deviceResult = await getDeviceWithActiveSensorsAction(deviceId);
+    const deviceResult = await getDeviceActiveViewWithActiveSensorsBetweenAction(deviceId, new Date(Date.now() - 10 * 60 * 1000), new Date(Date.now()));
     const firmwareData = await getDeviceFirmwareState(deviceId);
 
     if (!deviceResult.success || !deviceResult.data || !firmwareData) {
         return notFound();
     }
-
     const device = deviceResult.data.device;
+    console.log(device)
 
     return (
         <div className="space-y-6">

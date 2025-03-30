@@ -113,7 +113,17 @@ export default function DeviceDetailGraphs({
                     const allValues = oldestValues.get(sensor.id) || [];
                     // Filter values based on selected time range
                     const filteredValues = allValues.filter(value => {
-                        return new Date(value.timestamp + "Z").getTime() >= timeToFetch.getTime()
+                        // Add Z only if timestamp is not already in ISO format
+                        // This is to ensure compatibility with the Date constructor
+                        // and avoid issues with time zones
+                        if (typeof value.timestamp === "string" && !value.timestamp.endsWith("Z")) {
+                            value.timestamp = new Date(value.timestamp + "Z")
+                        } else {
+                            value.timestamp = new Date(value.timestamp)
+                        }
+
+
+                        return value.timestamp.getTime() >= timeToFetch.getTime()
                     }
                     );
 
@@ -148,7 +158,7 @@ export default function DeviceDetailGraphs({
             if (data.type === "new sensors" && data.sensors && data.sensors.length > 0) {
                 setDeviceData(prev => {
                     // Create updated device data
-                    const updatedDevice = { ...prev};
+                    const updatedDevice = { ...prev };
 
                     // Update status and lastValueAt
                     updatedDevice.status = "ONLINE";

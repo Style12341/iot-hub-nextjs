@@ -553,3 +553,15 @@ export async function getDeviceFirmwareState(deviceId: string) {
     });
     return device;
 }
+export async function getDeviceActiveView(userId: string, deviceId: string) {
+    const device = await db.device.findUnique({
+        where: {
+            userId,
+            id: deviceId
+        },
+        select: {
+            View: true,
+        }
+    });
+    return device?.View
+}

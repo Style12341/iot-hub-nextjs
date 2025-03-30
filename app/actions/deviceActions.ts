@@ -1,7 +1,7 @@
 "use server";
 
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
-import { createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors } from "@/lib/contexts/deviceContext";
+import { createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors, getDeviceActiveView } from "@/lib/contexts/deviceContext";
 import { getAllUserViews } from "@/lib/contexts/userContext";
 import { CreateDeviceFormData, createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
@@ -135,5 +135,18 @@ export async function getDeviceViewWithActiveSensorsBetweenAction(deviceId: stri
         );
     }
     const res = await getDeviceViewWithActiveSensorsBetween(userId, deviceId, view, startDate, endDate);
+    return createSuccessResponse(ServerActionReason.SUCCESS, "Device view retrieved successfully", res);
+}
+export async function getDeviceActiveViewWithActiveSensorsBetweenAction(deviceId: string, startDate: Date, endDate: Date, token?: string | null, context?: string) {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+        return createErrorResponse(
+            ServerActionReason.UNAUTHORIZED,
+            "Unauthorized access"
+        );
+    }
+    const view = await getDeviceActiveView(userId, deviceId);
+    const name = view?.name ?? "Default";
+    const res = await getDeviceViewWithActiveSensorsBetween(userId, deviceId, name, startDate, endDate);
     return createSuccessResponse(ServerActionReason.SUCCESS, "Device view retrieved successfully", res);
 }
