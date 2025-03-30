@@ -1,14 +1,10 @@
 import DeviceForm from "@/components/devices/DeviceForm";
 import { createDeviceAction } from "@/app/actions/deviceActions";
-import { PrismaClient } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { createCategoryAction } from "@/app/actions/categoryActions";
-import CategoryDialog from "@/components/categories/CategoryDialog";
 import { getUserCategories } from "@/lib/contexts/categoriesContext";
 import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
-
-const prisma = new PrismaClient();
 
 export default async function NewDevicePage() {
     const { userId } = await auth();

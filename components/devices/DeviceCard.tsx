@@ -210,8 +210,12 @@ function ViewDeviceCard(device: DeviceQueryResult) {
             if (timeToFetch.getTime() < oldestValue.getTime()) {
                 console.log("fetching new data", timeToFetch, oldestValue);
                 setOldestValue(timeToFetch);
-                const newData = await getDeviceViewWithActiveSensorsBetweenAction(deviceData.id, deviceData.view, timeToFetch, new Date(Date.now()))
-
+                const response = await getDeviceViewWithActiveSensorsBetweenAction(deviceData.id, deviceData.view, timeToFetch, new Date(Date.now()))
+                if (!response.success) {
+                    console.error("Error fetching device data:", response.message);
+                    return;
+                }
+                const newData = response.data;
                 if (newData) {
                     setDeviceData(newData.device);
                     // Create new Map to update state properly

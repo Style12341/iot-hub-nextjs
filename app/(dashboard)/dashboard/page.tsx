@@ -4,28 +4,22 @@ import { getSensorsQtyAction } from "@/app/actions/sensorActions";
 import { getSensorValuesMetricBetween } from "@/app/actions/userActions";
 import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
 import Metric from "@/components/dashboard/Metric";
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { LayoutGrid, Cpu, Database } from "lucide-react";
 
-async function metricFetcherAction(userId: string) {
-    "use server"
-    return await getSensorValuesMetricBetween(userId, new Date(Date.now() - 1 * 60000), new Date())
-}
 export default async function Dashboard() {
-    const { userId } = await auth();
-    if (!userId) {
-        return redirect("/login");
-    }
-    const [devicesQtyAgg, sensorsQty, sensorValueMetrics] = await Promise.all([
-        getDevicesQtyAction(userId),
-        getSensorsQtyAction(userId),
+    const [devicesQtyRes, sensorsQtyRes, sensorValueMetricsRes] = await Promise.all([
+        getDevicesQtyAction(),
+        getSensorsQtyAction(),
         //Get metric from now minus 5 minutes to now
-        getSensorValuesMetricBetween(userId, new Date(Date.now() - 5 * 60000), new Date())
+        getSensorValuesMetricBetween(new Date(Date.now() - 5 * 60000), new Date())
     ]);
-    if (sensorValueMetrics === null || devicesQtyAgg === null || sensorsQty === null) {
+    if (!devicesQtyRes.success || !sensorsQtyRes.success || !sensorValueMetricsRes.success) {
         return redirect("/login");
     }
+    const devicesQtyAgg = devicesQtyRes.data;
+    const sensorsQty = sensorsQtyRes.data;
+    const sensorValueMetrics = sensorValueMetricsRes.data;
     let waitingDevicesQty = 0;
     let offlineDevicesQty = 0;
     let onlineDevicesQty = 0;

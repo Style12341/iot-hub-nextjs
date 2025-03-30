@@ -1,11 +1,16 @@
 "use server";
 
+import getUserIdFromAuthOrToken from "@/lib/authUtils";
 import { createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors } from "@/lib/contexts/deviceContext";
 import { getAllUserViews } from "@/lib/contexts/userContext";
 import { CreateDeviceFormData, createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
+/**
+ * Creates a new device given the formdata
+ * @param data The form data to create the device
+ */
 export async function createDeviceAction(data: CreateDeviceFormData) {
     try {
         // Server side validations
@@ -36,52 +41,99 @@ export async function createDeviceAction(data: CreateDeviceFormData) {
         }
     }
 }
-export async function getDevicesWithActiveSensorsAction(userId: string, page: number = 1) {
-    const { userId: currentUserId } = await auth();
-    if (!currentUserId) {
-        return null;
-    }
-    return await getDevicesWithActiveSensors(userId, page);
-}
-export async function getDevicesQtyAction(userId: string) {
-    const { userId: currentUserId } = await auth();
-    if (currentUserId !== userId) {
-        return null
-    }
-
-    return await getDevicesQty(userId);
-}
-export async function getAllUserViewsAction() {
-    const { userId: currentUserId } = await auth();
-    if (!currentUserId) {
-        return null;
-    }
-    return await getAllUserViews(currentUserId);
-}
-export async function getDeviceWithActiveSensorsAction(deviceId: string) {
-    const { userId: currentUserId } = await auth();
-    if (!currentUserId) {
+/**
+ * Gets all devices for the logged in user or the given token.
+ * Returns a paginated list of devices with the active sensors of the active group
+ * @param page The page number to retrieve (default: 1)
+ * @param token The token to use for authentication (optional)
+ * @param context The context to use for authentication (optional)
+ * @returns A paginated list of devices with the active sensors of the active group
+ */
+export async function getDevicesWithActiveSensorsAction(page: number = 1, token?: string | null, context?: string) {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
         return createErrorResponse(
             ServerActionReason.UNAUTHORIZED,
-            "You must be logged in to view this device"
+            "Unauthorized access"
         );
     }
-    const device = await getDeviceWithActiveSensors(currentUserId, deviceId);
+    const res = await getDevicesWithActiveSensors(userId, page);
+    return createSuccessResponse(ServerActionReason.SUCCESS, "Devices retrieved successfully", res);
+}
+/**
+ * Gets the quantity of devices for the logged in user or the given token.
+ */
+export async function getDevicesQtyAction(token?: string | null, context?: string) {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+        return createErrorResponse(
+            ServerActionReason.UNAUTHORIZED,
+            "Unauthorized access"
+        );
+    }
+    const res = await getDevicesQty(userId);
+
+    return createSuccessResponse(ServerActionReason.SUCCESS, "Devices quantity retrieved successfully", res);
+}
+/**
+ * Get all views for the logged in user or the given token.
+ * Returns the views name and device count
+ */
+export async function getAllUserViewsAction(token?: string | null, context?: string) {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+        return createErrorResponse(
+            ServerActionReason.UNAUTHORIZED,
+            "Unauthorized access"
+        );
+    }
+    const res = await getAllUserViews(userId);
+    return createSuccessResponse(ServerActionReason.SUCCESS, "Views retrieved successfully", res);
+}
+/**
+ * Gets the device with the given id for the logged in user or the given token.
+ * Returns the device with the active sensors of the active group
+ * @param deviceId The id of the device to retrieve
+ * @param token The token to use for authentication (optional)
+ * @param context The context to use for authentication (optional)
+ */
+export async function getDeviceWithActiveSensorsAction(deviceId: string, token?: string | null, context?: string) {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+        return createErrorResponse(
+            ServerActionReason.UNAUTHORIZED,
+            "Unauthorized access"
+        );
+    }
+    const device = await getDeviceWithActiveSensors(userId, deviceId);
 
     return createSuccessResponse(ServerActionReason.SUCCESS, "Device retrieved successfully", device);
 }
-export async function getDevicesViewWithActiveSensorsBetweenAction(view: string, startDate: Date, endDate: Date) {
-    const { userId: currentUserId } = await auth();
-    if (!currentUserId) {
-        return null;
+/**
+ * Gets the devices of a specific view with the active sensors of the active group for the logged in user or the given token.
+ */
+export async function getDevicesViewWithActiveSensorsBetweenAction(view: string, startDate: Date, endDate: Date, token?: string | null, context?: string) {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+        return createErrorResponse(
+            ServerActionReason.UNAUTHORIZED,
+            "Unauthorized access"
+        );
     }
-    return await getDevicesViewWithActiveSensorsBetween(currentUserId, view, startDate, endDate);
+    const res = await getDevicesViewWithActiveSensorsBetween(userId, view, startDate, endDate);
+    return createSuccessResponse(ServerActionReason.SUCCESS, "Devices view retrieved successfully", res);
 }
-export async function getDeviceViewWithActiveSensorsBetweenAction(deviceId: string, view: string, startDate: Date, endDate: Date) {
-    const { userId: currentUserId } = await auth();
-    if (!currentUserId) {
-        return null;
+/**
+ * Gets the device view with the active sensors of the active group for the logged in user or the given token.
+ */
+export async function getDeviceViewWithActiveSensorsBetweenAction(deviceId: string, view: string, startDate: Date, endDate: Date, token?: string | null, context?: string) {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+        return createErrorResponse(
+            ServerActionReason.UNAUTHORIZED,
+            "Unauthorized access"
+        );
     }
-
-    return await getDeviceViewWithActiveSensorsBetween(currentUserId, deviceId, view, startDate, endDate);
+    const res = await getDeviceViewWithActiveSensorsBetween(userId, deviceId, view, startDate, endDate);
+    return createSuccessResponse(ServerActionReason.SUCCESS, "Device view retrieved successfully", res);
 }

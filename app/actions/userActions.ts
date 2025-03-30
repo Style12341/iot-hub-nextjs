@@ -1,13 +1,18 @@
 "use server"
 
+import getUserIdFromAuthOrToken from "@/lib/authUtils";
 import { getMetricValueBetween } from "@/lib/contexts/metricsContext"
-import { auth } from "@clerk/nextjs/server";
+import { createErrorResponse, createSuccessResponse, ServerActionReason } from "@/types/types";
 
 
-export async function getSensorValuesMetricBetween(passedUser: string, start: Date, end: Date) {
-    const { userId } = await auth();
-    if (userId !== passedUser) {
-        return null
+export async function getSensorValuesMetricBetween(start: Date, end: Date, token?: string | null, context?: string) {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+        return createErrorResponse(
+            ServerActionReason.UNAUTHORIZED,
+            "Unauthorized access"
+        );
     }
-    return await getMetricValueBetween("SENSOR_VALUES_PER_MINUTE", userId, start, end);
+    const res = await getMetricValueBetween("SENSOR_VALUES_PER_MINUTE", userId, start, end);
+    return createSuccessResponse(ServerActionReason.SUCCESS, "Sensor values metric retrieved successfully", res);
 }
