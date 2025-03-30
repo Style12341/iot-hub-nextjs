@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
 
 // Define the schema for firmware upload
@@ -19,17 +20,20 @@ const firmwareUploadSchema = z.object({
         .regex(/^\d+\.\d+\.\d+$/, "Version must be in format x.y.z (e.g. 1.0.0)"),
     file: z.instanceof(File)
         .refine(file => file.size > 0, "File is required")
-        .refine(file => file.size <= 10 * 1024 * 1024, "File must be less than 10MB")
+        .refine(file => file.type === "application/octet-stream", "File must be a binary file")
+        .refine(file => file.size <= 10 * 1024 * 1024, "File must be less than 10MB"),
+    autoAssign: z.boolean().default(false)
 });
 
 type FirmwareUploadFormValues = z.infer<typeof firmwareUploadSchema>;
 
 interface FirmwareUploadFormProps {
     deviceId: string;
+    currentAssignedFirmwareVersion?: string;
     onUploadSuccess?: (firmware: any) => void;
 }
 
-export function FirmwareUploadForm({ deviceId, onUploadSuccess }: FirmwareUploadFormProps) {
+export function FirmwareUploadForm({ deviceId, currentAssignedFirmwareVersion, onUploadSuccess }: FirmwareUploadFormProps) {
     const [isUploading, setIsUploading] = useState(false);
     const [selectedFileName, setSelectedFileName] = useState<string>("");
 
@@ -39,6 +43,7 @@ export function FirmwareUploadForm({ deviceId, onUploadSuccess }: FirmwareUpload
         defaultValues: {
             description: "",
             version: "",
+            autoAssign: false
         }
     });
 
@@ -51,6 +56,7 @@ export function FirmwareUploadForm({ deviceId, onUploadSuccess }: FirmwareUpload
             formData.append("file", data.file);
             formData.append("description", data.description);
             formData.append("version", data.version);
+            formData.append("autoAssign", data.autoAssign.toString());
 
             // Make API request to upload firmware
             const response = await fetch(`/api/v1/devices/${deviceId}/firmwares`, {
@@ -66,13 +72,14 @@ export function FirmwareUploadForm({ deviceId, onUploadSuccess }: FirmwareUpload
 
             // Show success message
             toast.info("Upload successful", {
-                description: `Firmware ${result.version} uploaded successfully!`,
+                description: `Firmware ${result.version} uploaded successfully!${data.autoAssign ? ' Device firmware assignment updated.' : ''}`,
             })
 
             // Reset form after successful upload
             form.reset({
                 description: "",
                 version: "",
+                autoAssign: false
             });
             setSelectedFileName("");
 
@@ -137,7 +144,14 @@ export function FirmwareUploadForm({ deviceId, onUploadSuccess }: FirmwareUpload
                         name="version"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Version</FormLabel>
+                                <div className="flex justify-between items-center">
+                                    <FormLabel>Version</FormLabel>
+                                    {
+                                        <span className="text-xs text-muted-foreground">
+                                            {currentAssignedFirmwareVersion === undefined ? "" : "Current:"} <span className="font-medium">{currentAssignedFirmwareVersion ?? "No version assigned"}</span>
+                                        </span>
+                                    }
+                                </div>
                                 <FormControl>
                                     <Input
                                         placeholder="1.0.0"
@@ -149,6 +163,30 @@ export function FirmwareUploadForm({ deviceId, onUploadSuccess }: FirmwareUpload
                                     Use semantic versioning (e.g., 1.0.0)
                                 </FormDescription>
                                 <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="autoAssign"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center gap-5 rounded-md border p-4">
+                                <FormControl className="flex items-center pt-0.5">
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        disabled={isUploading}
+                                    />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                    <FormLabel>
+                                        Automatically assign to device
+                                    </FormLabel>
+                                    <FormDescription>
+                                        The device will be configured to use this firmware immediately after upload
+                                    </FormDescription>
+                                </div>
                             </FormItem>
                         )}
                     />

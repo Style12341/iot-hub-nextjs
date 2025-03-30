@@ -146,7 +146,14 @@ export const getDevice = async (id: string) => {
             },
             Groups: true,
             User: true,
-            View: true
+            View: true,
+            AssignedFirmware: {
+                select: {
+                    id: true,
+                    version: true,
+                    description: true,
+                }
+            }
         }
     });
     if (!device) {
@@ -502,4 +509,19 @@ export async function updateDevicesStatus(userId: string) {
         WHERE "userId" = ${userId}
     `;
     return
+}
+export async function assignFirmwareToDevice(deviceId: string, firmwareId: string) {
+    const device = await db.device.update({
+        where: {
+            id: deviceId
+        },
+        data: {
+            AssignedFirmware: {
+                connect: {
+                    id: firmwareId
+                }
+            }
+        }
+    });
+    return device;
 }

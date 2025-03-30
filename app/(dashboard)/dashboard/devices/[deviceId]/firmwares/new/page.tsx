@@ -36,6 +36,7 @@ export default async function NewFirmwarePage({ params }: { params: Promise<{ de
                 <Suspense fallback={<div>Loading form...</div>}>
                     <FirmwareUploadForm
                         deviceId={deviceId}
+                        currentAssignedFirmwareVersion={device.AssignedFirmware?.version}
                     />
                 </Suspense>
             </div>

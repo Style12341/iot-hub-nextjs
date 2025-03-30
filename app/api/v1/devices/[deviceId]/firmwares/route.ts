@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadFirmware } from '@/lib/firmwareUtils';
-import { validateDeviceOwnership } from '@/lib/contexts/deviceContext';
+import { assignFirmwareToDevice, validateDeviceOwnership } from '@/lib/contexts/deviceContext';
 import { getDeviceFirmwares, getFirmwareByDeviceAndVersion } from '@/lib/contexts/firmwareContext';
 import { auth } from '@clerk/nextjs/server';
 
@@ -76,6 +76,7 @@ export async function POST(
         const file = formData.get('file') as File;
         const description = formData.get('description') as string;
         const version = formData.get('version') as string;
+        const autoAssign = formData.get('autoAssign') === 'true';
 
         // Validate required fields
         if (!file || !description || !version) {
@@ -115,7 +116,7 @@ export async function POST(
             version,
             deviceId,
         });
-
+        await assignFirmwareToDevice(deviceId, firmware.id);
         return NextResponse.json(firmware, { status: 201 });
     } catch (error) {
         console.error('Error uploading firmware:', error);
