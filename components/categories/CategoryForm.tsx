@@ -30,16 +30,14 @@ const colorPresets = [
 
 type CategoryFormProps = {
     categoryAction: (formData: CreateCategoryFormData) => Promise<ServerActionResponse>;
-    addCategory?: (category: SensorCategory) => void;
-    onUpdate?: (category: SensorCategory) => void;
+    onSubmit?: (category: SensorCategory) => void;
     initialData?: SensorCategory | null; // New prop for edit mode
     redirect?: boolean;
     formAttributes?: React.FormHTMLAttributes<HTMLFormElement>; // For dialog integration
 }
 
 export default function CategoryForm({
-    addCategory,
-    onUpdate,
+    onSubmit,
     categoryAction,
     initialData = null, // Default to null (create mode)
     redirect: standalone = false,
@@ -113,16 +111,10 @@ export default function CategoryForm({
                         formMethods.reset(); // Only reset in create mode
                     }
 
-                    if (typeof addCategory === "function" && !isEditMode && result.data) {
+                    if (typeof onSubmit === "function" && result.data) {
                         const category = result.data as SensorCategory;
-                        addCategory(category);
+                        onSubmit(category);
                     }
-
-                    if (typeof onUpdate === "function" && isEditMode && result.data) {
-                        const category = result.data as SensorCategory;
-                        onUpdate(category);
-                    }
-
                     if (standalone) {
                         router.push("/dashboard/categories");
                     }

@@ -15,20 +15,20 @@ import ViewForm from "./ViewForm";
 import { DeviceWithViewPaginated } from "@/lib/contexts/deviceContext";
 
 type ViewDialogProps = {
-    addView: (view: View) => void,
+    onSubmit: (view: View) => void,
     buttonVariant?: "outline" | "ghost" | "link",
     buttonSize?: "default" | "sm" | "lg" | "icon",
 };
 
 export default function ViewDialog({
-    addView,
+    onSubmit,
     buttonVariant = "outline",
     buttonSize = "icon"
 }: ViewDialogProps) {
     const [open, setOpen] = useState(false);
 
     const handleAddView = (view: View) => {
-        addView(view);
+        onSubmit(view);
         setOpen(false); // Close dialog after successful creation
     };
 
@@ -51,7 +51,7 @@ export default function ViewDialog({
                     {/* Pass a custom viewAction that handles the dialog state */}
                     <ViewFormWrapper
                         create={true}
-                        addView={handleAddView}
+                        onSubmit={handleAddView}
                     />
                 </div>
             </DialogContent>
@@ -60,9 +60,9 @@ export default function ViewDialog({
 }
 
 // Wrapper component to prevent form nesting issues
-function ViewFormWrapper({create, addView }: {
+function ViewFormWrapper({ create, onSubmit }: {
     create: boolean;
-    addView: (view: View) => void;
+    onSubmit: (view: View) => void;
 }) {
     // Use state to control if the form is shown - prevents form nesting issues
     const [formKey] = useState(Math.random());
@@ -71,10 +71,10 @@ function ViewFormWrapper({create, addView }: {
         <div key={formKey} className="view-form-wrapper">
             <ViewForm
                 create={create}
-                addView={addView}
+                onSubmit={onSubmit}
                 // Override the form onSubmit to prevent bubbling up
                 formAttributes={{ onSubmit: e => e.stopPropagation() }}
-                // Pass the viewAction
+            // Pass the viewAction
             />
         </div>
     );

@@ -16,13 +16,13 @@ type CategoryDialogProps =
     | {
         categoryAction: (formData: CreateCategoryFormData) => Promise<ServerActionResponse>,
         create: true,
-        addCategory?: (category: SensorCategory) => void
+        onSubmit?: (category: SensorCategory) => void
     }
     |
     {
         categoryAction: (formData: CreateCategoryFormData) => Promise<ServerActionResponse>,
         create: false; categoryId: string,
-        addCategory?: (category: SensorCategory) => void
+        onSubmit?: (category: SensorCategory) => void
     };
 
 export default function CategoryDialog(props: CategoryDialogProps) {

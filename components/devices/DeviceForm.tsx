@@ -94,7 +94,7 @@ export default function DeviceForm({ views, categories, deviceAction, categoryAc
         <>
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-2xl font-bold mb-6">Create New Device</h1>
-                <CategoryDialog create={true} categoryAction={categoryAction} addCategory={addCategory} />
+                <CategoryDialog create={true} categoryAction={categoryAction} onSubmit={addCategory} />
             </div>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
@@ -164,7 +164,7 @@ export default function DeviceForm({ views, categories, deviceAction, categoryAc
                                             </SelectContent>
                                         </Select>
                                         <ViewDialog
-                                            addView={addView}
+                                            onSubmit={addView}
                                             buttonVariant="ghost"
                                         />
                                     </div>

@@ -19,7 +19,7 @@ import { Badge } from "../ui/badge";
 import { getDevicesListWithDataAction } from "@/app/actions/deviceActions";
 
 type ViewFormProps = {
-    addView?: (view: View) => void;
+    onSubmit?: (view: View) => void;
     create: boolean;
     redirect?: boolean;
     formAttributes?: React.FormHTMLAttributes<HTMLFormElement>; // Add this line
@@ -27,7 +27,7 @@ type ViewFormProps = {
 };
 
 export default function ViewForm({
-    addView,
+    onSubmit,
     create,
     redirect,
     formAttributes = {}, // Default to empty object
@@ -78,9 +78,9 @@ export default function ViewForm({
                 if (result.success) {
                     toast.success("View created successfully");
                     formMethods.reset();
-                    if (typeof addView === "function" && result.data) {
+                    if (typeof onSubmit === "function" && result.data) {
                         const view = result.data as View;
-                        addView(view);
+                        onSubmit(view);
                     }
                     if (redirect)
                         router.push("/dashboard/views");
