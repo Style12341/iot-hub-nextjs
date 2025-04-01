@@ -31,21 +31,34 @@ const colorPresets = [
 type CategoryFormProps = {
     categoryAction: (formData: CreateCategoryFormData) => Promise<ServerActionResponse>;
     addCategory?: (category: SensorCategory) => void;
-    create: boolean;
+    onUpdate?: (category: SensorCategory) => void;
+    initialData?: SensorCategory | null; // New prop for edit mode
     redirect?: boolean;
+    formAttributes?: React.FormHTMLAttributes<HTMLFormElement>; // For dialog integration
 }
 
-export default function CategoryForm({ addCategory, categoryAction, create, redirect: standalone = false }: CategoryFormProps) {
+export default function CategoryForm({
+    addCategory,
+    onUpdate,
+    categoryAction,
+    initialData = null, // Default to null (create mode)
+    redirect: standalone = false,
+    formAttributes = {}
+}: CategoryFormProps) {
     const { user } = useUser();
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const userId = user?.id;
+
+    // Determine if we're in edit mode
+    const isEditMode = !!initialData;
+
     const formMethods = useForm<CreateCategoryFormData>({
         resolver: zodResolver(createCategoryFormSchema),
         defaultValues: {
-            name: "",
+            name: initialData?.name || "",
             userId: userId || "default",
-            color: "#75C2C6" // Default tealish color from schema
+            color: initialData?.color || "#75C2C6" // Use existing color or default
         }
     });
 
@@ -60,22 +73,62 @@ export default function CategoryForm({ addCategory, categoryAction, create, redi
         setCustomColor(currentColor);
     }, [currentColor]);
 
+    // If userId changes, update the form value
+    useEffect(() => {
+        if (userId) {
+            formMethods.setValue("userId", userId);
+        }
+    }, [userId, formMethods]);
+
+    // If initialData changes (e.g. in a dialog), update the form
+    useEffect(() => {
+        if (initialData) {
+            formMethods.reset({
+                name: initialData.name,
+                userId: initialData.userId || userId || "default",
+                color: initialData.color || "#75C2C6"
+            });
+            setCustomColor(initialData.color || "#75C2C6");
+        }
+    }, [initialData, formMethods, userId]);
+
     function handleSubmit(data: CreateCategoryFormData) {
         startTransition(async () => {
             try {
-                const result = await categoryAction(data);
+                // If in edit mode, add the category ID to the data
+                const submitData = isEditMode
+                    ? { ...data, id: initialData.id }
+                    : data;
+
+                const result = await categoryAction(submitData);
+
                 if (result.success) {
-                    toast.success("Category created successfully");
-                    formMethods.reset();
-                    if (typeof addCategory === "function") {
-                        const category = (await result.data) as SensorCategory;
+                    const successMessage = isEditMode
+                        ? "Category updated successfully"
+                        : "Category created successfully";
+
+                    toast.success(successMessage);
+
+                    if (!isEditMode) {
+                        formMethods.reset(); // Only reset in create mode
+                    }
+
+                    if (typeof addCategory === "function" && !isEditMode && result.data) {
+                        const category = result.data as SensorCategory;
                         addCategory(category);
                     }
+
+                    if (typeof onUpdate === "function" && isEditMode && result.data) {
+                        const category = result.data as SensorCategory;
+                        onUpdate(category);
+                    }
+
                     if (standalone) {
                         router.push("/dashboard/categories");
                     }
                 } else {
-                    toast.error("Failed to create category", { description: result.message });
+                    const actionType = isEditMode ? "update" : "create";
+                    toast.error(`Failed to ${actionType} category`, { description: result.message });
                 }
             } catch (error) {
                 toast.error("An unexpected error occurred", {
@@ -87,9 +140,22 @@ export default function CategoryForm({ addCategory, categoryAction, create, redi
 
     return (
         <FormProvider {...formMethods}>
-            <form onSubmit={formMethods.handleSubmit(handleSubmit)} className="space-y-8">
+            <form
+                {...formAttributes}
+                onSubmit={(e) => {
+                    // Handle custom onSubmit from formAttributes if provided
+                    if (formAttributes.onSubmit) formAttributes.onSubmit(e);
+                    if (!e.defaultPrevented) formMethods.handleSubmit(handleSubmit)(e);
+                }}
+                className="space-y-8"
+            >
                 {/* Hidden form field for userID */}
                 <input type="hidden" {...formMethods.register("userId")} />
+
+                {/* Only include ID field if editing */}
+                {isEditMode && initialData?.id && (
+                    <input type="hidden" name="id" value={initialData.id} />
+                )}
 
                 <FormField
                     control={formMethods.control}
@@ -203,7 +269,10 @@ export default function CategoryForm({ addCategory, categoryAction, create, redi
                 />
 
                 <Button type="submit" disabled={isPending}>
-                    {isPending ? "Creating..." : "Create Category"}
+                    {isPending
+                        ? isEditMode ? "Updating..." : "Creating..."
+                        : isEditMode ? "Update Category" : "Create Category"
+                    }
                 </Button>
             </form>
         </FormProvider>

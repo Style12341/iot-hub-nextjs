@@ -13,7 +13,7 @@ export default async function NewCategoryForm() {
                 page="New"
             />
             <div className="container mx-auto py-8 px-8">
-                <CategoryForm create categoryAction={createCategoryAction} redirect />
+                <CategoryForm categoryAction={createCategoryAction} redirect />
             </div>
         </>
 
