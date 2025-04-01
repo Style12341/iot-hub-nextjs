@@ -16,7 +16,6 @@ import {
 } from "chart.js";
 import 'chartjs-adapter-date-fns';
 import { SensorQueryResult } from "@/lib/contexts/deviceContext";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate } from "@/lib/utils";
 import { ChartColorSet, chartColors, generateColorSetFromBase, getLineDatasetStyle, getStandardChartOptions, getTimeScaleOptions } from "@/lib/configs/chartConfig";
 
@@ -37,12 +36,12 @@ ChartJS.register(
 interface SensorGraphProps {
     sensor: SensorQueryResult;
     className?: string;
-    color?: string; // Optional color override
+    color: string; // Optional color override
 }
 
 export default function SensorGraph({ sensor, className = "", color }: SensorGraphProps) {
     const [values, setValues] = useState(sensor.values || []);
-
+    console.log("Color:", color);
     // Determine color set to use
     const colorSet: ChartColorSet = color
         ? generateColorSetFromBase(color)
