@@ -51,6 +51,10 @@ const data = {
                     url: "/dashboard/devices/new",
                 },
                 {
+                    title: "Categories",
+                    url: "/dashboard/categories",
+                },
+                {
                     title: "New Category",
                     url: "/dashboard/categories/new",
                 }

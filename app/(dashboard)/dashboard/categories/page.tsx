@@ -3,6 +3,7 @@ import { getCategoriesWithSensorCountAction } from "@/app/actions/categoryAction
 import { Separator } from "@/components/ui/separator";
 import CategoryDialog from "@/components/categories/CategoryDialog";
 import { CategoriesClient } from "./pageClient";
+import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
 
 export default async function CategoriesPage() {
     const response = await getCategoriesWithSensorCountAction();
@@ -21,24 +22,30 @@ export default async function CategoriesPage() {
     const categories = response.data;
 
     return (
-        <div className="container py-6 space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
-                    <p className="text-muted-foreground">
-                        Manage your sensor categories to organize your data.
-                    </p>
+        <>
+            <BreadcrumbHandler
+                breadcrumbs={[{ href: '/dashboard', name: 'Dashboard' }]}
+                page="Categories"
+            />
+            <div className="container py-6 space-y-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
+                        <p className="text-muted-foreground">
+                            Manage your sensor categories to organize your data.
+                        </p>
+                    </div>
+                    <CategoryDialog
+                        create={true}
+                        redirect={true}
+                    />
                 </div>
-                <CategoryDialog
-                    create={true}
-                    redirect={true}
-                />
+
+                <Separator />
+
+                <CategoriesClient initialCategories={categories} />
             </div>
-
-            <Separator />
-
-            <CategoriesClient initialCategories={categories} />
-        </div>
+        </>
     );
 }
 
