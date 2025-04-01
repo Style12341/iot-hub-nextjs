@@ -128,6 +128,9 @@ export type CreateDeviceFormData = z.infer<typeof createDeviceFormSchema>;
 export const createCategoryFormSchema = z.object({
     userId: z.string().nonempty({ message: "User ID is required" }),
     name: z.string().nonempty({ message: "Category name is required" }),
+    color: z.string().nonempty({ message: "Category color is required" }).refine((val) => {
+        return /^#[0-9A-F]{6}$/i.test(val);
+    }).optional(),
 });
 export type CreateCategoryFormData = z.infer<typeof createCategoryFormSchema>;
 

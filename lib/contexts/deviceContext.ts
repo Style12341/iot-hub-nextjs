@@ -12,6 +12,7 @@ export interface SensorQueryResult {
     name: string;
     unit: string;
     category?: string;
+    categoryColor?: string;
     groupSensorId: string;
     values: SensorValueQueryResult[];
 };
@@ -199,6 +200,7 @@ export const getDevicesWithActiveSensors = async (userId: string, page: number =
                         'name', s."name",
                         'unit', s."unit",
                         'category', c."name",
+                        'color',c."color",
                         'values', (
                             SELECT jsonb_agg(
                                 jsonb_build_object(
@@ -264,6 +266,7 @@ export const getDevicesViewWithActiveSensorsBetween = async (userId: string, vie
                         'name', s."name",
                         'unit', s."unit",
                         'category', c."name",
+                        'color',c."color",
                         'values', (
                             SELECT jsonb_agg(
                                 jsonb_build_object(
@@ -332,6 +335,7 @@ export const getDeviceViewWithActiveSensorsBetween = async (userId: string, devi
                         'name', s."name",
                         'unit', s."unit",
                         'category', c."name",
+                        'color',c."color",
                         'values', (
                             SELECT jsonb_agg(
                                 jsonb_build_object(
@@ -406,6 +410,7 @@ export const getDeviceWithActiveSensors = async (userId: string, deviceId: strin
                         'name', s."name",
                         'unit', s."unit",
                         'category', c."name",
+                        'color',c."color",
                         'values', (
                             SELECT jsonb_agg(
                                 jsonb_build_object(

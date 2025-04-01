@@ -48,16 +48,6 @@ export default function DeviceDetailGraphs({
         { label: "Last 24 hours", value: 1440 },
     ];
 
-    // Predefined colors based on categories
-    const categoryColors: Record<string, string> = {
-        "Temperature": "#FF5733", // Red-orange for temperature
-        "Humidity": "#337DFF",    // Blue for humidity
-        "Pressure": "#33FF57",    // Green for pressure
-        "Light": "#FFC733",       // Yellow for light
-        "Velocity": "#D433FF",    // Purple for motion
-    };
-    const defaultColor = "#75C2C6"; // Teal-ish default
-
     // Effect for fetching historical data when time range changes
     useEffect(() => {
         const fetchData = async () => {
@@ -255,9 +245,7 @@ export default function DeviceDetailGraphs({
                             key={sensor.id}
                             sensor={sensor}
                             color={
-                                sensor.category
-                                    ? categoryColors[sensor.category] || defaultColor
-                                    : defaultColor
+                                sensor.categoryColor
                             }
                         />
                     ))
