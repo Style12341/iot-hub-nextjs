@@ -1,6 +1,6 @@
 import { CreateDeviceFormData } from "@/types/types";
 import db from "../prisma";
-import { DeviceStatus, Firmware } from "@prisma/client";
+import { Device, DeviceStatus, Firmware, View } from "@prisma/client";
 // Example usage
 export interface SensorValueQueryResult {
     value: number;
@@ -12,6 +12,7 @@ export interface SensorQueryResult {
     name: string;
     unit: string;
     category?: string;
+    categoryColor: string;
     groupSensorId: string;
     values: SensorValueQueryResult[];
 };
@@ -199,6 +200,7 @@ export const getDevicesWithActiveSensors = async (userId: string, page: number =
                         'name', s."name",
                         'unit', s."unit",
                         'category', c."name",
+                        'categoryColor',c."color",
                         'values', (
                             SELECT jsonb_agg(
                                 jsonb_build_object(
@@ -264,6 +266,7 @@ export const getDevicesViewWithActiveSensorsBetween = async (userId: string, vie
                         'name', s."name",
                         'unit', s."unit",
                         'category', c."name",
+                        'categoryColor',c."color",
                         'values', (
                             SELECT jsonb_agg(
                                 jsonb_build_object(
@@ -332,6 +335,7 @@ export const getDeviceViewWithActiveSensorsBetween = async (userId: string, devi
                         'name', s."name",
                         'unit', s."unit",
                         'category', c."name",
+                        'categoryColor',c."color",
                         'values', (
                             SELECT jsonb_agg(
                                 jsonb_build_object(
@@ -406,6 +410,7 @@ export const getDeviceWithActiveSensors = async (userId: string, deviceId: strin
                         'name', s."name",
                         'unit', s."unit",
                         'category', c."name",
+                        'categoryColor',c."color",
                         'values', (
                             SELECT jsonb_agg(
                                 jsonb_build_object(
@@ -450,6 +455,41 @@ export const getDeviceWithActiveSensors = async (userId: string, deviceId: strin
 
     return res;
 }
+export const getDevicesWithViews = async (userId: string, page: number = 1): Promise<DeviceWithViewPaginated> => {
+    const DEVICES_PER_PAGE = 100;
+    const count = await db.device.count({
+        where: {
+            userId,
+        }
+    })
+    if (count === 0) {
+        return { devices: [], page: 1, maxPage: 1, count: 0 };
+    }
+    let searchPage = Math.max(1, page);
+    const maxPage = Math.ceil(count / DEVICES_PER_PAGE);
+    searchPage = Math.min(searchPage, maxPage);
+    const skip = Math.max(0, (searchPage - 1) * DEVICES_PER_PAGE);
+    const res = await db.device.findMany({
+        where: {
+            userId
+        },
+        include: {
+            View: true,
+        },
+        orderBy: {
+            name: "asc"
+        },
+        take: DEVICES_PER_PAGE,
+        skip: skip
+    });
+    return { devices: res, page: searchPage, maxPage, count };
+}
+export type DeviceWithViewPaginated = {
+    devices: ((Device | null) & { View: View | null })[];
+    page: number;
+    maxPage: number;
+    count: number;
+};
 
 export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string | null) {
     // Ensure we're working with a properly formatted date

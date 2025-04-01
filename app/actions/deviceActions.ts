@@ -1,7 +1,7 @@
 "use server";
 
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
-import { createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors, getDeviceActiveView } from "@/lib/contexts/deviceContext";
+import { createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors, getDeviceActiveView, getDevicesWithViews } from "@/lib/contexts/deviceContext";
 
 import { getAllUserViews } from "@/lib/contexts/userContext";
 import { CreateDeviceFormData, createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
@@ -61,6 +61,25 @@ export async function getDevicesWithActiveSensorsAction(page: number = 1, token?
         );
     }
     const res = await getDevicesWithActiveSensors(userId, page);
+    return createSuccessResponse(ServerActionReason.SUCCESS, "Devices retrieved successfully", res);
+}
+/**
+ * Gets all devices for the logged in user or the given token with their assigned view.
+ * Returns a list of devices with the active sensors of the active group
+ * @param page The page number to retrieve (default: 1)
+ * @param token The token to use for authentication (optional)
+ * @param context The context to use for authentication (optional)
+ * @returns A list of devices with the active sensors of the active group
+ */
+export async function getDevicesListWithDataAction(page: number = 1, token?: string | null, context?: string) {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+        return createErrorResponse(
+            ServerActionReason.UNAUTHORIZED,
+            "Unauthorized access"
+        );
+    }
+    const res = await getDevicesWithViews(userId, 1);
     return createSuccessResponse(ServerActionReason.SUCCESS, "Devices retrieved successfully", res);
 }
 /**

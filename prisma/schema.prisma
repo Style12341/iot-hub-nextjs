@@ -125,6 +125,7 @@ model SensorCategory {
   name   String
   User   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
+  color  String  @default("#75C2C6") // Tealish default
   Sensor Sensor[]
 
   @@unique(name: "usersSensorCategories", [name, userId])

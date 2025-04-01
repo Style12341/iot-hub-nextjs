@@ -32,6 +32,9 @@ const data = {
                 }, {
                     title: "Views",
                     url: "/dashboard/views",
+                }, {
+                    title: "New View",
+                    url: "/dashboard/views/new",
                 }
             ],
         }, {
@@ -47,6 +50,14 @@ const data = {
                     title: "New Device",
                     url: "/dashboard/devices/new",
                 },
+                {
+                    title: "Categories",
+                    url: "/dashboard/categories",
+                },
+                {
+                    title: "New Category",
+                    url: "/dashboard/categories/new",
+                }
             ],
         }
 
