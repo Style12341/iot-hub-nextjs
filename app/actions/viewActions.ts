@@ -6,9 +6,9 @@ import { createErrorResponse, createSuccessResponse, CreateViewFormData, ServerA
 
 
 export async function createViewAction(data: CreateViewFormData, token?: string, context?: string) {
-    const { name, userId: formUserId, devicesIdsToTransfer } = data;
+    const { name, devicesIdsToTransfer } = data;
     const userId = await getUserIdFromAuthOrToken(token, context);
-    if (!userId || userId !== formUserId) {
+    if (!userId) {
         return createErrorResponse(
             ServerActionReason.UNAUTHORIZED,
             "Unauthorized access"

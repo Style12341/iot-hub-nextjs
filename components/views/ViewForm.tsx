@@ -11,7 +11,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { View } from "@prisma/client";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createViewAction } from "@/app/actions/viewActions";
 import { DeviceWithViewPaginated } from "@/lib/contexts/deviceContext";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -31,14 +31,11 @@ export default function ViewForm({
     formAttributes = {}, // Default to empty object
     viewAction = createViewAction // Default to the imported action
 }: ViewFormProps) {
+    const router = useRouter();
     const { user } = useUser();
     const [isPending, startTransition] = useTransition();
     const [devices, setDevices] = useState<DeviceWithViewPaginated>({ devices: [], count: 0, page: 0, maxPage: 1 });
     const userId = user?.id;
-
-    if (!userId) {
-        redirect("/login");
-    }
     useEffect(() => {
         const fetchDevices = async () => {
             const res = await getDevicesListWithDataAction();
@@ -83,6 +80,7 @@ export default function ViewForm({
                         const view = result.data as View;
                         addView(view);
                     }
+                    router.push("/dashboard/views");
                 } else {
                     toast.error("Failed to create view", { description: result.message });
                 }
@@ -94,7 +92,10 @@ export default function ViewForm({
         });
     }
 
-    return (
+    return (<>
+        <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold mb-6">Create a new View</h1>
+        </div>
         <FormProvider {...formMethods}>
             <Form {...formMethods}>
                 {/* Apply formAttributes to prevent form nesting issues */}
@@ -193,5 +194,6 @@ export default function ViewForm({
                 </form>
             </Form>
         </FormProvider>
+    </>
     );
 }
