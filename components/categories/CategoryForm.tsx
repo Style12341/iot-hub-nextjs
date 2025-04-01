@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { createCategoryAction, editCategoryAction } from "@/app/actions/categoryActions";
 
 // Color presets for quick selection
 const colorPresets = [
@@ -29,7 +30,6 @@ const colorPresets = [
 ];
 
 type CategoryFormProps = {
-    categoryAction: (formData: CreateCategoryFormData) => Promise<ServerActionResponse>;
     onSubmit?: (category: SensorCategory) => void;
     initialData?: SensorCategory | null; // New prop for edit mode
     redirect?: boolean;
@@ -38,9 +38,8 @@ type CategoryFormProps = {
 
 export default function CategoryForm({
     onSubmit,
-    categoryAction,
     initialData = null, // Default to null (create mode)
-    redirect: standalone = false,
+    redirect = false,
     formAttributes = {}
 }: CategoryFormProps) {
     const { user } = useUser();
@@ -98,7 +97,13 @@ export default function CategoryForm({
                     ? { ...data, id: initialData.id }
                     : data;
 
-                const result = await categoryAction(submitData);
+                let result;
+                if (isEditMode) {
+                    result = await editCategoryAction(submitData, initialData.id);
+                }
+                else {
+                    result = await createCategoryAction(submitData);
+                }
 
                 if (result.success) {
                     const successMessage = isEditMode
@@ -109,14 +114,19 @@ export default function CategoryForm({
 
                     if (!isEditMode) {
                         formMethods.reset(); // Only reset in create mode
+                        document.dispatchEvent(
+                            new CustomEvent("categoryCreated", {
+                                detail: result.data
+                            }
+                            ))
                     }
 
                     if (typeof onSubmit === "function" && result.data) {
                         const category = result.data as SensorCategory;
                         onSubmit(category);
                     }
-                    if (standalone) {
-                        router.push("/dashboard/categories");
+                    if (redirect) {
+                        router.replace("/dashboard/categories");
                     }
                 } else {
                     const actionType = isEditMode ? "update" : "create";
