@@ -11,7 +11,7 @@ export default async function NewViewForm() {
                 breadcrumbs={[{ href: '/dashboard', name: 'Dashboard' }, { href: '/dashboard/views', name: 'Views' }]}
                 page="New"
             />
-            <ViewForm create />
+            <ViewForm create redirect/>
         </>
 
     );

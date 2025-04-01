@@ -9,15 +9,18 @@ import { FormDescription, FormField, FormItem, FormMessage, FormControl, FormLab
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { SensorCategory } from "@prisma/client";
+import { useRouter } from "next/navigation";
 
 type CategoryFormProps = {
     categoryAction: (formData: CreateCategoryFormData) => Promise<ServerActionResponse>;
     addCategory?: (category: SensorCategory) => void;
     create: boolean;
+    redirect?: boolean;
 }
 
-export default function CategoryForm({ addCategory, categoryAction, create }: CategoryFormProps) {
+export default function CategoryForm({ addCategory, categoryAction, create, redirect: standalone = false }: CategoryFormProps) {
     const { user } = useUser();
+    const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const userId = user?.id;
     const formMethods = useForm<CreateCategoryFormData>({
@@ -38,6 +41,9 @@ export default function CategoryForm({ addCategory, categoryAction, create }: Ca
                     if (typeof addCategory === "function") {
                         const category = (await result.data) as SensorCategory;
                         addCategory(category);
+                    }
+                    if (standalone) {
+                        router.push("/dashboard/categories");
                     }
                 } else {
                     toast.error("Failed to create category", { description: result.message });

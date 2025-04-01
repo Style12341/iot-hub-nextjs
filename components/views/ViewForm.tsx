@@ -21,6 +21,7 @@ import { getDevicesListWithDataAction } from "@/app/actions/deviceActions";
 type ViewFormProps = {
     addView?: (view: View) => void;
     create: boolean;
+    redirect?: boolean;
     formAttributes?: React.FormHTMLAttributes<HTMLFormElement>; // Add this line
     viewAction?: (formData: CreateViewFormData) => Promise<ServerActionResponse>; // Make this optional
 };
@@ -28,6 +29,7 @@ type ViewFormProps = {
 export default function ViewForm({
     addView,
     create,
+    redirect,
     formAttributes = {}, // Default to empty object
     viewAction = createViewAction // Default to the imported action
 }: ViewFormProps) {
@@ -80,7 +82,8 @@ export default function ViewForm({
                         const view = result.data as View;
                         addView(view);
                     }
-                    router.push("/dashboard/views");
+                    if (redirect)
+                        router.push("/dashboard/views");
                 } else {
                     toast.error("Failed to create view", { description: result.message });
                 }
