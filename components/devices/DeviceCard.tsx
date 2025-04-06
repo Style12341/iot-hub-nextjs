@@ -117,79 +117,88 @@ function IndexDeviceCard(device: DeviceQueryResult) {
     // Default number of sensors to show
     const initialSensorsCount = 3;
     const hasMoreSensors = device.sensors ? device.sensors.length > initialSensorsCount : false;
+    console.log("Device", device)
     return (<>
-        {
-            device.status != "WAITING" ? (
-                <CardContent>
-                    <div className="space-y-2">
-                        <h3 className="text-sm font-medium">
-                            Active Sensors ({device.sensors.length})
-                        </h3>
-
-                        <Collapsible
-                            open={isExpanded}
-                            onOpenChange={setIsExpanded}
-                            className="w-full"
-                        >
-                            <ul className="divide-y pb-2">
-                                {device.sensors
-                                    .slice(0, initialSensorsCount)
-                                    .map((sensor) => (
-                                        <SensorListItem key={sensor.id} sensor={sensor} />
-                                    ))
-                                }
-                            </ul>
-
-                            {/* Collapsible content for additional sensors */}
-                            {hasMoreSensors && (
-                                <>
-                                    <CollapsibleContent>
-                                        <ul className="divide-y border-t pt-2">
-                                            {device.sensors
-                                                .slice(initialSensorsCount)
-                                                .map((sensor) => (
-                                                    <SensorListItem key={sensor.id} sensor={sensor} />
-                                                ))
-                                            }
-                                        </ul>
-                                    </CollapsibleContent>
-
-                                    <CollapsibleTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="w-full mt-2 text-xs text-muted-foreground"
-                                        >
-                                            {isExpanded ? (
-                                                <>
-                                                    <ChevronUp className="h-3 w-3 mr-1" />
-                                                    Show less
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <ChevronDown className="h-3 w-3 mr-1" />
-                                                    Show {device.sensors.length - initialSensorsCount} more sensors
-                                                </>
-                                            )}
-                                        </Button>
-                                    </CollapsibleTrigger>
-                                </>
-                            )}
-                        </Collapsible>
-
-                        <Button variant="outline" size="sm" className="w-full mt-4" asChild>
-                            <Link href={`/dashboard/devices/${device.id}`}>
-                                View Details <ChevronRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </div>
-                </CardContent>
-            ) : (
+        {device.status
+            === "WAITING" ?
+            (
                 <CardContent className="flex justify-center items-center">
                     Waiting for data...
                 </CardContent>
             )
-        }</>
+            :
+            !device.sensors || device.sensors?.length == 0 ? (
+                <CardContent className="flex justify-center items-center">
+                    No active sensors
+                </CardContent>
+            ) :
+                (
+                    <CardContent>
+                        <div className="space-y-2">
+                            <h3 className="text-sm font-medium">
+                                Active Sensors ({device.sensors.length})
+                            </h3>
+
+                            <Collapsible
+                                open={isExpanded}
+                                onOpenChange={setIsExpanded}
+                                className="w-full"
+                            >
+                                <ul className="divide-y pb-2">
+                                    {device.sensors.length != 0 && device.sensors
+                                        .slice(0, initialSensorsCount)
+                                        .map((sensor) => (
+                                            <SensorListItem key={sensor.id} sensor={sensor} />
+                                        ))
+                                    }
+                                </ul>
+
+                                {/* Collapsible content for additional sensors */}
+                                {hasMoreSensors && (
+                                    <>
+                                        <CollapsibleContent>
+                                            <ul className="divide-y border-t pt-2">
+                                                {device.sensors
+                                                    .slice(initialSensorsCount)
+                                                    .map((sensor) => (
+                                                        <SensorListItem key={sensor.id} sensor={sensor} />
+                                                    ))
+                                                }
+                                            </ul>
+                                        </CollapsibleContent>
+
+                                        <CollapsibleTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="w-full mt-2 text-xs text-muted-foreground"
+                                            >
+                                                {isExpanded ? (
+                                                    <>
+                                                        <ChevronUp className="h-3 w-3 mr-1" />
+                                                        Show less
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <ChevronDown className="h-3 w-3 mr-1" />
+                                                        Show {device.sensors.length - initialSensorsCount} more sensors
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </CollapsibleTrigger>
+                                    </>
+                                )}
+                            </Collapsible>
+
+                            <Button variant="outline" size="sm" className="w-full mt-4" asChild>
+                                <Link href={`/dashboard/devices/${device.id}`}>
+                                    View Details <ChevronRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </CardContent>
+                )}
+    </>
     )
 
 }
@@ -203,7 +212,7 @@ function ViewDeviceCard(device: DeviceQueryResult) {
     useEffect(() => {
         const initialValues = new Map<string, SensorValueQueryResult[]>();
         deviceData.sensors?.forEach((sensor) => {
-            initialValues.set(sensor.id, sensor.values);
+            initialValues.set(sensor.id, sensor.values as SensorValueQueryResult[]);
         });
         setOldestValues(initialValues);
     }, []);  // Empty dependency array means this only runs once
@@ -223,7 +232,7 @@ function ViewDeviceCard(device: DeviceQueryResult) {
                     // Create new Map to update state properly
                     const newOldestValues = new Map(oldestValues);
                     newData.device.sensors?.forEach((sensor) => {
-                        newOldestValues.set(sensor.id, sensor.values);
+                        newOldestValues.set(sensor.id, sensor.values as SensorValueQueryResult[]);
                     });
                     setOldestValues(newOldestValues);
                 }
@@ -281,7 +290,7 @@ function ViewDeviceCard(device: DeviceQueryResult) {
         if (newDevice.sensors && device.sensors) {
             newDevice.sensors = newDevice.sensors.map((sensor) => {
                 if (!sensor.values) return sensor;
-                const newSensor = device.sensors.find((s) => s.id === sensor.id);
+                const newSensor = device.sensors?.find((s) => s.id === sensor.id);
                 if (!newSensor || !newSensor.values || !newSensor.values[0]) return sensor;
 
                 const newValue = newSensor.values[0];

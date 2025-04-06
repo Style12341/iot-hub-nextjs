@@ -14,7 +14,7 @@ export interface SensorQueryResult {
     category?: string;
     categoryColor: string;
     groupSensorId: string;
-    values: SensorValueQueryResult[];
+    values?: SensorValueQueryResult[];
 };
 
 export interface GroupQueryResult {
@@ -28,7 +28,7 @@ export interface DeviceHasReceivedData {
     status: "ONLINE" | "OFFLINE";
     lastValueAt: Date;
     group: GroupQueryResult;
-    sensors: SensorQueryResult[];
+    sensors?: SensorQueryResult[];
     activeFirmwareVersion: string | null;
 };
 export interface DeviceHasNotReceivedData {
@@ -242,6 +242,9 @@ export const getDevicesWithActiveSensors = async (userId: string, page: number =
 
     devices.forEach(device => {
         device.device.status = getDeviceStatusFromLastValueAt(device.device.lastValueAt);
+        if (device.device.sensors && device.device.sensors.length == 1 && device.device.sensors[0].name == null) {
+            device.device.sensors = undefined;
+        }
     });
 
     return { devices, page: searchPage, maxPage, count };
@@ -307,6 +310,9 @@ export const getDevicesViewWithActiveSensorsBetween = async (userId: string, vie
     // Map status accordingly
     devices.forEach(device => {
         device.device.status = getDeviceStatusFromLastValueAt(device.device.lastValueAt);
+        if (device.device.sensors && device.device.sensors.length == 1 && device.device.sensors[0].name == null) {
+            device.device.sensors = undefined;
+        }
         if (device.device.sensors) {
             device.device.sensors.sort((a, b) => a.name.localeCompare(b.name));
         }
@@ -384,6 +390,9 @@ export const getDeviceViewWithActiveSensorsBetween = async (userId: string, devi
     const device = devices[0];
     device.device.status = getDeviceStatusFromLastValueAt(device.device.lastValueAt);
     // Sort sensors by name
+    if (device.device.sensors && device.device.sensors.length == 1 && device.device.sensors[0].name == null) {
+        device.device.sensors = undefined;
+    }
     if (device.device.sensors) {
         device.device.sensors.sort((a, b) => a.name.localeCompare(b.name));
     }
@@ -451,6 +460,9 @@ export const getDeviceWithActiveSensors = async (userId: string, deviceId: strin
     const res = devices[0];
     console.debug(res)
     res.device.status = getDeviceStatusFromLastValueAt(res.device.lastValueAt);
+    if (res.device.sensors && res.device.sensors.length == 1 && res.device.sensors[0].name == null) {
+        res.device.sensors = undefined;
+    }
     console.debug(res.device.group)
 
     return res;
