@@ -1,7 +1,7 @@
 "use server";
 
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
-import { createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors, getDeviceActiveView, getDevicesWithViews } from "@/lib/contexts/deviceContext";
+import { validateDeviceOwnership,createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors, getDeviceActiveView, getDevicesWithViews, getPlainDevice,getDeviceSensorsWithGroupCount } from "@/lib/contexts/deviceContext";
 
 import { getAllUserViews } from "@/lib/contexts/userContext";
 import { CreateDeviceFormData, createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
@@ -171,4 +171,47 @@ export async function getDeviceActiveViewWithActiveSensorsBetweenAction(deviceId
     const name = view?.name ?? "Default";
     const res = await getDeviceViewWithActiveSensorsBetween(userId, deviceId, name, startDate, endDate);
     return createSuccessResponse(ServerActionReason.SUCCESS, "Device view retrieved successfully", res);
+}
+export async function getDeviceAction(deviceId: string, token?: string | null, context?: string) {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+        return createErrorResponse(
+            ServerActionReason.UNAUTHORIZED,
+            "Unauthorized access"
+        );
+    }
+    const device = await getPlainDevice(userId, deviceId);
+    if (!device) {
+        return createErrorResponse(
+            ServerActionReason.NOT_FOUND,
+            "Device not found"
+        );
+    }
+    return createSuccessResponse(ServerActionReason.SUCCESS, "Device retrieved successfully", device);
+}
+export async function getDeviceSensorsAction(deviceId: string, token?: string | null, context?: string) {
+  try {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in");
+    }
+
+    // Validate device ownership
+    const hasAccess = await validateDeviceOwnership(userId, deviceId);
+    if (!hasAccess) {
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+    }
+
+    // Get sensors with group counts
+    const sensors = await getDeviceSensorsWithGroupCount(deviceId);
+    
+    return createSuccessResponse(
+      ServerActionReason.SUCCESS,
+      "Device sensors retrieved successfully",
+      sensors
+    );
+  } catch (error) {
+    console.error("Error fetching device sensors:", error);
+    return createErrorResponse();
+  }
 }

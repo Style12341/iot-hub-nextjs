@@ -1,6 +1,6 @@
 import { CreateDeviceFormData } from "@/types/types";
 import db from "../prisma";
-import { Device, DeviceStatus, Firmware, View } from "@prisma/client";
+import { Device, DeviceStatus, Firmware, View,Sensor } from "@prisma/client";
 // Example usage
 export interface SensorValueQueryResult {
     value: number;
@@ -157,6 +157,19 @@ export const getDevice = async (id: string) => {
                     description: true,
                 }
             }
+        }
+    });
+    if (!device) {
+        return null;
+    }
+    device.status = getDeviceStatusFromLastValueAt(device.lastValueAt);
+    return device;
+}
+export const getPlainDevice = async (userId: string, deviceId: string) => {
+    const device = await db.device.findUnique({
+        where: {
+            id: deviceId,
+            userId
         }
     });
     if (!device) {
@@ -617,4 +630,54 @@ export async function getDeviceActiveView(userId: string, deviceId: string) {
         }
     });
     return device?.View
+}
+export interface SensorWithActiveGroupCount extends Sensor {
+    activeGroupCount: number;
+    GroupSensor: {
+        id: string;
+        active: boolean;
+        groupId: string;
+        sensorId: string;
+    }[];
+    Category?: {
+        id: string;
+        name: string;
+        color: string;
+    } | null;
+}
+export async function getDeviceSensorsWithGroupCount(deviceId: string): Promise<SensorWithActiveGroupCount[]> {
+    // Get all sensors for a device with count of active groups
+    const sensors = await db.sensor.findMany({
+        where: {
+            deviceId
+        },
+        include: {
+            Category: {
+                select: {
+                    id: true,
+                    name: true,
+                    color: true
+                }
+            },
+            GroupSensor: true,
+            _count: {
+                select: {
+                    GroupSensor: {
+                        where: {
+                            active: true
+                        }
+                    }
+                }
+            }
+        },
+        orderBy: {
+            name: 'asc'
+        }
+    });
+
+    // Format the response
+    return sensors.map(sensor => ({
+        ...sensor,
+        activeGroupCount: sensor._count.GroupSensor
+    }));
 }
