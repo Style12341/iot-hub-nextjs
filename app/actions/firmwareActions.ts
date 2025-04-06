@@ -303,35 +303,35 @@ export async function assignFirmwareAction(deviceId: string, firmwareId: string,
  * Update firmware description
  */
 export async function updateFirmwareDescriptionAction(
-  deviceId: string,
-  firmwareId: string,
-  description: string,
-  token?: string | null,
-  context?: string
-): Promise<ServerActionResponse<FirmwareType>> {
-  try {
-    // First authenticate
-    const userId = await getUserIdFromAuthOrToken(token, context);
-    if (!userId) {
-      return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access');
-    }
+    deviceId: string,
+    firmwareId: string,
+    description: string,
+    token?: string | null,
+    context?: string
+) {
+    try {
+        // First authenticate
+        const userId = await getUserIdFromAuthOrToken(token, context);
+        if (!userId) {
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access');
+        }
 
-    // Validate access
-    const accessResult = await validateFirmwareAccessAction(deviceId, firmwareId, token, context);
-    if (!accessResult.success) {
-      return createErrorResponse(accessResult.reason, accessResult.message);
-    }
+        // Validate access
+        const accessResult = await validateFirmwareAccessAction(deviceId, firmwareId, token, context);
+        if (!accessResult.success) {
+            return createErrorResponse(accessResult.reason, accessResult.message);
+        }
 
-    // Update firmware description
-    const firmware = await updateFirmwareDescription(firmwareId, description);
-    
-    return createSuccessResponse(
-      ServerActionReason.SUCCESS,
-      'Firmware description updated successfully',
-      firmware
-    );
-  } catch (error) {
-    console.error('Error updating firmware description:', error);
-    return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to update firmware description');
-  }
+        // Update firmware description
+        const firmware = await updateFirmwareDescription(firmwareId, description);
+
+        return createSuccessResponse(
+            ServerActionReason.SUCCESS,
+            'Firmware description updated successfully',
+            firmware
+        );
+    } catch (error) {
+        console.error('Error updating firmware description:', error);
+        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to update firmware description');
+    }
 }
