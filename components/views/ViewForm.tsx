@@ -136,7 +136,7 @@ export default function ViewForm({
                                 Devices will be moved from their current view to this new view
                             </p>
 
-                            <div className="space-y-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {Object.entries(devicesByView).map(([viewName, viewDevices]) => (
                                     <Card key={viewName} className="overflow-hidden">
                                         <CardHeader className="bg-muted/50 py-3">
