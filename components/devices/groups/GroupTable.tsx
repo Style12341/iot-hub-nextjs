@@ -135,7 +135,7 @@ export function GroupTable({
                     {groups.map((group) => {
                         const isActive = group.id === localActiveGroupId;
                         const hasSensors = group.sensorCount > 0;
-                        
+
                         return (
                             <TableRow key={group.id}>
                                 <TableCell className="font-medium">{group.name}</TableCell>
@@ -180,17 +180,17 @@ export function GroupTable({
                                             </DropdownMenuItem>
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild className="p-0">
-                                                    <DropdownMenuItem 
+                                                    <DropdownMenuItem
                                                         onSelect={(e) => e.preventDefault()}
                                                         disabled={isActive}
                                                         className={isActive ? "text-muted-foreground" : ""}
                                                     >
-                                                        <Button 
-                                                            variant="ghost" 
+                                                        <Button
+                                                            variant="ghost"
                                                             className={cn(
-                                                                "w-full justify-start", 
+                                                                "w-full justify-start",
                                                                 !isActive && "text-destructive"
-                                                            )} 
+                                                            )}
                                                             size="sm"
                                                             disabled={isActive}
                                                         >

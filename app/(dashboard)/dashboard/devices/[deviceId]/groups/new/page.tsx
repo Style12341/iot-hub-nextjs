@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { getDeviceWithActiveSensorsAction } from "@/app/actions/deviceActions";
 import { GroupForm } from "@/components/devices/groups/GroupForm";
 import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
-import { Separator } from "@/components/ui/separator";
 import DeviceMenu from "@/components/devices/DeviceMenu";
+import { Suspense } from "react";
 
 export default async function NewGroupPage({
     params,
@@ -33,20 +33,22 @@ export default async function NewGroupPage({
 
             <BreadcrumbHandler
                 breadcrumbs={breadcrumbs}
-                page="New Group"
+                page="New"
             />
 
             <div>
-                <h1 className="text-2xl font-bold tracking-tight">Create Group</h1>
+                <h1 className="text-3xl font-bold mb-8">Create Group</h1>
                 <p className="text-muted-foreground">
                     Create a new group for organizing sensors in {device.name}
                 </p>
             </div>
 
-            <Separator />
 
-            <div className="max-w-2xl">
-                <GroupForm deviceId={deviceId} />
+
+            <div className="max-w-2xl mx-auto">
+                <Suspense fallback={<div>Loading form...</div>}>
+                    <GroupForm deviceId={deviceId} />
+                </Suspense>
             </div>
         </div>
     );

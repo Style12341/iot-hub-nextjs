@@ -2,16 +2,68 @@
 
 import { createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
 import { validateDeviceOwnership, updateDeviceActiveGroup } from "@/lib/contexts/deviceContext";
-import { Group } from "@prisma/client";
+import { Group, Sensor } from "@prisma/client";
 import {
     getDeviceGroups,
     getDeviceActiveGroupId,
     isActiveGroup,
     deleteGroup,
     createGroup,
-    updateGroup
+    updateGroup,
+    getDeviceSensors,
+    getGroupSensorStates
 } from "@/lib/contexts/groupContext";
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
+// Add a new interface for sensors with active state
+interface SensorWithActiveState extends Sensor {
+    isActive: boolean;
+}
+
+export async function getDeviceSensorsAction(
+    deviceId: string,
+    groupId?: string,
+    token?: string | null,
+    context?: string
+): Promise<ServerActionResponse<SensorWithActiveState[]>> {
+    try {
+        // Get user ID from auth or token
+        const userId = await getUserIdFromAuthOrToken(token, context);
+        if (!userId) {
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in");
+        }
+
+        // Validate device ownership
+        const hasAccess = await validateDeviceOwnership(userId, deviceId);
+        if (!hasAccess) {
+            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+        }
+
+        // Get all sensors for the device
+        const sensors = await getDeviceSensors(deviceId);
+
+        // If groupId is provided, get active status for each sensor
+        let sensorWithActiveState: SensorWithActiveState[] = sensors.map(s => ({ ...s, isActive: true }));
+
+        if (groupId) {
+            const activeSensors = await getGroupSensorStates(groupId);
+
+            // Mark sensors as active/inactive based on group sensor states
+            sensorWithActiveState = sensors.map(sensor => ({
+                ...sensor,
+                isActive: activeSensors.some(as => as.sensorId === sensor.id && as.active)
+            }));
+        }
+
+        return createSuccessResponse(
+            ServerActionReason.SUCCESS,
+            "Device sensors retrieved successfully",
+            sensorWithActiveState
+        );
+    } catch (error) {
+        console.error("Error fetching device sensors:", error);
+        return createErrorResponse();
+    }
+}
 
 /**
  * Get all groups for a device
@@ -58,7 +110,7 @@ export async function getDeviceGroupsAction(
  * Set a group as active for a device
  */
 export async function setActiveGroupAction(
-    deviceId: string, 
+    deviceId: string,
     groupId: string,
     token?: string | null,
     context?: string
@@ -90,7 +142,7 @@ export async function setActiveGroupAction(
  * Delete a group
  */
 export async function deleteGroupAction(
-    deviceId: string, 
+    deviceId: string,
     groupId: string,
     token?: string | null,
     context?: string
@@ -131,8 +183,9 @@ export async function deleteGroupAction(
  * Create a new group
  */
 export async function createGroupAction(
-    deviceId: string, 
+    deviceId: string,
     name: string,
+    activeSensorIds: string[] = [], // Add activeSensorIds parameter with default empty array
     token?: string | null,
     context?: string
 ): Promise<ServerActionResponse<Group>> {
@@ -149,8 +202,8 @@ export async function createGroupAction(
             return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
         }
 
-        // Create the group
-        const group = await createGroup(deviceId, name);
+        // Create the group with active sensors
+        const group = await createGroup(deviceId, name, activeSensorIds);
 
         return createSuccessResponse(ServerActionReason.CREATED, "Group created successfully", group);
     } catch (error) {
@@ -163,9 +216,10 @@ export async function createGroupAction(
  * Update a group
  */
 export async function updateGroupAction(
-    deviceId: string, 
-    groupId: string, 
+    deviceId: string,
+    groupId: string,
     name: string,
+    activeSensorIds: string[] = [], // Add activeSensorIds parameter with default empty array
     token?: string | null,
     context?: string
 ): Promise<ServerActionResponse<Group>> {
@@ -182,8 +236,8 @@ export async function updateGroupAction(
             return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
         }
 
-        // Update the group
-        const group = await updateGroup(groupId, name);
+        // Update the group with active sensors
+        const group = await updateGroup(groupId, name, activeSensorIds);
 
         return createSuccessResponse(ServerActionReason.SUCCESS, "Group updated successfully", group);
     } catch (error) {
