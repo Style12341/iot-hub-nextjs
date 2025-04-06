@@ -20,6 +20,7 @@ export default function SensorListItem({ sensor }: SensorListItemProps) {
     const [valueKey, setValueKey] = useState(0);
     // Update local state when prop changes
     useEffect(() => {
+        if (!sensor.values) sensor.values = [];
         const newValue = sensor.values[0]?.value?.toString();
         if (!newValue) return;
 

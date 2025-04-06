@@ -102,15 +102,3 @@ export async function validateGroupOwnership(deviceId: string, groupId: string):
 
     return !!group;
 }
-
-/**
- * Get all group sensors for a group
- */
-export async function getGroupSensors(groupId: string) {
-    return await db.groupSensor.findMany({
-        where: { groupId },
-        include: {
-            Sensor: true
-        }
-    });
-}
