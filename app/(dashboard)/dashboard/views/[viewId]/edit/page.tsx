@@ -6,13 +6,13 @@ import { getViewByIdAction } from "@/app/actions/viewActions"
 import { redirect } from "next/navigation"
 
 interface EditViewPageProps {
-    params: {
+    params: Promise<{
         viewId: string;
-    };
+    }>;
 }
 
 export default async function EditViewPage({ params }: EditViewPageProps) {
-    const { viewId } = params;
+    const { viewId } = await params;
 
     // Fetch the view data
     const response = await getViewByIdAction(viewId);

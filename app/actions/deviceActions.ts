@@ -152,7 +152,7 @@ export async function getDevicesListWithDataAction(page: number = 1, token?: str
       "Unauthorized access"
     );
   }
-  const res = await getDevicesWithViews(userId, 1);
+  const res = await getDevicesWithViews(userId, page);
   return createSuccessResponse(ServerActionReason.SUCCESS, "Devices retrieved successfully", res);
 }
 /**
