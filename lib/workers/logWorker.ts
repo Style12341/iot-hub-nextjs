@@ -6,7 +6,7 @@ import { getGroupSensors } from '@/lib/contexts/groupSensorsContext';
 import { createMultipleSensorValues } from '@/lib/contexts/sensorValuesContext';
 import { getUserFromToken } from '@/lib/contexts/userTokensContext';
 import { DeviceSSEMessage, LOGTOKEN } from '@/types/types';
-import { getDeviceChannel, getSensorChannel } from '../sseUtils';
+import { getDeviceChannel } from '../sseUtils';
 import { trackMetricInDB } from '../contexts/metricsContext';
 
 type SensorsLogBody = {
@@ -41,7 +41,7 @@ export type LogEntry = {
 async function safeRedisOperation<T>(operation: () => Promise<T>, fallback: () => Promise<T>): Promise<T> {
     try {
         return await operation();
-    } catch (error) {
+    } catch (error: any) {
         console.warn('Redis operation failed, using fallback:', error);
         return await fallback();
     }
@@ -135,27 +135,20 @@ export async function processLog(body: DeviceLogBody) {
         const { token, device_id, group_id, sensors, firmware_version } = body;
         const sensor_ids = sensors.map(sensor => sensor.sensor_id);
 
-        console.log(`[${device_id}] Starting log processing with ${sensors.length} sensors`);
-
         // Cache validation
         let cache = null;
         try {
-            console.log(`[${device_id}] Attempting to retrieve cache`);
             cache = await tryGetCache(token, device_id);
-            console.log(`[${device_id}] Cache retrieval ${cache ? "succeeded" : "returned null"}`);
         } catch (error: any) {
-            console.warn(`[${device_id}] Cache retrieval failed: ${error.message}`);
+            console.warn('Redis operation failed, using fallback:', error);
             // Continue without cache - will force DB validation
         }
 
         let validationResult: RedisRequestCache<Map<string, string>> | string | null = null;
 
         if (!isCacheValid(cache, device_id, group_id, sensor_ids)) {
-            console.log(`[${device_id}] Cache miss or invalid - validating from database`);
             try {
-                console.log(`[${device_id}] Starting database validation`);
                 validationResult = await validateRequestFromDB(token, device_id, group_id, sensor_ids);
-                console.log(`[${device_id}] Database validation complete`);
 
                 if (typeof validationResult === 'string') {
                     console.error(`[${device_id}] Validation failed: ${validationResult}`);
@@ -163,9 +156,7 @@ export async function processLog(body: DeviceLogBody) {
                 }
 
                 try {
-                    console.log(`[${device_id}] Updating cache`);
                     await forceCache(token, validationResult);
-                    console.log(`[${device_id}] Cache updated successfully`);
                 } catch (cacheError: any) {
                     console.warn(`[${device_id}] Could not update cache: ${cacheError.message}`);
                     // Continue without caching
@@ -177,11 +168,8 @@ export async function processLog(body: DeviceLogBody) {
                 return "Error: database validation failed";
             }
         } else {
-            console.log(`[${device_id}] Cache hit`);
             try {
-                console.log(`[${device_id}] Refreshing cache TTL`);
                 refreshTTLOnCache(token, device_id);
-                console.log(`[${device_id}] Cache TTL refreshed`);
             } catch (ttlError: any) {
                 console.warn(`[${device_id}] Could not refresh cache TTL: ${ttlError.message}`);
                 // Continue anyway
@@ -194,23 +182,15 @@ export async function processLog(body: DeviceLogBody) {
             return "Error: invalid cache state";
         }
 
-        console.log(`[${device_id}] Starting to process logs`);
-
         const { groupSensorIdMap } = cache as RedisRequestCache<Map<string, string>>;
-
-        // Log the actual mapping data for debugging
-        console.log(`[${device_id}] GroupSensorIdMap has ${groupSensorIdMap.size} entries`);
 
         // Validate all sensors have mappings
         const missingMappings = sensors.filter(s => !groupSensorIdMap.has(s.sensor_id));
         if (missingMappings.length > 0) {
             console.error(`[${device_id}] Missing groupSensor mappings for sensors: ${missingMappings.map(s => s.sensor_id).join(', ')}`);
-            // Log all the available sensor IDs in the map for debugging
-            console.log(`[${device_id}] Available mappings: ${Array.from(groupSensorIdMap.keys()).join(', ')}`);
             return "Error: missing sensor mappings";
         }
 
-        console.log(`[${device_id}] Creating log entries`);
         const logs: LogEntry[] = sensors.map(sensor => {
             const groupSensorId = groupSensorIdMap.get(sensor.sensor_id);
             if (!groupSensorId) {
@@ -223,7 +203,6 @@ export async function processLog(body: DeviceLogBody) {
             };
         });
 
-        console.log(`[${device_id}] Creating device status message`);
         const deviceStatus: DeviceSSEMessage = {
             id: device_id,
             lastValueAt: new Date(),
@@ -238,7 +217,6 @@ export async function processLog(body: DeviceLogBody) {
             }))
         };
 
-        console.log(`[${device_id}] Starting Promise.all for database/publishing operations`);
         try {
             await Promise.all([
                 updateDeviceActiveGroup(device_id, group_id),
@@ -248,16 +226,15 @@ export async function processLog(body: DeviceLogBody) {
                 publishDeviceStatus(deviceStatus)
             ]);
 
-            console.log(`[${device_id}] All operations completed successfully`);
             return "Success";
         } catch (processingError: any) {
-            console.error(`[${device_id}] Failed to process logs: ${processingError.message}`, processingError.stack);
+            console.error(`[${device_id}] Failed to process logs: ${processingError.message}`, { error: processingError, body: { body } });
             return "Error: processing failed";
         }
     } catch (error: any) {
         // Catch all uncaught errors
         const deviceId = body?.device_id || 'unknown';
-        console.error(`[${deviceId}] Unexpected error in processLog: ${error.message}`, error.stack);
+        console.error(`[${deviceId}] Unexpected error in processLog: ${error.message}`, { error: error, body: { body } });
         return "Error: unexpected exception";
     }
 }
@@ -269,15 +246,12 @@ export async function publishDeviceStatus(deviceStatus: DeviceSSEMessage) {
         const payload = JSON.stringify(deviceStatus);
         const channel = getDeviceChannel(deviceId);
 
-        console.log(`[${deviceId}] Publishing device status to ${channel}`);
-
         // Check if Redis is available
         if (!redisPub || typeof redisPub.publish !== 'function') {
             throw new Error('Redis publisher is not available');
         }
 
         const publishResult = await redisPub.publish(channel, payload);
-        console.log(`[${deviceId}] Publish result: ${publishResult} subscribers received the message`);
 
         if (publishResult === 0) {
             console.warn(`[${deviceId}] Message published but no subscribers were listening`);
@@ -285,7 +259,7 @@ export async function publishDeviceStatus(deviceStatus: DeviceSSEMessage) {
 
         return publishResult;
     } catch (error: any) {
-        console.error(`[${deviceId}] Failed to publish device status: ${error.message}`, error.stack);
+        console.error(`[${deviceId}] Failed to publish device status: ${error.message}`, { error: error, body: { deviceStatus } });
         throw error; // Rethrow for the caller to handle
     }
 }
