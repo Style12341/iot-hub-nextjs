@@ -78,13 +78,23 @@ export const createSuccessResponse = <T>(
 
 export const createErrorResponse = (
     reason: ErrorReasons = ServerActionReason.UNKNOWN_ERROR,
-    message = "An error occurred"
-): ErrorResponse => ({
-    success: false,
-    reason,
-    message,
-    statusCode: reasonToStatusCode[reason],
-});
+    message = "An error occurred",
+    // Optional object for more detailed error information can be a generic error or a body
+    error?: Object
+): ErrorResponse => {
+    console.error({
+        reason,
+        message,
+        error,
+        statusCode: reasonToStatusCode[reason],
+    }); // Log the error for debugging
+    return {
+        success: false,
+        reason,
+        message,
+        statusCode: reasonToStatusCode[reason],
+    }
+};
 
 export const createDeviceFormSchema = z.object({
     name: z.string().nonempty({ message: "Device name is required" }),
