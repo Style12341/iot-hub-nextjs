@@ -41,10 +41,10 @@ interface ViewCollapsibleProps {
 
 const defaultFetchDate = new Date(Date.now() - 1000 * 60 * 10); // Default to 10 minutes ago
 
-export default function ViewCollapsible({ 
-    viewName, 
-    viewId, 
-    deviceCount, 
+export default function ViewCollapsible({
+    viewName,
+    viewId,
+    deviceCount,
     defaultExpanded = false,
     isDefaultView = false
 }: ViewCollapsibleProps) {
@@ -98,7 +98,7 @@ export default function ViewCollapsible({
         try {
             setIsDeleting(true);
             const result = await deleteViewAction(viewId);
-            
+
             if (result.success) {
                 toast.success("View deleted successfully");
                 if (deviceCount > 0) {
@@ -149,7 +149,7 @@ export default function ViewCollapsible({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>View Actions</DropdownMenuLabel>
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                     onClick={() => toast.info("Edit functionality coming soon")}
                                 >
                                     <Edit className="mr-2 h-4 w-4" />

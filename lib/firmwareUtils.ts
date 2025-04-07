@@ -199,7 +199,7 @@ export async function deleteFirmwareFileById(firmwareId: string): Promise<void> 
             throw new Error('Firmware not found');
         }
         if (firmware.embedded) {
-            return ; // No need to delete embedded firmware
+            return; // No need to delete embedded firmware
         }
         // Get file from Google Cloud Storage using stored path directly
         const file = bucket.file(firmware.fileUrl);

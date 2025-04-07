@@ -2,7 +2,7 @@
 
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
 import { createSensor, deleteSensor, getSensorsQty, updateSensor, validateSensorOwnership } from "@/lib/contexts/sensorContext";
-import {validateDeviceOwnership} from "@/lib/contexts/deviceContext";
+import { validateDeviceOwnership } from "@/lib/contexts/deviceContext";
 import { createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
 import { Sensor } from "@prisma/client";
 
@@ -50,7 +50,7 @@ export async function updateSensorAction(
 
     // Update sensor
     const sensor = await updateSensor(sensorId, data);
-    
+
     return createSuccessResponse(
       ServerActionReason.SUCCESS,
       "Sensor updated successfully",
@@ -87,7 +87,7 @@ export async function createSensorAction(
 
     // Create sensor
     const sensor = await createSensor(deviceId, data);
-    
+
     return createSuccessResponse(
       ServerActionReason.CREATED,
       "Sensor created successfully",
@@ -125,7 +125,7 @@ export async function deleteSensorAction(
 
     // Delete sensor
     await deleteSensor(sensorId);
-    
+
     return createSuccessResponse(
       ServerActionReason.SUCCESS,
       "Sensor deleted successfully",

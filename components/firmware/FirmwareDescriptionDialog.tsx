@@ -37,14 +37,14 @@ export function FirmwareDescriptionDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (description.trim() === firmware.description) {
       setOpen(false);
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
       const result = await updateFirmwareDescriptionAction(
         deviceId,
@@ -105,9 +105,9 @@ export function FirmwareDescriptionDialog({
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => setOpen(false)}
               disabled={isSubmitting}
             >

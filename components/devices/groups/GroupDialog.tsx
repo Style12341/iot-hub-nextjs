@@ -33,7 +33,7 @@ export function GroupDialog({
 
     const handleSuccess = (updatedGroup: Group, sensorCount: number) => {
         if (onSuccess) {
-            onSuccess(updatedGroup,sensorCount);
+            onSuccess(updatedGroup, sensorCount);
         }
         setOpen(false);
     };

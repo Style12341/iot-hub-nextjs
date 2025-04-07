@@ -13,25 +13,25 @@ interface DeviceSettingsPageProps {
 
 export default async function DeviceSettingsPage({ params }: DeviceSettingsPageProps) {
   const { deviceId } = await params;
-  
+
   // Fetch device details
   const deviceResponse = await getDeviceAction(deviceId);
-  
+
   if (!deviceResponse.success) {
     redirect("/dashboard/devices");
   }
-  
+
   const device = deviceResponse.data;
-  
+
   // Fetch available views
   const viewsResponse = await getAllUserViewsAction();
-  
+
   if (!viewsResponse.success) {
     redirect("/dashboard/devices");
   }
-  
+
   const views = viewsResponse.data;
-  
+
   return (
     <>
       <BreadcrumbHandler
@@ -42,7 +42,7 @@ export default async function DeviceSettingsPage({ params }: DeviceSettingsPageP
         ]}
         page="Settings"
       />
-      
+
       <div className="container py-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Device Settings</h1>
@@ -50,9 +50,9 @@ export default async function DeviceSettingsPage({ params }: DeviceSettingsPageP
             Manage settings for device: {device.name}
           </p>
         </div>
-        
+
         <Separator />
-        
+
         <DeviceSettingsForm device={device} views={views} />
       </div>
     </>

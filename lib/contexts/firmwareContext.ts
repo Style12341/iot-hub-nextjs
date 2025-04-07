@@ -232,10 +232,10 @@ export async function mapFirmwareType(firmware: PrismaFirmware): Promise<Firmwar
  * @param description - The new description
  */
 export async function updateFirmwareDescription(firmwareId: string, description: string) {
-  const firmware = await db.firmware.update({
-    where: { id: firmwareId },
-    data: { description }
-  });
-  
-  return await mapFirmwareType(firmware);
+    const firmware = await db.firmware.update({
+        where: { id: firmwareId },
+        data: { description }
+    });
+
+    return await mapFirmwareType(firmware);
 }

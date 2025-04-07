@@ -20,7 +20,7 @@ interface SensorDialogProps {
   categories: SensorCategory[];
   sensor?: SensorWithActiveGroupCount;
   children?: ReactNode;
-  onSuccess?: (sensor: Sensor,activeGroups: number) => void;
+  onSuccess?: (sensor: Sensor, activeGroups: number) => void;
 }
 
 export function SensorDialog({ deviceId, categories, sensor, children, onSuccess }: SensorDialogProps) {
@@ -28,7 +28,7 @@ export function SensorDialog({ deviceId, categories, sensor, children, onSuccess
 
   const handleSuccess = (sensor: Sensor, activeGroupCount: number) => {
     if (onSuccess) {
-      onSuccess(sensor,activeGroupCount);
+      onSuccess(sensor, activeGroupCount);
     }
     setIsOpen(false);
   };
@@ -54,7 +54,7 @@ export function SensorDialog({ deviceId, categories, sensor, children, onSuccess
               : "Add a new sensor to this device"}
           </DialogDescription>
         </DialogHeader>
-        <SensorForm 
+        <SensorForm
           deviceId={deviceId}
           sensor={sensor}
           categories={categories}

@@ -1,6 +1,6 @@
 import { Separator } from "@/components/ui/separator";
 import { getCategoriesWithSensorCountAction } from "@/app/actions/categoryActions";
-import { getDeviceAction,getDeviceSensorsAction } from "@/app/actions/deviceActions";
+import { getDeviceAction, getDeviceSensorsAction } from "@/app/actions/deviceActions";
 import { SensorTable } from "@/components/devices/sensors/SensorTable";
 import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
 import { SensorDialog } from "@/components/devices/sensors/SensorDialog";
@@ -29,7 +29,7 @@ export default async function SensorPage({ params }: SensorPageProps) {
   const device = deviceResponse.data;
 
   // Fetch sensors for this device
-  const [sensorsResponse,categoriesResponse] = await Promise.all([getDeviceSensorsAction(deviceId), getCategoriesWithSensorCountAction()]);
+  const [sensorsResponse, categoriesResponse] = await Promise.all([getDeviceSensorsAction(deviceId), getCategoriesWithSensorCountAction()]);
 
   if (!sensorsResponse.success) {
     return (

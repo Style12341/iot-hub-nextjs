@@ -1,6 +1,6 @@
 import { CreateDeviceFormData } from "@/types/types";
 import db from "../prisma";
-import { Device, DeviceStatus, Firmware, View,Sensor } from "@prisma/client";
+import { Device, DeviceStatus, Firmware, View, Sensor } from "@prisma/client";
 // Example usage
 export interface SensorValueQueryResult {
     value: number;
