@@ -681,3 +681,23 @@ export async function getDeviceSensorsWithGroupCount(deviceId: string): Promise<
         activeGroupCount: sensor._count.GroupSensor
     }));
 }
+export async function deleteDevice(deviceId: string) {
+    // Delete the device and its related data
+    const deletedDevice = await db.device.delete({
+        where: {
+            id: deviceId
+        }
+    });
+    return deletedDevice;
+}
+export async function updateDevice(deviceId: string, data: Partial<Device>) {
+    const updatedDevice = await db.device.update({
+        where: {
+            id: deviceId
+        },
+        data: {
+            ...data,
+        }
+    });
+    return updatedDevice;
+}

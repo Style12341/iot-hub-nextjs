@@ -1,13 +1,86 @@
 "use server";
 
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
-import { validateDeviceOwnership,createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors, getDeviceActiveView, getDevicesWithViews, getPlainDevice,getDeviceSensorsWithGroupCount } from "@/lib/contexts/deviceContext";
+import { updateDevice,validateDeviceOwnership,createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors, getDeviceActiveView, getDevicesWithViews, getPlainDevice,getDeviceSensorsWithGroupCount,deleteDevice } from "@/lib/contexts/deviceContext";
 
 import { getAllUserViews } from "@/lib/contexts/userContext";
 import { CreateDeviceFormData, createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+// Add these functions to your existing deviceActions.ts file
 
+/**
+ * Update a device's details
+ * @param deviceId - ID of the device to update
+ * @param data - Data to update
+ */
+export async function updateDeviceAction(
+  deviceId: string, 
+  data: { name: string; viewId: string },
+  token?: string | null,
+  context?: string
+): Promise<ServerActionResponse> {
+  try {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "Unauthorized access");
+    }
+
+    // Validate device ownership
+    const hasAccess = await validateDeviceOwnership(userId, deviceId);
+    if (!hasAccess) {
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+    }
+
+    // Update device
+    await updateDevice(deviceId, data);
+
+    return createSuccessResponse(ServerActionReason.SUCCESS, "Device updated successfully", null);
+  } catch (error) {
+    console.error("Error updating device:", error);
+    
+    // Check for unique constraint violation
+    if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+      return createErrorResponse(
+        ServerActionReason.CONFLICT, 
+        "A device with this name already exists"
+      );
+    }
+    
+    return createErrorResponse();
+  }
+}
+
+/**
+ * Delete a device and all its associated data
+ * @param deviceId - ID of the device to delete
+ */
+export async function deleteDeviceAction(
+  deviceId: string,
+  token?: string | null,
+  context?: string
+): Promise<ServerActionResponse> {
+  try {
+    const userId = await getUserIdFromAuthOrToken(token, context);
+    if (!userId) {
+      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "Unauthorized access");
+    }
+
+    // Validate device ownership
+    const hasAccess = await validateDeviceOwnership(userId, deviceId);
+    if (!hasAccess) {
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+    }
+
+    // Delete device - Prisma will cascade delete all related entities based on schema
+    await deleteDevice(deviceId);
+
+    return createSuccessResponse(ServerActionReason.SUCCESS, "Device deleted successfully", null);
+  } catch (error) {
+    console.error("Error deleting device:", error);
+    return createErrorResponse();
+  }
+}
 /**
  * Creates a new device given the formdata
  * @param data The form data to create the device
