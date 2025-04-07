@@ -123,7 +123,7 @@ export default function ViewCollapsible({
                 <div className="flex justify-between items-center">
                     <Button
                         variant="ghost"
-                        onClick={() => setIsExpanded(!isExpanded)}
+                        onClick={() => setIsExpanded(!isExpanded && deviceCount > 0)}
                         className="flex justify-start items-center p-0 h-auto"
                     >
                         <CardTitle className="text-xl flex items-center">
