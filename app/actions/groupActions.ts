@@ -14,6 +14,7 @@ import {
     getGroupSensorStates
 } from "@/lib/contexts/groupContext";
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
+import { error } from "console";
 // Add a new interface for sensors with active state
 interface SensorWithActiveState extends Sensor {
     isActive: boolean;
@@ -29,13 +30,27 @@ export async function getDeviceSensorsAction(
         // Get user ID from auth or token
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in");
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in", {
+                body: {
+                    deviceId,
+                    groupId,
+                    token,
+                    context,
+                }
+            });
         }
 
         // Validate device ownership
         const hasAccess = await validateDeviceOwnership(userId, deviceId);
         if (!hasAccess) {
-            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device", {
+                body: {
+                    deviceId,
+                    groupId,
+                    token,
+                    context,
+                }
+            });
         }
 
         // Get all sensors for the device
@@ -60,8 +75,15 @@ export async function getDeviceSensorsAction(
             sensorWithActiveState
         );
     } catch (error) {
-        console.error("Error fetching device sensors:", error);
-        return createErrorResponse();
+        return createErrorResponse(ServerActionReason.UNKNOWN_ERROR, "An error occurred while fetching device sensors", {
+            error,
+            body: {
+                deviceId,
+                groupId,
+                token,
+                context,
+            }
+        });
     }
 }
 
@@ -77,13 +99,25 @@ export async function getDeviceGroupsAction(
         // Get user ID from auth or token
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in");
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in", {
+                body: {
+                    deviceId,
+                    token,
+                    context,
+                }
+            });
         }
 
         // Validate device ownership
         const hasAccess = await validateDeviceOwnership(userId, deviceId);
         if (!hasAccess) {
-            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device", {
+                body: {
+                    deviceId,
+                    token,
+                    context,
+                }
+            });
         }
 
         // Get groups and active group ID
@@ -101,8 +135,14 @@ export async function getDeviceGroupsAction(
             }
         );
     } catch (error) {
-        console.error("Error fetching device groups:", error);
-        return createErrorResponse();
+        return createErrorResponse(ServerActionReason.UNKNOWN_ERROR, "An error occurred while fetching device groups", {
+            error,
+            body: {
+                deviceId,
+                token,
+                context,
+            }
+        });
     }
 }
 
@@ -119,13 +159,27 @@ export async function setActiveGroupAction(
         // Get user ID from auth or token
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in");
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in", {
+                body: {
+                    deviceId,
+                    groupId,
+                    token,
+                    context,
+                }
+            });
         }
 
         // Validate device ownership
         const hasAccess = await validateDeviceOwnership(userId, deviceId);
         if (!hasAccess) {
-            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device", {
+                body: {
+                    deviceId,
+                    groupId,
+                    token,
+                    context,
+                }
+            });
         }
 
         // Update active group
@@ -133,8 +187,15 @@ export async function setActiveGroupAction(
 
         return createSuccessResponse(ServerActionReason.SUCCESS, "Active group updated", null);
     } catch (error) {
-        console.error("Error setting active group:", error);
-        return createErrorResponse();
+        return createErrorResponse(ServerActionReason.UNKNOWN_ERROR, "An error occurred while updating active group", {
+            error,
+            body: {
+                deviceId,
+                groupId,
+                token,
+                context,
+            }
+        });
     }
 }
 
@@ -151,13 +212,27 @@ export async function deleteGroupAction(
         // Get user ID from auth or token
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in");
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in", {
+                body: {
+                    deviceId,
+                    groupId,
+                    token,
+                    context,
+                }
+            });
         }
 
         // Validate device ownership
         const hasAccess = await validateDeviceOwnership(userId, deviceId);
         if (!hasAccess) {
-            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device", {
+                body: {
+                    deviceId,
+                    groupId,
+                    token,
+                    context,
+                }
+            });
         }
 
         // Check if this is the active group
@@ -165,7 +240,15 @@ export async function deleteGroupAction(
         if (activeGroupCheck) {
             return createErrorResponse(
                 ServerActionReason.CONFLICT,
-                "Cannot delete the active group. Set another group as active first."
+                "Cannot delete the active group. Set another group as active first.",
+                {
+                    body: {
+                        deviceId,
+                        groupId,
+                        token,
+                        context,
+                    }
+                }
             );
         }
 
@@ -174,8 +257,15 @@ export async function deleteGroupAction(
 
         return createSuccessResponse(ServerActionReason.SUCCESS, "Group deleted successfully", null);
     } catch (error) {
-        console.error("Error deleting group:", error);
-        return createErrorResponse();
+        return createErrorResponse(ServerActionReason.UNKNOWN_ERROR, "An error occurred while deleting the group", {
+            error,
+            body: {
+                deviceId,
+                groupId,
+                token,
+                context,
+            }
+        });
     }
 }
 
@@ -193,13 +283,29 @@ export async function createGroupAction(
         // Get user ID from auth or token
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in");
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in", {
+                body: {
+                    deviceId,
+                    name,
+                    activeSensorIds,
+                    token,
+                    context,
+                }
+            });
         }
 
         // Validate device ownership
         const hasAccess = await validateDeviceOwnership(userId, deviceId);
         if (!hasAccess) {
-            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device", {
+                body: {
+                    deviceId,
+                    name,
+                    activeSensorIds,
+                    token,
+                    context,
+                }
+            });
         }
 
         // Create the group with active sensors
@@ -207,8 +313,16 @@ export async function createGroupAction(
 
         return createSuccessResponse(ServerActionReason.CREATED, "Group created successfully", group);
     } catch (error) {
-        console.error("Error creating group:", error);
-        return createErrorResponse();
+        return createErrorResponse(ServerActionReason.UNKNOWN_ERROR, "An error occurred while creating the group", {
+            error,
+            body: {
+                deviceId,
+                name,
+                activeSensorIds,
+                token,
+                context,
+            }
+        });
     }
 }
 
@@ -227,13 +341,31 @@ export async function updateGroupAction(
         // Get user ID from auth or token
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in");
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in", {
+                body: {
+                    deviceId,
+                    groupId,
+                    name,
+                    activeSensorIds,
+                    token,
+                    context,
+                }
+            });
         }
 
         // Validate device ownership
         const hasAccess = await validateDeviceOwnership(userId, deviceId);
         if (!hasAccess) {
-            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+            return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device", {
+                body: {
+                    deviceId,
+                    groupId,
+                    name,
+                    activeSensorIds,
+                    token,
+                    context,
+                }
+            });
         }
 
         // Update the group with active sensors
@@ -241,7 +373,16 @@ export async function updateGroupAction(
 
         return createSuccessResponse(ServerActionReason.SUCCESS, "Group updated successfully", group);
     } catch (error) {
-        console.error("Error updating group:", error);
-        return createErrorResponse();
+        return createErrorResponse(ServerActionReason.UNKNOWN_ERROR, "An error occurred while updating the group", {
+            error,
+            body: {
+                deviceId,
+                groupId,
+                name,
+                activeSensorIds,
+                token,
+                context,
+            }
+        });
     }
 }

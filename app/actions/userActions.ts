@@ -10,7 +10,13 @@ export async function getSensorValuesMetricBetween(start: Date, end: Date, token
     if (!userId) {
         return createErrorResponse(
             ServerActionReason.UNAUTHORIZED,
-            "Unauthorized access"
+            "Unauthorized access",
+            {
+                body: {
+                    token,
+                    context,
+                }
+            }
         );
     }
     const res = await getMetricValueBetween("SENSOR_VALUES_PER_MINUTE", userId, start, end);

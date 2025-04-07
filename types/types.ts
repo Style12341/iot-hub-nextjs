@@ -80,19 +80,23 @@ export const createErrorResponse = (
     reason: ErrorReasons = ServerActionReason.UNKNOWN_ERROR,
     message = "An error occurred",
     // Optional object for more detailed error information can be a generic error or a body
-    error?: Object
+    error: any
 ): ErrorResponse => {
-    console.error({
-        reason,
-        message,
-        error,
-        statusCode: reasonToStatusCode[reason],
-    }); // Log the error for debugging
-    return {
-        success: false,
-        reason,
-        message,
-        statusCode: reasonToStatusCode[reason],
+    try {
+        throw error; // This will help to capture the stack trace in the console
+    } catch (e) {
+        console.error({
+            reason,
+            message,
+            e,
+            statusCode: reasonToStatusCode[reason],
+        }); // Log the error for debugging
+        return {
+            success: false,
+            reason,
+            message,
+            statusCode: reasonToStatusCode[reason],
+        }
     }
 };
 
