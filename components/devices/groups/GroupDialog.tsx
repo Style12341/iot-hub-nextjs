@@ -16,7 +16,7 @@ interface GroupDialogProps {
     deviceId: string;
     group?: Group;
     children: ReactNode;
-    onSuccess?: (group: Group) => void;
+    onSuccess?: (group: Group, sensorCount: number) => void;
     title?: string;
     description?: string;
 }
@@ -31,9 +31,9 @@ export function GroupDialog({
 }: GroupDialogProps) {
     const [open, setOpen] = useState(false);
 
-    const handleSuccess = (updatedGroup: Group) => {
+    const handleSuccess = (updatedGroup: Group, sensorCount: number) => {
         if (onSuccess) {
-            onSuccess(updatedGroup);
+            onSuccess(updatedGroup,sensorCount);
         }
         setOpen(false);
     };

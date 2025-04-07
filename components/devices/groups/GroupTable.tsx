@@ -110,12 +110,12 @@ export function GroupTable({
     }
 
     // Function to handle edit request
-    function handleEditGroup(group: Group) {
+    function handleEditGroup(group: Group, sensorCount: number) {
         if (onGroupEdited) {
             onGroupEdited(group);
         }
         setGroups((prev) =>
-            prev.map((g) => (g.id === group.id ? { ...g, name: group.name } : g))
+            prev.map((g) => (g.id === group.id ? { ...g, name: group.name, sensorCount: sensorCount } : g))
         );
     }
 

@@ -140,17 +140,42 @@ export async function updateGroup(
     });
 
     // Get existing GroupSensor entries
+    // Get all sensors for the device that owns this group
+    const deviceSensors = await getDeviceSensors(group.deviceId);
+
+    // Get existing GroupSensor entries
     const existingGroupSensors = await getGroupSensorStates(groupId);
 
-    // Update each GroupSensor.active status based on activeSensorIds
-    await Promise.all(
-        existingGroupSensors.map(gs =>
-            db.groupSensor.update({
-                where: { id: gs.id },
-                data: { active: activeSensorIds.includes(gs.sensorId) }
-            })
-        )
+    // Map of sensorId to existing GroupSensor for quick lookup
+    const sensorToGroupSensor = new Map(
+        existingGroupSensors.map(gs => [gs.sensorId, gs])
     );
+
+    // For each device sensor, update existing or create new GroupSensor entries
+    await db.$transaction(async (transaction) => {
+        await Promise.all(
+            deviceSensors.map(sensor => {
+                const existingGS = sensorToGroupSensor.get(sensor.id);
+
+                if (existingGS) {
+                    // Update existing GroupSensor
+                    return transaction.groupSensor.update({
+                        where: { id: existingGS.id },
+                        data: { active: activeSensorIds.includes(sensor.id) }
+                    });
+                } else {
+                    // Create new GroupSensor
+                    return transaction.groupSensor.create({
+                        data: {
+                            groupId: groupId,
+                            sensorId: sensor.id,
+                            active: activeSensorIds.includes(sensor.id)
+                        }
+                    });
+                }
+            })
+        );
+    });
 
     return group;
 }

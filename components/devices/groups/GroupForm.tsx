@@ -30,7 +30,7 @@ interface SensorWithActiveStatus extends Sensor {
 interface GroupFormProps {
     deviceId: string;
     group?: Group;
-    onSuccess?: (group: Group) => void;
+    onSuccess?: (group: Group, sensorCount: number) => void;
     isDialog?: boolean;
 }
 
@@ -95,7 +95,7 @@ export function GroupForm({ deviceId, group, onSuccess, isDialog = false }: Grou
                 toast.success(isEditing ? "Group updated successfully" : "Group created successfully");
 
                 if (onSuccess && result.data) {
-                    onSuccess(result.data);
+                    onSuccess(result.data, activeSensorIds.length);
                 } else if (!isDialog) {
                     router.push(`/dashboard/devices/${deviceId}/groups`);
                     router.refresh();
