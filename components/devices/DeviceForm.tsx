@@ -164,6 +164,7 @@ export default function DeviceForm({ views, categories, deviceAction, categoryAc
                                             </SelectContent>
                                         </Select>
                                         <ViewDialog
+                                            create
                                             onSubmit={addView}
                                             buttonVariant="ghost"
                                         />

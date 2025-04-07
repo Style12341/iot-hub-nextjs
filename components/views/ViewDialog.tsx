@@ -1,3 +1,5 @@
+"use client"
+
 import {
     Dialog,
     DialogContent,
@@ -6,62 +8,85 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { CreateViewFormData, ServerActionResponse } from "@/types/types";
 import { View } from "@prisma/client";
 import { Button } from "../ui/button";
-import { useState } from "react";
-import { PlusCircle } from "lucide-react";
+import { ReactNode, useState } from "react";
+import { Plus, Edit } from "lucide-react";
 import ViewForm from "./ViewForm";
-import { DeviceWithViewPaginated } from "@/lib/contexts/deviceContext";
 
 type ViewDialogProps = {
-    onSubmit: (view: View) => void,
-    buttonVariant?: "outline" | "ghost" | "link",
-    buttonSize?: "default" | "sm" | "lg" | "icon",
-};
+    create: boolean;
+    initialData?: View | null;
+    onSubmit?: (view: View) => void;
+    children?: ReactNode;
+    buttonVariant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
+}
 
 export default function ViewDialog({
+    create,
+    initialData = null,
     onSubmit,
-    buttonVariant = "outline",
-    buttonSize = "icon"
+    children,
+    buttonVariant = "default"
 }: ViewDialogProps) {
-    const [open, setOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
-    const handleAddView = (view: View) => {
-        onSubmit(view);
-        setOpen(false); // Close dialog after successful creation
+    const handleSubmit = (view: View) => {
+        if (onSubmit) {
+            onSubmit(view);
+        }
+        setIsOpen(false);
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button variant={buttonVariant} size={buttonSize} className="ml-2">
-                    <PlusCircle className="h-4 w-4" />
-                    <span className="sr-only">Create View</span>
-                </Button>
+                {children || (
+                    <Button variant={buttonVariant}>
+                        {create ? (
+                            <>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create View
+                            </>
+                        ) : (
+                            <>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit View
+                            </>
+                        )}
+                    </Button>
+                )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Create a new view</DialogTitle>
+                    <DialogTitle>
+                        {create ? "Create a new view" : "Edit view"}
+                    </DialogTitle>
                     <DialogDescription>
-                        Create a new view to organize your devices
+                        {create
+                            ? "Create a new view to organize your devices"
+                            : "Modify this view's settings and add devices to it"
+                        }
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
-                    {/* Pass a custom viewAction that handles the dialog state */}
-                    <ViewFormWrapper
-                        create={true}
-                        onSubmit={handleAddView}
-                    />
-                </div>
+                <ViewFormWrapper
+                    create={create}
+                    initialData={initialData}
+                    onSubmit={handleSubmit}
+                />
             </DialogContent>
         </Dialog>
     );
 }
 
 // Wrapper component to prevent form nesting issues
-function ViewFormWrapper({ create, onSubmit }: {
+function ViewFormWrapper({
+    create,
+    initialData,
+    onSubmit
+}: {
     create: boolean;
+    initialData?: View | null;
     onSubmit: (view: View) => void;
 }) {
     // Use state to control if the form is shown - prevents form nesting issues
@@ -71,10 +96,10 @@ function ViewFormWrapper({ create, onSubmit }: {
         <div key={formKey} className="view-form-wrapper">
             <ViewForm
                 create={create}
+                initialData={initialData}
                 onSubmit={onSubmit}
                 // Override the form onSubmit to prevent bubbling up
                 formAttributes={{ onSubmit: e => e.stopPropagation() }}
-            // Pass the viewAction
             />
         </div>
     );

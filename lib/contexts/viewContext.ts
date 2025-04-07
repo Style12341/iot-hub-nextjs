@@ -81,3 +81,70 @@ export async function getAllUserViews(userId: string) {
         devicesCount: view._count.Devices
     }));
 }
+/**
+ * Update a view and transfer devices to it
+ * @param id - ID of the view to update
+ * @param userId - ID of the user who owns the view
+ * @param name - New name for the view
+ * @param devicesIdsToTransfer - Array of device IDs to transfer to this view
+ */
+export async function updateView(id: string, userId: string, name: string, devicesIdsToTransfer: string[] = []) {
+    // Update view with new data
+    const updatedView = await db.view.update({
+        where: {
+            id,
+            userId // Ensure the view belongs to this user
+        },
+        data: { name }
+    });
+
+    // If there are devices to transfer, connect them to this view
+    if (devicesIdsToTransfer.length > 0) {
+        await db.device.updateMany({
+            where: {
+                id: { in: devicesIdsToTransfer },
+                userId // Ensure the devices belong to this user
+            },
+            data: {
+                viewId: updatedView.id
+            }
+        });
+    }
+
+    // Get updated view with device count
+    const viewWithCount = await db.view.findUnique({
+        where: { id: updatedView.id },
+        include: {
+            _count: {
+                select: { Devices: true }
+            }
+        }
+    });
+
+    if (!viewWithCount) {
+        throw new Error("View not found after update");
+    }
+
+    // Return view with device count
+    return {
+        ...viewWithCount,
+        devicesCount: viewWithCount._count.Devices
+    };
+}
+export async function getViewById(userId: string, viewId: string) {
+    // Fetch the view by ID and ensure it belongs to the user
+    const view = await db.view.findFirst({
+        where: {
+            id: viewId,
+            userId
+        },
+        include: {
+            _count: {
+                select: {
+                    Devices: true
+                }
+            }
+        }
+    });
+    return view;
+}

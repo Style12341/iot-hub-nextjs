@@ -11,6 +11,7 @@ import { getDevicesViewWithActiveSensorsBetweenAction } from "@/app/actions/devi
 import { deleteViewAction } from "@/app/actions/viewActions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import ViewDialog from "./ViewDialog";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -30,6 +31,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
+import Link from "next/link";
 
 interface ViewCollapsibleProps {
     viewName: string;
@@ -125,6 +127,7 @@ export default function ViewCollapsible({
                         variant="ghost"
                         onClick={() => setIsExpanded(!isExpanded && deviceCount > 0)}
                         className="flex justify-start items-center p-0 h-auto"
+                        disabled={deviceCount === 0}
                     >
                         <CardTitle className="text-xl flex items-center">
                             {isExpanded ?
@@ -149,13 +152,27 @@ export default function ViewCollapsible({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>View Actions</DropdownMenuLabel>
-                                <DropdownMenuItem
-                                    onClick={() => toast.info("Edit functionality coming soon")}
-                                >
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit
+
+                                {/* Edit option using ViewDialog */}
+                                <DropdownMenuItem className="p-0">
+                                    <Link
+                                        href={`/dashboard/views/${viewId}/edit`}
+                                        className="flex w-full items-center"
+                                    >
+                                        <Button
+                                            variant="ghost"
+                                            className="w-full justify-start"
+                                            size="sm"
+                                        >
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            Edit
+                                        </Button>
+                                    </Link>
                                 </DropdownMenuItem>
+
                                 <DropdownMenuSeparator />
+
+                                {/* Delete option */}
                                 <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                                     <AlertDialogTrigger asChild>
                                         <DropdownMenuItem
