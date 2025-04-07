@@ -92,7 +92,7 @@ export default function DeviceCard({ device, isWrapper = false, viewMode = false
                                 </Badge>
                             </motion.div>
                         </AnimatePresence>
-                        <DeviceMenu className="" deviceId={device.id} variant="dropdown" dropdownButtonVariant="ghost" dropdownButtonSize="sm"/>
+                        <DeviceMenu className="" deviceId={device.id} variant="dropdown" dropdownButtonVariant="ghost" dropdownButtonSize="sm" />
                     </div>
                 </div>
 
@@ -117,93 +117,102 @@ function IndexDeviceCard(device: DeviceQueryResult) {
     // Default number of sensors to show
     const initialSensorsCount = 3;
     const hasMoreSensors = device.sensors ? device.sensors.length > initialSensorsCount : false;
+    console.log("Device", device)
     return (<>
-        {
-            device.status != "WAITING" ? (
-                <CardContent>
-                    <div className="space-y-2">
-                        <h3 className="text-sm font-medium">
-                            Active Sensors ({device.sensors.length})
-                        </h3>
-
-                        <Collapsible
-                            open={isExpanded}
-                            onOpenChange={setIsExpanded}
-                            className="w-full"
-                        >
-                            <ul className="divide-y pb-2">
-                                {device.sensors
-                                    .slice(0, initialSensorsCount)
-                                    .map((sensor) => (
-                                        <SensorListItem key={sensor.id} sensor={sensor} />
-                                    ))
-                                }
-                            </ul>
-
-                            {/* Collapsible content for additional sensors */}
-                            {hasMoreSensors && (
-                                <>
-                                    <CollapsibleContent>
-                                        <ul className="divide-y border-t pt-2">
-                                            {device.sensors
-                                                .slice(initialSensorsCount)
-                                                .map((sensor) => (
-                                                    <SensorListItem key={sensor.id} sensor={sensor} />
-                                                ))
-                                            }
-                                        </ul>
-                                    </CollapsibleContent>
-
-                                    <CollapsibleTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="w-full mt-2 text-xs text-muted-foreground"
-                                        >
-                                            {isExpanded ? (
-                                                <>
-                                                    <ChevronUp className="h-3 w-3 mr-1" />
-                                                    Show less
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <ChevronDown className="h-3 w-3 mr-1" />
-                                                    Show {device.sensors.length - initialSensorsCount} more sensors
-                                                </>
-                                            )}
-                                        </Button>
-                                    </CollapsibleTrigger>
-                                </>
-                            )}
-                        </Collapsible>
-
-                        <Button variant="outline" size="sm" className="w-full mt-4" asChild>
-                            <Link href={`/dashboard/devices/${device.id}`}>
-                                View Details <ChevronRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </div>
-                </CardContent>
-            ) : (
+        {device.status
+            === "WAITING" ?
+            (
                 <CardContent className="flex justify-center items-center">
                     Waiting for data...
                 </CardContent>
             )
-        }</>
+            :
+            !device.sensors || device.sensors?.length == 0 ? (
+                <CardContent className="flex justify-center items-center">
+                    No active sensors
+                </CardContent>
+            ) :
+                (
+                    <CardContent>
+                        <div className="space-y-2">
+                            <h3 className="text-sm font-medium">
+                                Active Sensors ({device.sensors.length})
+                            </h3>
+
+                            <Collapsible
+                                open={isExpanded}
+                                onOpenChange={setIsExpanded}
+                                className="w-full"
+                            >
+                                <ul className="divide-y pb-2">
+                                    {device.sensors.length != 0 && device.sensors
+                                        .slice(0, initialSensorsCount)
+                                        .map((sensor) => (
+                                            <SensorListItem key={sensor.id} sensor={sensor} />
+                                        ))
+                                    }
+                                </ul>
+
+                                {/* Collapsible content for additional sensors */}
+                                {hasMoreSensors && (
+                                    <>
+                                        <CollapsibleContent>
+                                            <ul className="divide-y border-t pt-2">
+                                                {device.sensors
+                                                    .slice(initialSensorsCount)
+                                                    .map((sensor) => (
+                                                        <SensorListItem key={sensor.id} sensor={sensor} />
+                                                    ))
+                                                }
+                                            </ul>
+                                        </CollapsibleContent>
+
+                                        <CollapsibleTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="w-full mt-2 text-xs text-muted-foreground"
+                                            >
+                                                {isExpanded ? (
+                                                    <>
+                                                        <ChevronUp className="h-3 w-3 mr-1" />
+                                                        Show less
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <ChevronDown className="h-3 w-3 mr-1" />
+                                                        Show {device.sensors.length - initialSensorsCount} more sensors
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </CollapsibleTrigger>
+                                    </>
+                                )}
+                            </Collapsible>
+
+                            <Button variant="outline" size="sm" className="w-full mt-4" asChild>
+                                <Link href={`/dashboard/devices/${device.id}`}>
+                                    View Details <ChevronRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </CardContent>
+                )}
+    </>
     )
 
 }
 function ViewDeviceCard(device: DeviceQueryResult) {
     const [timeRange, setTimeRange] = useState<number>(10); // Default time range value
     const [deviceData, setDeviceData] = useState<DeviceQueryResult>(device); // State to hold fetched data
-  
+
     const [oldestValue, setOldestValue] = useState<Date>(new Date(Date.now() - 10 * 60 * 1000));
     const [oldestValues, setOldestValues] = useState<Map<string, SensorValueQueryResult[]>>(new Map());
-  
+
     useEffect(() => {
         const initialValues = new Map<string, SensorValueQueryResult[]>();
         deviceData.sensors?.forEach((sensor) => {
-            initialValues.set(sensor.id, sensor.values);
+            initialValues.set(sensor.id, sensor.values as SensorValueQueryResult[]);
         });
         setOldestValues(initialValues);
     }, []);  // Empty dependency array means this only runs once
@@ -211,7 +220,6 @@ function ViewDeviceCard(device: DeviceQueryResult) {
         const fetchData = async () => {
             const timeToFetch = new Date(Date.now() - timeRange * 60 * 1000);
             if (timeToFetch.getTime() < oldestValue.getTime()) {
-                console.log("fetching new data", timeToFetch, oldestValue);
                 setOldestValue(timeToFetch);
                 const response = await getDeviceViewWithActiveSensorsBetweenAction(deviceData.id, deviceData.view, timeToFetch, new Date(Date.now()))
                 if (!response.success) {
@@ -224,23 +232,41 @@ function ViewDeviceCard(device: DeviceQueryResult) {
                     // Create new Map to update state properly
                     const newOldestValues = new Map(oldestValues);
                     newData.device.sensors?.forEach((sensor) => {
-                        newOldestValues.set(sensor.id, sensor.values);
+                        newOldestValues.set(sensor.id, sensor.values as SensorValueQueryResult[]);
                     });
                     setOldestValues(newOldestValues);
                 }
                 // Update the oldest values map with the new data
 
             } else {
-                const newData = deviceData.sensors?.map((sensor) => {
-                    const values = oldestValues.get(sensor.id) || []; // Get the values from the map or an empty array
-                    const filteredValues = values.filter((value) => {
-                        return value.timestamp >= timeToFetch;
-                    });
+                // Create updated sensors with filtered values
+                const newData = deviceData.sensors?.map(sensor => {
+                    // Get all historical values from cache
+                    const allValues = oldestValues.get(sensor.id) || [];
+                    // Filter values based on selected time range
+                    const filteredValues = allValues.filter(value => {
+                        // Add Z only if timestamp is not already in ISO format
+                        // This is to ensure compatibility with the Date constructor
+                        // and avoid issues with time zones
+                        if (typeof value.timestamp === "string" && !value.timestamp.endsWith("Z")) {
+                            value.timestamp = new Date(value.timestamp + "Z")
+                        } else {
+                            value.timestamp = new Date(value.timestamp)
+
+                        }
+                        console.log("Filtering value", value.timestamp, timeToFetch, value.timestamp.getTime(), timeToFetch.getTime())
+
+
+                        return value.timestamp.getTime() >= timeToFetch.getTime()
+                    }
+                    );
+
                     return {
                         ...sensor,
-                        values: filteredValues,
+                        values: filteredValues
                     };
                 });
+
                 if (newData && deviceData.status !== "WAITING" && newData.length) {
                     const newDevice: DeviceQueryResult = {
                         ...deviceData,
@@ -264,7 +290,7 @@ function ViewDeviceCard(device: DeviceQueryResult) {
         if (newDevice.sensors && device.sensors) {
             newDevice.sensors = newDevice.sensors.map((sensor) => {
                 if (!sensor.values) return sensor;
-                const newSensor = device.sensors.find((s) => s.id === sensor.id);
+                const newSensor = device.sensors?.find((s) => s.id === sensor.id);
                 if (!newSensor || !newSensor.values || !newSensor.values[0]) return sensor;
 
                 const newValue = newSensor.values[0];
@@ -288,7 +314,7 @@ function ViewDeviceCard(device: DeviceQueryResult) {
 
             setDeviceData(newDevice);
         }
-    }, [device]); // Add deviceData to dependencies
+    }, [device]);
     const timeRanges = [
         { label: "Last 10 minutes", value: 10 },
         { label: "Last 30 minutes", value: 30 },
@@ -299,15 +325,6 @@ function ViewDeviceCard(device: DeviceQueryResult) {
         { label: "Last 24 hours", value: 1440 },
     ];
     // Oldest value is by default 10 minutes ago
-
-    // Predefined colors based on categories
-    const categoryColors: Record<string, string> = {
-        "Temperature": "#FF5733", // Red-orange for temperature
-        "Humidity": "#337DFF",    // Blue for humidity
-        "Pressure": "#33FF57",    // Green for pressure
-        "Light": "#FFC733",       // Yellow for light
-        "Velocity": "#D433FF",      // Purple for motion
-    };
 
     // Default color for unknown categories
     const defaultColor = "#75C2C6"; // Teal-ish default
@@ -337,7 +354,7 @@ function ViewDeviceCard(device: DeviceQueryResult) {
                                 key={sensor.id}
                                 sensor={sensor}
                                 // Get color based on category, or use default if category not found
-                                color={sensor.category ? categoryColors[sensor.category] || defaultColor : defaultColor}
+                                color={sensor.categoryColor}
                             />
                         ))}
                     </div>

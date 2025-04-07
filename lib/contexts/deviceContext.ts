@@ -1,6 +1,6 @@
 import { CreateDeviceFormData } from "@/types/types";
 import db from "../prisma";
-import { DeviceStatus, Firmware } from "@prisma/client";
+import { Device, DeviceStatus, Firmware, View, Sensor } from "@prisma/client";
 // Example usage
 export interface SensorValueQueryResult {
     value: number;
@@ -12,8 +12,9 @@ export interface SensorQueryResult {
     name: string;
     unit: string;
     category?: string;
+    categoryColor: string;
     groupSensorId: string;
-    values: SensorValueQueryResult[];
+    values?: SensorValueQueryResult[];
 };
 
 export interface GroupQueryResult {
@@ -27,7 +28,7 @@ export interface DeviceHasReceivedData {
     status: "ONLINE" | "OFFLINE";
     lastValueAt: Date;
     group: GroupQueryResult;
-    sensors: SensorQueryResult[];
+    sensors?: SensorQueryResult[];
     activeFirmwareVersion: string | null;
 };
 export interface DeviceHasNotReceivedData {
@@ -85,7 +86,7 @@ export const createDevice = async (data: CreateDeviceFormData) => {
         }
     });
     const group = device.Groups[0];
-    await Promise.all([
+    await db.$transaction([
         db.device.update({
             where: {
                 id: device.id
@@ -164,6 +165,19 @@ export const getDevice = async (id: string) => {
     device.status = getDeviceStatusFromLastValueAt(device.lastValueAt);
     return device;
 }
+export const getPlainDevice = async (userId: string, deviceId: string) => {
+    const device = await db.device.findUnique({
+        where: {
+            id: deviceId,
+            userId
+        }
+    });
+    if (!device) {
+        return null;
+    }
+    device.status = getDeviceStatusFromLastValueAt(device.lastValueAt);
+    return device;
+}
 export const getDevicesWithActiveSensors = async (userId: string, page: number = 1): Promise<DeviceQueryResultPaginated> => {
     const DEVICES_PER_PAGE = 6;
     const count = await db.device.count({
@@ -199,6 +213,7 @@ export const getDevicesWithActiveSensors = async (userId: string, page: number =
                         'name', s."name",
                         'unit', s."unit",
                         'category', c."name",
+                        'categoryColor',c."color",
                         'values', (
                             SELECT jsonb_agg(
                                 jsonb_build_object(
@@ -240,6 +255,9 @@ export const getDevicesWithActiveSensors = async (userId: string, page: number =
 
     devices.forEach(device => {
         device.device.status = getDeviceStatusFromLastValueAt(device.device.lastValueAt);
+        if (device.device.sensors && device.device.sensors.length == 1 && device.device.sensors[0].name == null) {
+            device.device.sensors = undefined;
+        }
     });
 
     return { devices, page: searchPage, maxPage, count };
@@ -264,6 +282,7 @@ export const getDevicesViewWithActiveSensorsBetween = async (userId: string, vie
                         'name', s."name",
                         'unit', s."unit",
                         'category', c."name",
+                        'categoryColor',c."color",
                         'values', (
                             SELECT jsonb_agg(
                                 jsonb_build_object(
@@ -304,6 +323,9 @@ export const getDevicesViewWithActiveSensorsBetween = async (userId: string, vie
     // Map status accordingly
     devices.forEach(device => {
         device.device.status = getDeviceStatusFromLastValueAt(device.device.lastValueAt);
+        if (device.device.sensors && device.device.sensors.length == 1 && device.device.sensors[0].name == null) {
+            device.device.sensors = undefined;
+        }
         if (device.device.sensors) {
             device.device.sensors.sort((a, b) => a.name.localeCompare(b.name));
         }
@@ -332,6 +354,7 @@ export const getDeviceViewWithActiveSensorsBetween = async (userId: string, devi
                         'name', s."name",
                         'unit', s."unit",
                         'category', c."name",
+                        'categoryColor',c."color",
                         'values', (
                             SELECT jsonb_agg(
                                 jsonb_build_object(
@@ -380,6 +403,9 @@ export const getDeviceViewWithActiveSensorsBetween = async (userId: string, devi
     const device = devices[0];
     device.device.status = getDeviceStatusFromLastValueAt(device.device.lastValueAt);
     // Sort sensors by name
+    if (device.device.sensors && device.device.sensors.length == 1 && device.device.sensors[0].name == null) {
+        device.device.sensors = undefined;
+    }
     if (device.device.sensors) {
         device.device.sensors.sort((a, b) => a.name.localeCompare(b.name));
     }
@@ -406,6 +432,7 @@ export const getDeviceWithActiveSensors = async (userId: string, deviceId: strin
                         'name', s."name",
                         'unit', s."unit",
                         'category', c."name",
+                        'categoryColor',c."color",
                         'values', (
                             SELECT jsonb_agg(
                                 jsonb_build_object(
@@ -446,10 +473,48 @@ export const getDeviceWithActiveSensors = async (userId: string, deviceId: strin
     const res = devices[0];
     console.debug(res)
     res.device.status = getDeviceStatusFromLastValueAt(res.device.lastValueAt);
+    if (res.device.sensors && res.device.sensors.length == 1 && res.device.sensors[0].name == null) {
+        res.device.sensors = undefined;
+    }
     console.debug(res.device.group)
 
     return res;
 }
+export const getDevicesWithViews = async (userId: string, page: number = 1): Promise<DeviceWithViewPaginated> => {
+    const DEVICES_PER_PAGE = 100;
+    const count = await db.device.count({
+        where: {
+            userId,
+        }
+    })
+    if (count === 0) {
+        return { devices: [], page: 1, maxPage: 1, count: 0 };
+    }
+    let searchPage = Math.max(1, page);
+    const maxPage = Math.ceil(count / DEVICES_PER_PAGE);
+    searchPage = Math.min(searchPage, maxPage);
+    const skip = Math.max(0, (searchPage - 1) * DEVICES_PER_PAGE);
+    const res = await db.device.findMany({
+        where: {
+            userId
+        },
+        include: {
+            View: true,
+        },
+        orderBy: {
+            name: "asc"
+        },
+        take: DEVICES_PER_PAGE,
+        skip: skip
+    });
+    return { devices: res, page: searchPage, maxPage, count };
+}
+export type DeviceWithViewPaginated = {
+    devices: ((Device | null) & { View: View | null })[];
+    page: number;
+    maxPage: number;
+    count: number;
+};
 
 export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string | null) {
     // Ensure we're working with a properly formatted date
@@ -565,4 +630,74 @@ export async function getDeviceActiveView(userId: string, deviceId: string) {
         }
     });
     return device?.View
+}
+export interface SensorWithActiveGroupCount extends Sensor {
+    activeGroupCount: number;
+    GroupSensor: {
+        id: string;
+        active: boolean;
+        groupId: string;
+        sensorId: string;
+    }[];
+    Category?: {
+        id: string;
+        name: string;
+        color: string;
+    } | null;
+}
+export async function getDeviceSensorsWithGroupCount(deviceId: string): Promise<SensorWithActiveGroupCount[]> {
+    // Get all sensors for a device with count of active groups
+    const sensors = await db.sensor.findMany({
+        where: {
+            deviceId
+        },
+        include: {
+            Category: {
+                select: {
+                    id: true,
+                    name: true,
+                    color: true
+                }
+            },
+            GroupSensor: true,
+            _count: {
+                select: {
+                    GroupSensor: {
+                        where: {
+                            active: true
+                        }
+                    }
+                }
+            }
+        },
+        orderBy: {
+            name: 'asc'
+        }
+    });
+
+    // Format the response
+    return sensors.map(sensor => ({
+        ...sensor,
+        activeGroupCount: sensor._count.GroupSensor
+    }));
+}
+export async function deleteDevice(deviceId: string) {
+    // Delete the device and its related data
+    const deletedDevice = await db.device.delete({
+        where: {
+            id: deviceId
+        }
+    });
+    return deletedDevice;
+}
+export async function updateDevice(deviceId: string, data: Partial<Device>) {
+    const updatedDevice = await db.device.update({
+        where: {
+            id: deviceId
+        },
+        data: {
+            ...data,
+        }
+    });
+    return updatedDevice;
 }

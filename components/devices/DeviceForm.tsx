@@ -26,7 +26,8 @@ import { useUser } from "@clerk/nextjs";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import CategoryDialog from "../categories/CategoryDialog";
-import { SensorCategory } from "@prisma/client";
+import { SensorCategory, View } from "@prisma/client";
+import ViewDialog from "../views/ViewDialog";
 
 // Props type for the component
 type DeviceFormProps = {
@@ -39,10 +40,19 @@ type DeviceFormProps = {
 export default function DeviceForm({ views, categories, deviceAction, categoryAction }: DeviceFormProps) {
     const { user } = useUser();
     const userId = user?.id
+    const [viewsState, setViews] = useState(views);
     const [isPending, startTransition] = useTransition();
     const [categoriesState, setCategories] = useState(categories);
     const addCategory = (category: SensorCategory) => {
         setCategories((prevCategories) => [...prevCategories, category]);
+    };
+    const addView = (view: View) => {
+        setViews((prevViews) => [
+            ...prevViews,
+            { id: view.id, name: view.name }
+        ]);
+        // Auto-select the new view
+        form.setValue("view.id", view.id);
     };
     const form = useForm<CreateDeviceFormData>({
         resolver: zodResolver(createDeviceFormSchema),
@@ -84,7 +94,7 @@ export default function DeviceForm({ views, categories, deviceAction, categoryAc
         <>
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-2xl font-bold mb-6">Create New Device</h1>
-                <CategoryDialog create={true} categoryAction={categoryAction} addCategory={addCategory} />
+                <CategoryDialog create={true} onSubmit={addCategory} />
             </div>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
@@ -123,40 +133,44 @@ export default function DeviceForm({ views, categories, deviceAction, categoryAc
                             )}
                         />
 
-                        {/* View Selection Dropdown */}
                         <FormField
                             control={form.control}
                             name="view.id"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>View</FormLabel>
-                                    <Select
-                                        onValueChange={(value) => {
-                                            // Find the selected view to get its name
-                                            const selectedView = views.find(v => v.id === value);
-                                            field.onChange(value);
-                                            // Update the view name as well
-                                            if (selectedView) {
-                                                form.setValue("view.id", selectedView.id);
-                                            }
-                                        }}
-                                        defaultValue={field.value || views.find(v => v.name === "Default")?.id || ""}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a view" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {views.map((view) => (
-                                                <SelectItem key={view.id} value={view.id}>
-                                                    {view.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <div className="flex items-center">
+                                        <Select
+                                            onValueChange={(value) => {
+                                                field.onChange(value);
+                                                const selectedView = viewsState.find(v => v.id === value);
+                                                if (selectedView) {
+                                                    form.setValue("view.id", selectedView.id);
+                                                }
+                                            }}
+                                            defaultValue={field.value || viewsState.find(v => v.name === "Default")?.id || ""}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select a view" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {viewsState.map((view) => (
+                                                    <SelectItem key={view.id} value={view.id}>
+                                                        {view.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <ViewDialog
+                                            create
+                                            onSubmit={addView}
+                                            buttonVariant="ghost"
+                                        />
+                                    </div>
                                     <FormDescription>
-                                        Choose which view this device should appear in
+                                        Choose which view this device should appear in or create a new one
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
