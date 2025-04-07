@@ -86,7 +86,7 @@ export const createDevice = async (data: CreateDeviceFormData) => {
         }
     });
     const group = device.Groups[0];
-    await Promise.all([
+    await db.$transaction([
         db.device.update({
             where: {
                 id: device.id

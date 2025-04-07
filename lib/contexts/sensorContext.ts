@@ -6,25 +6,25 @@ import { Sensor } from "@prisma/client";
 
 
 export async function validateSensorOwnership(userId: string, sensorId: string): Promise<boolean> {
-    const sensor = await db.sensor.findFirst({
-        where: {
-            id: sensorId,
-            Device: {
-                userId: userId
-            }
-        }
-    });
-    return !!sensor;
+  const sensor = await db.sensor.findFirst({
+    where: {
+      id: sensorId,
+      Device: {
+        userId: userId
+      }
+    }
+  });
+  return !!sensor;
 }
 
 export async function getSensorsQty(userId: string) {
-    return db.sensor.count({
-        where: {
-            Device: {
-                userId
-            }
-        }
-    });
+  return db.sensor.count({
+    where: {
+      Device: {
+        userId
+      }
+    }
+  });
 }
 
 
@@ -53,10 +53,12 @@ export async function updateSensor(sensorId: string, data: {
     const currentGroupSensors = await db.groupSensor.findMany({
       where: { sensorId }
     });
+    const updateData = currentGroupSensors.map(gs => ({
+      where: { id: gs.id },
 
-    // Update each group sensor's active status
+    }));
     await Promise.all(
-      currentGroupSensors.map(gs => 
+      currentGroupSensors.map(gs =>
         db.groupSensor.update({
           where: { id: gs.id },
           data: { active: data.activeGroupIds!.includes(gs.groupId) }
@@ -99,8 +101,8 @@ export async function createSensor(deviceId: string, data: {
         sensorId: sensor.id,
         // If activeGroupIds is provided, check if this group should be active
         // Otherwise default to false
-        active: data.activeGroupIds 
-          ? data.activeGroupIds.includes(group.id) 
+        active: data.activeGroupIds
+          ? data.activeGroupIds.includes(group.id)
           : false
       }))
     });
@@ -110,7 +112,7 @@ export async function createSensor(deviceId: string, data: {
 }
 
 export async function deleteSensor(sensorId: string): Promise<Sensor> {
-    return await db.sensor.delete({
-        where: { id: sensorId }
-    });
+  return await db.sensor.delete({
+    where: { id: sensorId }
+  });
 }
