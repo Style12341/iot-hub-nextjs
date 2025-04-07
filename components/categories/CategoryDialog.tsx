@@ -1,4 +1,4 @@
-
+"use client"
 import {
     Dialog,
     DialogContent,
@@ -7,43 +7,72 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { CreateCategoryFormData, ServerActionResponse } from "@/types/types";
 import { SensorCategory } from "@prisma/client";
 import CategoryForm from "./CategoryForm";
 import { Button } from "../ui/button";
+import { ReactNode, useState } from "react";
+import { Plus } from "lucide-react";
 
-type CategoryDialogProps =
-    | {
-        categoryAction: (formData: CreateCategoryFormData) => Promise<ServerActionResponse>,
-        create: true,
-        addCategory?: (category: SensorCategory) => void
-    }
-    |
-    {
-        categoryAction: (formData: CreateCategoryFormData) => Promise<ServerActionResponse>,
-        create: false; categoryId: string,
-        addCategory?: (category: SensorCategory) => void
+type CategoryDialogProps = {
+    create: true,
+    redirect?: boolean,
+    initialData?: null,
+    categoryId?: null,
+    onSubmit?: (category: SensorCategory) => void,
+    children?: ReactNode
+} | {
+    create: false,
+    redirect?: boolean,
+    initialData?: SensorCategory,
+    categoryId: string,
+    onSubmit?: (category: SensorCategory) => void,
+    children?: ReactNode
+}
+
+export default function CategoryDialog({
+    create,
+    initialData = null,
+    redirect = false,
+    onSubmit,
+    children
+}: CategoryDialogProps) {
+    const [isOpen, setIsOpen] = useState(false);
+
+    const handleSubmit = (category: SensorCategory) => {
+        if (onSubmit) {
+            onSubmit(category);
+        }
+        setIsOpen(false);
     };
 
-export default function CategoryDialog(props: CategoryDialogProps) {
-    const { create } = props;
     return (
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline">
-                    {create ? "Create" : "Edit"} category
-                </Button>
+                {children || (
+                    <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        {create ? "Create category" : "Edit category"}
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Create a new category</DialogTitle>
+                    <DialogTitle>
+                        {create ? "Create a new category" : "Edit category"}
+                    </DialogTitle>
                     <DialogDescription>
-                        {create ? "Create a new category for your sensors" : "Edit an existing category"}
+                        {create
+                            ? "Create a new category for your sensors"
+                            : "Edit category details"
+                        }
                     </DialogDescription>
                 </DialogHeader>
-                <CategoryForm {...props} />
+                <CategoryForm
+                    onSubmit={handleSubmit}
+                    initialData={initialData}
+                    redirect={redirect}
+                />
             </DialogContent>
         </Dialog>
-
-    )
+    );
 }

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
-import { InfoIcon, DownloadIcon, TrashIcon, MoreHorizontalIcon } from 'lucide-react';
+import { InfoIcon, DownloadIcon, TrashIcon, MoreHorizontalIcon, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -47,6 +47,7 @@ import { assignFirmwareAction, deleteFirmwareAction } from '@/app/actions/firmwa
 import { FirmwareType } from '@/lib/contexts/firmwareContext';
 import { DeviceSSEMessage } from '@/types/types';
 import { subscribeToDeviceEvents } from '@/lib/sseUtils';
+import { FirmwareDescriptionDialog } from './FirmwareDescriptionDialog';
 
 interface FirmwareTableProps {
     firmwares: FirmwareType[];
@@ -97,7 +98,14 @@ export function FirmwareTable({
         // Clean up subscription on unmount
         return () => unsubscribe();
     }, [])
-
+    // Inside the FirmwareTable component, add this function:
+    const handleDescriptionUpdate = (firmwareId: string, updatedFirmware: FirmwareType) => {
+        setFirmwares(prev =>
+            prev.map(firmware =>
+                firmware.id === firmwareId ? updatedFirmware : firmware
+            )
+        );
+    };
     // Function to handle assignment changes
     async function handleAssignmentToggle(firmwareId: string) {
         try {
@@ -275,13 +283,18 @@ export function FirmwareTable({
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                                                {/* Details Option */}
-                                                <Link href={`/dashboard/devices/${deviceId}/firmwares/${firmware.id}`} passHref>
-                                                    <DropdownMenuItem>
-                                                        <InfoIcon className="mr-2 h-4 w-4" />
-                                                        <span>View details</span>
-                                                    </DropdownMenuItem>
-                                                </Link>
+                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className='ml-0 pl-0'>
+                                                    <FirmwareDescriptionDialog
+                                                        deviceId={deviceId}
+                                                        firmware={firmware}
+                                                        onUpdate={(updated) => handleDescriptionUpdate(firmware.id, updated)}
+                                                    >
+                                                        <Button variant="ghost" className="w-full justify-start" size="sm">
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Edit Description
+                                                        </Button>
+                                                    </FirmwareDescriptionDialog>
+                                                </DropdownMenuItem>
 
                                                 {firmware.embedded ? (
                                                     <TooltipProvider>
