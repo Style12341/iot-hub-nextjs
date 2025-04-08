@@ -701,3 +701,67 @@ export async function updateDevice(deviceId: string, data: Partial<Device>) {
     });
     return updatedDevice;
 }
+export type DeviceGroupsWithSensorsIds = {
+    id: string;
+    firmwareVersion: string;
+    Groups: {
+        id: string
+        active: boolean
+        name: string
+        sensor: {
+            id: string
+            name: string
+        }[]
+    }[]
+}
+export async function getDeviceGroupsWithActiveSensors(userId: string, deviceId: string): Promise<DeviceGroupsWithSensorsIds | null> {
+    const device = await db.device.findFirst(
+        {
+            where: {
+                id: deviceId,
+                userId
+            },
+            include: {
+                ActiveFirmware: {
+                    select: {
+                        version: true,
+                    }
+                },
+                Groups: {
+                    include: {
+                        GroupSensor: {
+                            where: {
+                                active: true
+                            },
+                            include: {
+                                Sensor: true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+    if (!device || !device.Groups) {
+        return null;
+    }
+    const newGroups = device.Groups.map(g => {
+        return {
+            id: g.id,
+            name: g.name,
+            sensor: g.GroupSensor.map(gs => {
+                return {
+                    id: gs.Sensor.id,
+                    name: gs.Sensor.name,
+                }
+            }),
+            active: device.activeGroupId == g.id
+        }
+    })
+    const newDevice = {
+        ...device,
+        firmwareVersion: device.ActiveFirmware?.version || "0.0.1",
+        Groups: newGroups
+    }
+    return newDevice;
+}
