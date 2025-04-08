@@ -1,4 +1,5 @@
 "use server";
+"use server";
 
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
 import { createSensor, deleteSensor, getSensorsQty, updateSensor, validateSensorOwnership } from "@/lib/contexts/sensorContext";

@@ -258,6 +258,7 @@ export async function getDevicesQtyAction(token?: string | null, context?: strin
   const res = await getDevicesQty(userId);
 
   return createSuccessResponse(ServerActionReason.SUCCESS, "Devices quantity retrieved successfully", res);
+  return createSuccessResponse(ServerActionReason.SUCCESS, "Devices quantity retrieved successfully", res);
 }
 /**
  * Get all views for the logged in user or the given token.
@@ -306,6 +307,7 @@ export async function getDeviceWithActiveSensorsAction(deviceId: string, token?:
   }
   const device = await getDeviceWithActiveSensors(userId, deviceId);
 
+  return createSuccessResponse(ServerActionReason.SUCCESS, "Device retrieved successfully", device);
   return createSuccessResponse(ServerActionReason.SUCCESS, "Device retrieved successfully", device);
 }
 /**
