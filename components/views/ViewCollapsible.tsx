@@ -64,14 +64,11 @@ export default function ViewCollapsible({
             const fetchData = async () => {
                 try {
                     setIsLoading(true);
-                    console.log(`Fetching data for ${viewName} view`);
-
                     const response = await getDevicesViewWithActiveSensorsBetweenAction(
                         viewName,
                         defaultFetchDate,
                         new Date(Date.now())
                     );
-
                     if (response.success) {
                         const deviceData = response.data.map(item => item.device);
                         setDevices(deviceData);

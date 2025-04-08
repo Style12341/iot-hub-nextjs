@@ -21,8 +21,6 @@ export default async function DeviceDetailsPage({
         return notFound();
     }
     const device = deviceResult.data.device;
-    console.log(device)
-
     return (
         
         <div className="space-y-6">

@@ -142,7 +142,6 @@ export async function deleteDeviceAction(
  */
 export async function createDeviceAction(data: CreateDeviceFormData) {
   try {
-    console.log(data)
     // Server side validations
     const { userId } = await auth();
     if (!userId) {

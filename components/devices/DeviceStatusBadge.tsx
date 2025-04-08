@@ -33,7 +33,6 @@ export default function DeviceStatusBadge({
         const intervalId = setInterval(() => {
             // Only check timeout-based status if we have a lastValueAt timestamp
             if (lastValueAt && status === "ONLINE") {
-                console.log("Checking device status based on time...");
                 const newStatus = getDeviceStatusFromLastValueAt(lastValueAt);
 
                 // If status should change based on time

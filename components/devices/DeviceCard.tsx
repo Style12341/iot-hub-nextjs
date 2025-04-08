@@ -133,7 +133,6 @@ function IndexDeviceCard(device: DeviceQueryResult) {
     // Default number of sensors to show
     const initialSensorsCount = 3;
     const hasMoreSensors = device.sensors ? device.sensors.length > initialSensorsCount : false;
-    console.log("Device", device)
     return (<>
         {device.status
             === "WAITING" ?
@@ -270,9 +269,6 @@ export function ViewDeviceCard(device: DeviceQueryResult) {
                             value.timestamp = new Date(value.timestamp)
 
                         }
-                        console.log("Filtering value", value.timestamp, timeToFetch, value.timestamp.getTime(), timeToFetch.getTime())
-
-
                         return value.timestamp.getTime() >= timeToFetch.getTime()
                     }
                     );
