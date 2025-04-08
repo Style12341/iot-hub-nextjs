@@ -9,12 +9,15 @@ import { DeviceSSEMessage, LOGTOKEN } from '@/types/types';
 import { getDeviceChannel } from '../sseUtils';
 import { trackMetricInDB } from '../contexts/metricsContext';
 
+type SensorValue = {
+    value: number;
+    timestamp: number;
+}
+
 type SensorsLogBody = {
     sensor_id: string;
-    timestamp?: number;
-    value: number;
-};
-
+    sensor_values: SensorValue[];
+}
 type DeviceLogBody = {
     token: string;
     device_id: string;
@@ -191,17 +194,20 @@ export async function processLog(body: DeviceLogBody) {
             return "Error: missing sensor mappings";
         }
 
-        const logs: LogEntry[] = sensors.map(sensor => {
+        const sensorLogs = sensors.map(sensor => {
             const groupSensorId = groupSensorIdMap.get(sensor.sensor_id);
             if (!groupSensorId) {
                 throw new Error(`Missing groupSensorId for sensor_id ${sensor.sensor_id}`);
             }
-            return {
-                groupSensorId,
-                timestamp: sensor.timestamp ? new Date(sensor.timestamp * 1000) : new Date(),
-                value: sensor.value
-            };
+            return sensor.sensor_values.map(sv => {
+                return {
+                    groupSensorId,
+                    timestamp: sv.timestamp ? new Date(sv.timestamp * 1000) : new Date(),
+                    value: sv.value
+                }
+            });
         });
+        const logs: LogEntry[] = sensorLogs.flatMap(logs => logs);
 
         const deviceStatus: DeviceSSEMessage = {
             id: device_id,
