@@ -59,7 +59,6 @@ export default async function DeviceSettingsPage({ params }: DeviceSettingsPageP
         </div>
 
         <Separator />
-        <DeviceApiCode device={deviceGroupsWSensors} />
         <DeviceSettingsForm device={device} views={views} />
       </div>
     </>

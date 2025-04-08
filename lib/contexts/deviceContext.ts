@@ -712,6 +712,8 @@ export type DeviceGroupsWithSensorsIds = {
         sensor: {
             id: string
             name: string
+            unit: string
+            category?: string
         }[]
     }[]
 }
@@ -735,7 +737,15 @@ export async function getDeviceGroupsWithActiveSensors(userId: string, deviceId:
                                 active: true
                             },
                             include: {
-                                Sensor: true
+                                Sensor: {
+                                    include: {
+                                        Category: {
+                                            select: {
+                                                name: true
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -754,6 +764,8 @@ export async function getDeviceGroupsWithActiveSensors(userId: string, deviceId:
                 return {
                     id: gs.Sensor.id,
                     name: gs.Sensor.name,
+                    unit: gs.Sensor.unit,
+                    category: gs.Sensor.Category?.name,
                 }
             }),
             active: device.activeGroupId == g.id
