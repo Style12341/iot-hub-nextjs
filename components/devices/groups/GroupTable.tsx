@@ -125,6 +125,7 @@ export function GroupTable({
                 <TableHeader>
                     <TableRow>
                         <TableHead>Name</TableHead>
+                        <TableHead className="max-w-[100px] md:max-w-[200px]">ID</TableHead>
                         <TableHead>Sensors</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead className="w-[80px] text-center">Active</TableHead>
@@ -139,6 +140,7 @@ export function GroupTable({
                         return (
                             <TableRow key={group.id}>
                                 <TableCell className="font-medium">{group.name}</TableCell>
+                                <TableCell className="max-w-[100px] md:max-w-[200px] truncate">{group.id}</TableCell>
                                 <TableCell>{group.sensorCount}</TableCell>
                                 <TableCell>{formatDate(group.createdAt)}</TableCell>
                                 <TableCell>

@@ -79,6 +79,7 @@ export function SensorTable({
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
+            <TableHead className="max-w-[100px] md:max-w-[200px]">ID</TableHead>
             <TableHead>Unit</TableHead>
             <TableHead>Category</TableHead>
             <TableHead>Active Groups</TableHead>
@@ -89,6 +90,7 @@ export function SensorTable({
           {sensors.map((sensor) => (
             <TableRow key={sensor.id}>
               <TableCell className="font-medium">{sensor.name}</TableCell>
+              <TableCell className="max-w-[100px] md:max-w-[200px] truncate">{sensor.id}</TableCell>
               <TableCell>{sensor.unit}</TableCell>
               <TableCell>
                 {sensor.Category ? (
