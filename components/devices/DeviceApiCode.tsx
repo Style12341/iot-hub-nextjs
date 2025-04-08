@@ -17,8 +17,8 @@ export default function DeviceApiCode({ device }: DeviceApiCodeProps) {
     useEffect(() => {
         setCode(
             `{
-        "device_id": "${device.id}",
-        "group_id": "${group?.id || "group_id"}",
+        "device_id": "${device.id}", // Device ID for: ${device.name}
+        "group_id": "${group?.id || "group_id"}", // Group ID for: ${group?.name || "group_name"}
         "firmwareVersion": "${device.firmwareVersion}", // Current firmware version here
         "fast": false, // Optional, if true, the server will answer faster but no errors will be returned
         "sensors": [${group?.sensor.map((sensor) => `

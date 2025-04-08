@@ -703,6 +703,7 @@ export async function updateDevice(deviceId: string, data: Partial<Device>) {
 }
 export type DeviceGroupsWithSensorsIds = {
     id: string;
+    name: string;
     firmwareVersion: string;
     Groups: {
         id: string
