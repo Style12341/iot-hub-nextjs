@@ -5,7 +5,7 @@ import { getDevice, ONLINE_DEVICE_THRESHOLD, updateDeviceActiveGroup, updateDevi
 import { getGroupSensors } from '@/lib/contexts/groupSensorsContext';
 import { createMultipleSensorValues } from '@/lib/contexts/sensorValuesContext';
 import { getUserFromToken } from '@/lib/contexts/userTokensContext';
-import { DeviceSSEMessage, LOGTOKEN } from '@/types/types';
+import { DeviceSSEMessage, LOGTOKEN, SensorValueSSEMessage } from '@/types/types';
 import { getDeviceChannel } from '../sseUtils';
 import { trackMetricInDB } from '../contexts/metricsContext';
 
@@ -208,6 +208,16 @@ export async function processLog(body: DeviceLogBody) {
             });
         });
         const logs: LogEntry[] = sensorLogs.flatMap(logs => logs);
+        type Value = SensorValueSSEMessage;
+        const sensorLogsGroupedByGroupSensorId = sensorLogs.reduce((acc, log) => {
+            log.forEach(entry => {
+                if (!acc[entry.groupSensorId]) {
+                    acc[entry.groupSensorId] = [];
+                }
+                acc[entry.groupSensorId].push({ value: entry.value, timestamp: entry.timestamp.toISOString() });
+            });
+            return acc;
+        }, {} as Record<string, Value[]>);
 
         const deviceStatus: DeviceSSEMessage = {
             id: device_id,
@@ -216,10 +226,7 @@ export async function processLog(body: DeviceLogBody) {
             type: "new sensors",
             sensors: logs.map(log => ({
                 groupSensorId: log.groupSensorId,
-                value: {
-                    value: log.value,
-                    timestamp: log.timestamp.toISOString()
-                }
+                values: sensorLogsGroupedByGroupSensorId[log.groupSensorId]
             }))
         };
 

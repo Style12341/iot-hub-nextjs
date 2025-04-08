@@ -42,7 +42,6 @@ interface SensorGraphProps {
 
 export default function SensorGraph({ sensor, className = "", color }: SensorGraphProps) {
     const [values, setValues] = useState(sensor.values || []);
-    console.log("Color:", color);
     // Determine color set to use
     const colorSet: ChartColorSet = color
         ? generateColorSetFromBase(color)

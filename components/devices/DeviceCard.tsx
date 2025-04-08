@@ -218,7 +218,7 @@ function IndexDeviceCard(device: DeviceQueryResult) {
     )
 
 }
-function ViewDeviceCard(device: DeviceQueryResult) {
+export function ViewDeviceCard(device: DeviceQueryResult) {
     const [timeRange, setTimeRange] = useState<number>(10); // Default time range value
     const [deviceData, setDeviceData] = useState<DeviceQueryResult>(device); // State to hold fetched data
 
@@ -309,19 +309,17 @@ function ViewDeviceCard(device: DeviceQueryResult) {
                 const newSensor = device.sensors?.find((s) => s.id === sensor.id);
                 if (!newSensor || !newSensor.values || !newSensor.values[0]) return sensor;
 
-                const newValue = newSensor.values[0];
-                const newValueTimestamp = new Date(newValue.timestamp).getTime();
-
-                // Check if this timestamp already exists in the values array
-                const valueExists = sensor.values.some(v =>
-                    new Date(v.timestamp).getTime() === newValueTimestamp
-                );
-
-                // Only add if it's a new value
-                if (!valueExists) {
+                const newValues = newSensor.values.slice(0, 10);
+                const newValuesFiltered = newValues.filter((value) => {
+                    if (sensor.values?.some(v => v.timestamp === value.timestamp)) return false;
+                    return true;
+                }).sort((a, b) => {
+                    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+                })
+                if (newValuesFiltered) {
                     return {
                         ...sensor,
-                        values: [newValue, ...sensor.values] // Add to beginning for chronological order
+                        values: [...newValuesFiltered, ...sensor.values.flat()] // Flatten nested arrays
                     };
                 }
 
