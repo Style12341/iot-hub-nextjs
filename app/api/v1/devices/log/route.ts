@@ -2,21 +2,9 @@
 // Could have device id as a query parameter but for compatibility it will stay in the request body
 
 import redis from "@/lib/redis"
-import { processLog } from "@/lib/workers/logWorker"
+import { DeviceLogBody, processLog } from "@/lib/workers/logWorker"
 import { Queue } from "bullmq"
 
-type SensorsLogBody = {
-    sensor_id: string
-    timestamp?: number
-    value: number
-}
-type DeviceLogBody = {
-    fast: boolean,
-    firmware_version?: string
-    device_id: string
-    group_id: string
-    sensors: SensorsLogBody[]
-}
 
 const logQueue = new Queue('logQueue', { connection: redis });
 
@@ -28,7 +16,7 @@ export async function POST(req: Request) {
         })
     }
 
-    const body: DeviceLogBody = await req.json()
+    const body: DeviceLogBody & { fast: boolean } = await req.json()
     const { device_id, group_id, sensors, fast, firmware_version } = body;
     const requestData = { token, device_id, group_id, sensors, firmware_version };
 

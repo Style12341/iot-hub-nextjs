@@ -18,7 +18,7 @@ type SensorsLogBody = {
     sensor_id: string;
     sensor_values: SensorValue[];
 }
-type DeviceLogBody = {
+export type DeviceLogBody = {
     token: string;
     device_id: string;
     group_id: string;
