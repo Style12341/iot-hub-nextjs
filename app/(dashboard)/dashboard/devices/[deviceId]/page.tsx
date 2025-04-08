@@ -24,6 +24,7 @@ export default async function DeviceDetailsPage({
     console.log(device)
 
     return (
+        
         <div className="space-y-6">
             <BreadcrumbHandler
                 breadcrumbs={[
