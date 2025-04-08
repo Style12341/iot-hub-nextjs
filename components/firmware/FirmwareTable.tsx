@@ -77,7 +77,6 @@ export function FirmwareTable({
     }, [assignedFirmware?.id]);
     useEffect(() => {
         const handleFirmwareUpdate = (data: DeviceSSEMessage) => {
-            console.log("Received firmware update:", data);
             if (data.type === "connected") {
                 return;
             }
@@ -193,7 +192,6 @@ export function FirmwareTable({
                 <TableBody>
                     {firmwares.map((firmware) => {
                         const isPendingDeletion = firmware.id === pendingDeletionId;
-                        console.log(firmware)
 
                         return (
                             <TableRow

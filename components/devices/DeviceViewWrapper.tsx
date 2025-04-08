@@ -75,14 +75,13 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
                                 if (!sensor.values) {
                                     sensor.values = [];
                                 }
-                                const timestamp = newSensor.value.timestamp;
+                                const newValues = newSensor.values.sort((a, b) => {
+                                    return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+                                })
                                 return {
                                     ...sensor,
                                     values: [
-                                        {
-                                            value: newSensor.value.value,
-                                            timestamp: timestamp
-                                        },
+                                        ...newValues,
                                         ...sensor.values,
                                     ].slice(0, 14400)
                                 };

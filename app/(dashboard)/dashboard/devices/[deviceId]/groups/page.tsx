@@ -7,6 +7,7 @@ import { notFound, redirect } from "next/navigation";
 import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
 import DeviceMenu from "@/components/devices/DeviceMenu";
 import { getDeviceWithActiveSensorsAction } from "@/app/actions/deviceActions";
+import { Separator } from "@/components/ui/separator";
 
 export default async function GroupsPage({
     params
@@ -48,7 +49,7 @@ export default async function GroupsPage({
 
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Device Groups</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Groups</h1>
                     <p className="text-muted-foreground">
                         Manage groups for {device.name}
                     </p>
@@ -60,7 +61,7 @@ export default async function GroupsPage({
                     </Button>
                 </Link>
             </div>
-
+            <Separator />
             {groups.length > 0 ? (
                 <GroupTable
                     groups={groups}

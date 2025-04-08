@@ -7,6 +7,7 @@ import DeviceOverview from "@/components/devices/DeviceOverview";
 import DeviceDetailGraphs from "@/components/devices/DeviceDetailGraphs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDeviceFirmwareState } from "@/lib/contexts/deviceContext";
+import { ViewDeviceCard } from "@/components/devices/DeviceCard";
 
 export default async function DeviceDetailsPage({
     params
@@ -21,9 +22,8 @@ export default async function DeviceDetailsPage({
         return notFound();
     }
     const device = deviceResult.data.device;
-    console.log(device)
-
     return (
+
         <div className="space-y-6">
             <BreadcrumbHandler
                 breadcrumbs={[
@@ -39,11 +39,7 @@ export default async function DeviceDetailsPage({
                 <DeviceOverview device={device} firmware={firmwareData} />
 
                 <Suspense fallback={<GraphsSkeleton />}>
-                    <DeviceDetailGraphs
-                        deviceId={device.id}
-                        view={device.view}
-                        initialData={device}
-                    />
+                    <DeviceDetailGraphs initialData={device} />
                 </Suspense>
             </div>
         </div>

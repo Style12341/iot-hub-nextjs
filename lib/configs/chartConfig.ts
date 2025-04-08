@@ -87,14 +87,15 @@ export const getLineDatasetStyle = (
     borderColor: colorSet.border,
     backgroundColor: filled ? colorSet.background : 'transparent',
     borderWidth: 2,
-    pointRadius: 3,
+    pointRadius: 0.5,
+    pointHitRadius: 5,
     pointBackgroundColor: colorSet.point,
     pointBorderColor: colorSet.point,
     pointHoverBackgroundColor: colorSet.pointHover,
     pointHoverBorderColor: colorSet.pointHoverBorder,
     pointHoverBorderWidth: 2,
     pointHoverRadius: 5,
-    tension: 0.3,
+    tension: 0,
     fill: filled,
 });
 
@@ -133,6 +134,7 @@ export const getStandardChartOptions = (
 ): ChartOptions<'line'> => ({
     responsive: true,
     maintainAspectRatio: false,
+    spanGaps: false,
     scales: {
         x: getTimeScaleOptions(),
         y: {

@@ -172,7 +172,7 @@ export interface SensorValueSSEMessage {
 export interface SensorSSEMessage {
     id?: string;
     groupSensorId: string;
-    value: SensorValueSSEMessage;
+    values: SensorValueSSEMessage[];
 }
 export type DeviceSSEType = "connected" | "new sensors" | "status";
 type BaseDeviceSSEMessage = {
