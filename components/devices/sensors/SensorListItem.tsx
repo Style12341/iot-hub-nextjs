@@ -6,6 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SensorListItemProps {
     sensor: SensorQueryResult;
@@ -41,7 +42,16 @@ export default function SensorListItem({ sensor }: SensorListItemProps) {
         <li className="py-2 first:pt-0 last:pb-0">
             <div className="flex justify-between items-center">
                 <div>
-                    <p className="text-sm font-medium">{sensorData.name}</p>
+                    <p className="text-sm font-medium">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="cursor-help">{sensorData.name}</span>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                                <p className="text-xs font-mono">ID: {sensorData.id}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </p>
                     <p className="text-xs text-muted-foreground">{sensorData.category ?? "No Category"}</p>
                 </div>
                 {sensorData.values && sensorData.values.length > 0 && (

@@ -18,6 +18,7 @@ import 'chartjs-adapter-date-fns';
 import { SensorQueryResult } from "@/lib/contexts/deviceContext";
 import { formatDate } from "@/lib/utils";
 import { ChartColorSet, chartColors, generateColorSetFromBase, getLineDatasetStyle, getStandardChartOptions, getTimeScaleOptions } from "@/lib/configs/chartConfig";
+import { Tooltip as TooltipUI, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Register ChartJS components
 ChartJS.register(
@@ -118,7 +119,16 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
     return (
         <Card className={`${className} h-full`}>
             <CardHeader className="pb-2 flex flex-row justify-between items-center">
-                <CardTitle className="text-sm font-medium">{sensor.name}</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                    <TooltipUI>
+                        <TooltipTrigger asChild>
+                            <span className="cursor-help">{sensor.name}</span>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                            <p className="text-xs font-mono">ID: {sensor.id}</p>
+                        </TooltipContent>
+                    </TooltipUI>
+                </CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="h-[200px]">
@@ -142,6 +152,6 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
                     ) : null}
                 </div>
             </CardContent>
-        </Card>
+        </Card >
     );
 }

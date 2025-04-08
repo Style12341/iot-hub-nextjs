@@ -15,6 +15,7 @@ import SensorGraph from "./sensors/SensorGraph";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { getDeviceViewWithActiveSensorsBetweenAction } from "@/app/actions/deviceActions";
 import DeviceMenu from "./DeviceMenu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface DeviceCardProps {
     device: DeviceQueryResult;
@@ -78,7 +79,14 @@ export default function DeviceCard({ device, isWrapper = false, viewMode = false
         <Card className="h-auto">
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{device.name}</CardTitle>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <CardTitle className="text-lg cursor-help">{device.name}</CardTitle>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                            <p className="text-xs font-mono">ID: {device.id}</p>
+                        </TooltipContent>
+                    </Tooltip>
                     <div className="flex items-center translate-x-4">
                         <AnimatePresence mode="wait">
                             <motion.div
@@ -98,8 +106,16 @@ export default function DeviceCard({ device, isWrapper = false, viewMode = false
 
                 {device.status != "WAITING" ? (
                     <>
+
                         <CardDescription>
-                            Group: {device.group.name}
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className="cursor-help">Group: {device.group.name}</span>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                    <p className="text-xs font-mono">ID: {device.group.id}</p>
+                                </TooltipContent>
+                            </Tooltip>
                         </CardDescription>
                         <CardDescription className="text-xs">
                             Last activity: {formatDate(device.lastValueAt ?? "")}
@@ -325,9 +341,6 @@ function ViewDeviceCard(device: DeviceQueryResult) {
         { label: "Last 24 hours", value: 1440 },
     ];
     // Oldest value is by default 10 minutes ago
-
-    // Default color for unknown categories
-    const defaultColor = "#75C2C6"; // Teal-ish default
 
     return (
         <CardContent className="px-2 space-y-4">
