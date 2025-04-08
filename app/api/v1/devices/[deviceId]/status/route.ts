@@ -44,16 +44,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ dev
     await Promise.all([updateActiveFirmware(deviceId, firmware_version as string), publishDeviceStatus(deviceStatus)])
     // Should update firmware
     const firmware_id = await getFirmwareIdForUpdate(deviceId)
+    const unix_time = Math.round(Date.now() / 1000)
     if (!firmware_id) {
         // No update needed
-        return new NextResponse("", {
+        return new NextResponse(JSON.stringify({ unix_time: unix_time }), {
             status: 200,
         })
     }
     const message = {
         notice: "update required",
         firmware_id: firmware_id,
-        unix_time: Date.now() / 1000,
+        unix_time: unix_time,
     }
     return new NextResponse(JSON.stringify(message), {
         status: 200,
