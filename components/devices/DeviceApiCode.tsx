@@ -71,6 +71,7 @@ export default function DeviceApiCode({ device }: DeviceApiCodeProps) {
         // ESP32 SDK code
         setEspCode(
             `#include <Arduino.h>
+// On firmware uploads to the page update the version to match the one on the server
 #define FIRMWARE_VERSION "${device.firmwareVersion}"
 #include "Logger.h"
 #define API_KEY "${"YOUR_API_KEY"}"
@@ -86,7 +87,7 @@ void setupLogger() {
   ${group?.sensor.map((sensor) => `logger.addSensor(${formatName(sensor.name)});`).join("\n  ") || ""}
   logger.init(API_KEY,"${formatName(device.name)}","${group?.id}");
   // With this configuration the logger will send 6 readings per sensor per minute
-  logger.setLogInterval(60);        // Interval in seconds to send data to the server
+  logger.setLogInterval(30);        // Interval in seconds to send data to the server
   logger.setSensorReadInterval(10); // Interval in seconds to read the sensors
 }
 
