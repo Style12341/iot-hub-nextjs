@@ -15,6 +15,7 @@ import SensorGraph from "./sensors/SensorGraph";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { getDeviceViewWithActiveSensorsBetweenAction } from "@/app/actions/deviceActions";
 import DeviceMenu from "./DeviceMenu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface DeviceCardProps {
     device: DeviceQueryResult;
@@ -78,7 +79,14 @@ export default function DeviceCard({ device, isWrapper = false, viewMode = false
         <Card className="h-auto">
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{device.name}</CardTitle>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <CardTitle className="text-lg cursor-help">{device.name}</CardTitle>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                            <p className="text-xs font-mono">ID: {device.id}</p>
+                        </TooltipContent>
+                    </Tooltip>
                     <div className="flex items-center translate-x-4">
                         <AnimatePresence mode="wait">
                             <motion.div
@@ -98,8 +106,16 @@ export default function DeviceCard({ device, isWrapper = false, viewMode = false
 
                 {device.status != "WAITING" ? (
                     <>
+
                         <CardDescription>
-                            Group: {device.group.name}
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className="cursor-help">Group: {device.group.name}</span>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                    <p className="text-xs font-mono">ID: {device.group.id}</p>
+                                </TooltipContent>
+                            </Tooltip>
                         </CardDescription>
                         <CardDescription className="text-xs">
                             Last activity: {formatDate(device.lastValueAt ?? "")}
@@ -117,7 +133,6 @@ function IndexDeviceCard(device: DeviceQueryResult) {
     // Default number of sensors to show
     const initialSensorsCount = 3;
     const hasMoreSensors = device.sensors ? device.sensors.length > initialSensorsCount : false;
-    console.log("Device", device)
     return (<>
         {device.status
             === "WAITING" ?
@@ -202,7 +217,7 @@ function IndexDeviceCard(device: DeviceQueryResult) {
     )
 
 }
-function ViewDeviceCard(device: DeviceQueryResult) {
+export function ViewDeviceCard(device: DeviceQueryResult) {
     const [timeRange, setTimeRange] = useState<number>(10); // Default time range value
     const [deviceData, setDeviceData] = useState<DeviceQueryResult>(device); // State to hold fetched data
 
@@ -254,9 +269,6 @@ function ViewDeviceCard(device: DeviceQueryResult) {
                             value.timestamp = new Date(value.timestamp)
 
                         }
-                        console.log("Filtering value", value.timestamp, timeToFetch, value.timestamp.getTime(), timeToFetch.getTime())
-
-
                         return value.timestamp.getTime() >= timeToFetch.getTime()
                     }
                     );
@@ -293,19 +305,17 @@ function ViewDeviceCard(device: DeviceQueryResult) {
                 const newSensor = device.sensors?.find((s) => s.id === sensor.id);
                 if (!newSensor || !newSensor.values || !newSensor.values[0]) return sensor;
 
-                const newValue = newSensor.values[0];
-                const newValueTimestamp = new Date(newValue.timestamp).getTime();
-
-                // Check if this timestamp already exists in the values array
-                const valueExists = sensor.values.some(v =>
-                    new Date(v.timestamp).getTime() === newValueTimestamp
-                );
-
-                // Only add if it's a new value
-                if (!valueExists) {
+                const newValues = newSensor.values.slice(0, 10);
+                const newValuesFiltered = newValues.filter((value) => {
+                    if (sensor.values?.some(v => v.timestamp === value.timestamp)) return false;
+                    return true;
+                }).sort((a, b) => {
+                    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+                })
+                if (newValuesFiltered) {
                     return {
                         ...sensor,
-                        values: [newValue, ...sensor.values] // Add to beginning for chronological order
+                        values: [...newValuesFiltered, ...sensor.values.flat()] // Flatten nested arrays
                     };
                 }
 
@@ -325,9 +335,6 @@ function ViewDeviceCard(device: DeviceQueryResult) {
         { label: "Last 24 hours", value: 1440 },
     ];
     // Oldest value is by default 10 minutes ago
-
-    // Default color for unknown categories
-    const defaultColor = "#75C2C6"; // Teal-ish default
 
     return (
         <CardContent className="px-2 space-y-4">

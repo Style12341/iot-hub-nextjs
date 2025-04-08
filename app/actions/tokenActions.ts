@@ -9,7 +9,13 @@ export async function createTokenAction(data: CreateTokenFormData) {
         const response = createSuccessResponse(ServerActionReason.CREATED, "Token created successfully", token);
         return response;
     } catch (error) {
-        console.error(error);
-        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, "Failed to create token");
+        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, "Failed to create token", {
+            error,
+            body: {
+                userId: data.userId,
+                context: data.context,
+            }
+        }
+        );
     }
 }

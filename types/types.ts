@@ -78,13 +78,27 @@ export const createSuccessResponse = <T>(
 
 export const createErrorResponse = (
     reason: ErrorReasons = ServerActionReason.UNKNOWN_ERROR,
-    message = "An error occurred"
-): ErrorResponse => ({
-    success: false,
-    reason,
-    message,
-    statusCode: reasonToStatusCode[reason],
-});
+    message = "An error occurred",
+    // Optional object for more detailed error information can be a generic error or a body
+    error: any
+): ErrorResponse => {
+    try {
+        throw error; // This will help to capture the stack trace in the console
+    } catch (e) {
+        console.error({
+            reason,
+            message,
+            e,
+            statusCode: reasonToStatusCode[reason],
+        }); // Log the error for debugging
+        return {
+            success: false,
+            reason,
+            message,
+            statusCode: reasonToStatusCode[reason],
+        }
+    }
+};
 
 export const createDeviceFormSchema = z.object({
     name: z.string().nonempty({ message: "Device name is required" }),
@@ -158,7 +172,7 @@ export interface SensorValueSSEMessage {
 export interface SensorSSEMessage {
     id?: string;
     groupSensorId: string;
-    value: SensorValueSSEMessage;
+    values: SensorValueSSEMessage[];
 }
 export type DeviceSSEType = "connected" | "new sensors" | "status";
 type BaseDeviceSSEMessage = {

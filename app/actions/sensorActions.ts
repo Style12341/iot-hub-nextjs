@@ -1,4 +1,5 @@
 "use server";
+"use server";
 
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
 import { createSensor, deleteSensor, getSensorsQty, updateSensor, validateSensorOwnership } from "@/lib/contexts/sensorContext";
@@ -11,7 +12,13 @@ export async function getSensorsQtyAction(token?: string | null, context?: strin
   if (!userId) {
     return createErrorResponse(
       ServerActionReason.UNAUTHORIZED,
-      "Unauthorized access"
+      "Unauthorized access",
+      {
+        body: {
+          token,
+          context,
+        }
+      }
     );
   }
   const res = await getSensorsQty(userId);
@@ -33,19 +40,34 @@ export async function updateSensorAction(
   try {
     const userId = await getUserIdFromAuthOrToken(token, context);
     if (!userId) {
-      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in");
+      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in", {
+        body: {
+          token,
+          context,
+        }
+      });
     }
 
     // Validate device ownership
     const hasAccess = await validateDeviceOwnership(userId, deviceId);
     if (!hasAccess) {
-      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device", {
+        body: {
+          token,
+          context,
+        }
+      });
     }
 
     // Validate sensor belongs to device
     const sensorOwnedByDevice = await validateSensorOwnership(userId, sensorId);
     if (!sensorOwnedByDevice) {
-      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this sensor");
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this sensor", {
+        body: {
+          token,
+          context,
+        }
+      });
     }
 
     // Update sensor
@@ -57,8 +79,13 @@ export async function updateSensorAction(
       sensor
     );
   } catch (error) {
-    console.error("Error updating sensor:", error);
-    return createErrorResponse();
+    return createErrorResponse(ServerActionReason.UNKNOWN_ERROR, "An error occurred while updating the sensor", {
+      error,
+      body: {
+        token,
+        context,
+      }
+    });
   }
 }
 
@@ -76,13 +103,23 @@ export async function createSensorAction(
   try {
     const userId = await getUserIdFromAuthOrToken(token, context);
     if (!userId) {
-      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in");
+      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in", {
+        body: {
+          token,
+          context,
+        }
+      });
     }
 
     // Validate device ownership
     const hasAccess = await validateDeviceOwnership(userId, deviceId);
     if (!hasAccess) {
-      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device", {
+        body: {
+          token,
+          context,
+        }
+      });
     }
 
     // Create sensor
@@ -94,8 +131,13 @@ export async function createSensorAction(
       sensor
     );
   } catch (error) {
-    console.error("Error creating sensor:", error);
-    return createErrorResponse();
+    return createErrorResponse(ServerActionReason.UNKNOWN_ERROR, "An error occurred while creating the sensor", {
+      error,
+      body: {
+        token,
+        context,
+      }
+    });
   }
 }
 
@@ -108,19 +150,34 @@ export async function deleteSensorAction(
   try {
     const userId = await getUserIdFromAuthOrToken(token, context);
     if (!userId) {
-      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in");
+      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in", {
+        body: {
+          token,
+          context,
+        }
+      });
     }
 
     // Validate device ownership
     const hasAccess = await validateDeviceOwnership(userId, deviceId);
     if (!hasAccess) {
-      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device", {
+        body: {
+          token,
+          context,
+        }
+      });
     }
 
     // Validate sensor belongs to device
     const sensorOwnedByDevice = await validateSensorOwnership(userId, sensorId);
     if (!sensorOwnedByDevice) {
-      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this sensor");
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this sensor", {
+        body: {
+          token,
+          context,
+        }
+      });
     }
 
     // Delete sensor
@@ -132,7 +189,12 @@ export async function deleteSensorAction(
       null
     );
   } catch (error) {
-    console.error("Error deleting sensor:", error);
-    return createErrorResponse();
+    return createErrorResponse(ServerActionReason.UNKNOWN_ERROR, "An error occurred while deleting the sensor", {
+      error,
+      body: {
+        token,
+        context,
+      }
+    });
   }
 }

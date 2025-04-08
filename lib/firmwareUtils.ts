@@ -95,7 +95,13 @@ export async function uploadFirmware(file: MulterFile, metadata: FirmwareMetadat
             blobStream.end(fileBuffer);
         });
     } catch (error) {
-        console.error('Error uploading firmware:', error);
+        console.error('Error uploading firmware:', {
+            error,
+            body: {
+                file,
+                metadata,
+            }
+        });
         throw error;
     }
 }
@@ -134,7 +140,12 @@ export async function getFirmwareForDownload(firmwareId: string): Promise<Downlo
             fileSizeBytes: firmware.fileSizeBytes
         };
     } catch (error) {
-        console.error('Error downloading firmware:', error);
+        console.error('Error downloading firmware:', {
+            error,
+            body: {
+                firmwareId: firmwareId,
+            }
+        });
         throw error;
     }
 }
@@ -186,7 +197,14 @@ export async function generateFirmwarePresignedUrl(
             fileSizeBytes: firmware.fileSizeBytes
         };
     } catch (error) {
-        console.error('Error generating presigned URL:', error);
+        console.error('Error generating presigned URL:', {
+            error,
+            body: {
+                firmwareId: firmwareId,
+                expirationMinutes: expirationMinutes,
+            }
+
+        });
         throw error;
     }
 }
@@ -213,7 +231,12 @@ export async function deleteFirmwareFileById(firmwareId: string): Promise<void> 
         // Delete the file from Google Cloud Storage
         await file.delete();
     } catch (error) {
-        console.error('Error deleting firmware file:', error);
+        console.error('Error deleting firmware file:', {
+            error,
+            body: {
+                firmwareId: firmwareId,
+            }
+        });
         throw error;
     }
 }

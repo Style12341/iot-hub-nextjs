@@ -36,16 +36,26 @@ export const subscribeToDeviceEvents = (deviceIds: string[], callback: EventCall
                     try {
                         subscriber(data);
                     } catch (err) {
-                        console.error('Error in subscriber callback:', err);
+                        console.error('Error in subscriber callback:', {
+                            err,
+                            body: {
+                                event: event.data,
+                                key,
+                            }
+                        });
                     }
                 });
             } catch (error) {
-                console.error("Error parsing SSE data:", error);
+                console.error("Error parsing SSE data:", { error, body: { event: event.data, key } });
             }
         };
 
         source.onerror = (error) => {
-            console.error(`SSE connection error for devices ${key}:`, error);
+            console.error(`SSE connection error for devices ${key}:`, {
+                error, body: {
+                    key,
+                }
+            });
             // Wait before cleaning up to prevent immediate reconnection attempts
             setTimeout(() => {
                 if (source.readyState === EventSource.CLOSED) {

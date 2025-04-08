@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 import BreadcrumbHandler from '@/components/dashboard/BreadcrumbHandler';
 import DeviceMenu from '@/components/devices/DeviceMenu';
 import { FirmwareType } from '@/lib/contexts/firmwareContext';
+import { Separator } from '@/components/ui/separator';
 
 export default async function FirmwarePage({
     params
@@ -39,7 +40,7 @@ export default async function FirmwarePage({
             />
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Device Firmwares</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Firmwares</h1>
                     <p className="text-muted-foreground">
                         Manage firmware for {data.deviceData.name}
                     </p>
@@ -51,7 +52,7 @@ export default async function FirmwarePage({
                     </Button>
                 </Link>
             </div>
-
+            <Separator />
             {
                 data.firmwares.length > 0 ? (
                     <FirmwareTable

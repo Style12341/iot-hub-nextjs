@@ -11,14 +11,26 @@ export async function createViewAction(data: CreateViewFormData, token?: string,
     if (!userId) {
         return createErrorResponse(
             ServerActionReason.UNAUTHORIZED,
-            "Unauthorized access"
+            "Unauthorized access",
+            {
+                body: {
+                    token,
+                    context,
+                }
+            }
         );
     }
     const view = await createView(userId, name, devicesIdsToTransfer ?? []);
     if (!view) {
         return createErrorResponse(
             ServerActionReason.INTERNAL_ERROR,
-            "Failed to create view"
+            "Failed to create view",
+            {
+                body: {
+                    token,
+                    context,
+                }
+            }
         );
     }
     return createSuccessResponse(ServerActionReason.SUCCESS, "View created successfully", view);
@@ -34,7 +46,13 @@ export async function deleteViewAction(
         if (!userId) {
             return createErrorResponse(
                 ServerActionReason.UNAUTHORIZED,
-                "Unauthorized access"
+                "Unauthorized access",
+                {
+                    body: {
+                        token,
+                        context,
+                    }
+                }
             );
         }
 
@@ -44,7 +62,13 @@ export async function deleteViewAction(
         if (!defaultViewId) {
             return createErrorResponse(
                 ServerActionReason.CONFLICT,
-                "User doesn't have a default view"
+                "User doesn't have a default view",
+                {
+                    body: {
+                        token,
+                        context,
+                    }
+                }
             );
         }
 
@@ -52,7 +76,13 @@ export async function deleteViewAction(
         if (viewId === defaultViewId) {
             return createErrorResponse(
                 ServerActionReason.FORBIDDEN,
-                "Cannot delete the default view"
+                "Cannot delete the default view",
+                {
+                    body: {
+                        token,
+                        context,
+                    }
+                }
             );
         }
 
@@ -65,8 +95,14 @@ export async function deleteViewAction(
             null
         );
     } catch (error) {
-        console.error('Error deleting view:', error);
-        return createErrorResponse();
+        return createErrorResponse(ServerActionReason.UNKNOWN_ERROR, "An error occurred while deleting the view",
+            {
+                error,
+                body: {
+                    token,
+                    context,
+                }
+            });
     }
 }
 /**
@@ -87,7 +123,13 @@ export async function updateViewAction(
         if (!userId) {
             return createErrorResponse(
                 ServerActionReason.UNAUTHORIZED,
-                "Unauthorized access"
+                "Unauthorized access",
+                {
+                    body: {
+                        token,
+                        context,
+                    }
+                }
             );
         }
 
@@ -105,16 +147,16 @@ export async function updateViewAction(
             updatedViewWithCount
         );
     } catch (error) {
-        console.error('Error updating view:', error);
-
         if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
             return createErrorResponse(
                 ServerActionReason.CONFLICT,
-                "A view with this name already exists"
+                "A view with this name already exists",
+                error
             );
         }
 
-        return createErrorResponse();
+        return createErrorResponse(ServerActionReason.UNKNOWN_ERROR, "An error occurred while updating the view",
+            { error, body: { token, context } });
     }
 }
 /**
@@ -130,7 +172,8 @@ export async function getViewByIdAction(
         if (!userId) {
             return createErrorResponse(
                 ServerActionReason.UNAUTHORIZED,
-                "Unauthorized access"
+                "Unauthorized access",
+                {}
             );
         }
 
@@ -140,7 +183,13 @@ export async function getViewByIdAction(
         if (!view) {
             return createErrorResponse(
                 ServerActionReason.NOT_FOUND,
-                "View not found"
+                "View not found",
+                {
+                    body: {
+                        token,
+                        context,
+                    }
+                }
             );
         }
 
@@ -150,7 +199,7 @@ export async function getViewByIdAction(
             view
         );
     } catch (error) {
-        console.error('Error retrieving view:', error);
-        return createErrorResponse();
+        return createErrorResponse(ServerActionReason.UNKNOWN_ERROR, "An error occurred while retrieving the view", { error, body: { token, context } });
+
     }
 }

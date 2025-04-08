@@ -38,20 +38,41 @@ export async function getDeviceFirmwaresAction(
     try {
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access');
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access', {
+                body: {
+                    userId,
+                    deviceId,
+                    token,
+                    context
+                }
+            });
         }
 
         // Validate user owns the device
         const hasAccess = await validateDeviceOwnership(userId, deviceId);
         if (!hasAccess) {
-            return createErrorResponse(ServerActionReason.FORBIDDEN, 'Access denied to this device');
+            return createErrorResponse(ServerActionReason.FORBIDDEN, 'Access denied to this device', {
+                body: {
+                    userId,
+                    deviceId,
+                    token,
+                    context
+                }
+            });
         }
 
         // Get all firmwares for the device
         const firmwares = await getFirmwares(deviceId);
         const deviceData = await getDeviceFirmwareState(deviceId);
         if (!deviceData) {
-            return createErrorResponse(ServerActionReason.NOT_FOUND, 'Device not found');
+            return createErrorResponse(ServerActionReason.NOT_FOUND, 'Device not found', {
+                body: {
+                    userId,
+                    deviceId,
+                    token,
+                    context
+                }
+            });
         }
         const response = {
             firmwares,
@@ -64,8 +85,14 @@ export async function getDeviceFirmwaresAction(
             response
         );
     } catch (error) {
-        console.error('Error fetching firmware list:', error);
-        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to fetch firmware list');
+        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to fetch firmware list', {
+            error,
+            body: {
+                deviceId,
+                token,
+                context
+            }
+        });
     }
 }
 
@@ -86,13 +113,27 @@ export async function uploadDeviceFirmwareAction(
     try {
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access');
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access', {
+                body: {
+                    userId,
+                    deviceId,
+                    token,
+                    context
+                }
+            });
         }
 
         // Validate user owns the device
         const hasAccess = await validateDeviceOwnership(userId, deviceId);
         if (!hasAccess) {
-            return createErrorResponse(ServerActionReason.FORBIDDEN, 'Access denied to this device');
+            return createErrorResponse(ServerActionReason.FORBIDDEN, 'Access denied to this device', {
+                body: {
+                    userId,
+                    deviceId,
+                    token,
+                    context
+                }
+            });
         }
 
         // Extract data
@@ -102,7 +143,15 @@ export async function uploadDeviceFirmwareAction(
         if (!file || !description || !version) {
             return createErrorResponse(
                 ServerActionReason.INVALID_DATA,
-                'Missing required fields: file, description, or version'
+                'Missing required fields: file, description, or version',
+                {
+                    body: {
+                        userId,
+                        deviceId,
+                        token,
+                        context
+                    }
+                }
             );
         }
 
@@ -111,7 +160,15 @@ export async function uploadDeviceFirmwareAction(
         if (existingFirmware) {
             return createErrorResponse(
                 ServerActionReason.CONFLICT,
-                'Firmware with this version already exists'
+                'Firmware with this version already exists',
+                {
+                    body: {
+                        userId,
+                        deviceId,
+                        token,
+                        context
+                    }
+                }
             );
         }
 
@@ -134,7 +191,14 @@ export async function uploadDeviceFirmwareAction(
             deviceId,
         });
         if (!firmware) {
-            return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to upload firmware');
+            return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to upload firmware', {
+                body: {
+                    userId,
+                    deviceId,
+                    token,
+                    context
+                }
+            });
         }
 
         // If autoAssign is true, assign firmware to device
@@ -148,8 +212,14 @@ export async function uploadDeviceFirmwareAction(
             firmware
         );
     } catch (error) {
-        console.error('Error uploading firmware:', error);
-        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to upload firmware');
+        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to upload firmware', {
+            error,
+            body: {
+                deviceId,
+                token,
+                context
+            }
+        });
     }
 }
 
@@ -165,7 +235,15 @@ export async function validateFirmwareAccessAction(
     try {
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access');
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access', {
+                body: {
+                    userId,
+                    deviceId,
+                    firmwareId,
+                    token,
+                    context
+                }
+            });
         }
 
         // Validate user has access to this device and firmware
@@ -175,17 +253,40 @@ export async function validateFirmwareAccessAction(
         ]);
 
         if (!hasDeviceAccess) {
-            return createErrorResponse(ServerActionReason.FORBIDDEN, 'Access denied to this device');
+            return createErrorResponse(ServerActionReason.FORBIDDEN, 'Access denied to this device', {
+                body: {
+                    userId,
+                    deviceId,
+                    firmwareId,
+                    token,
+                    context
+                }
+            });
         }
 
         if (!hasFirmwareAccess) {
-            return createErrorResponse(ServerActionReason.FORBIDDEN, 'Access denied to this firmware');
+            return createErrorResponse(ServerActionReason.FORBIDDEN, 'Access denied to this firmware', {
+                body: {
+                    userId,
+                    deviceId,
+                    firmwareId,
+                    token,
+                    context
+                }
+            });
         }
 
         return createSuccessResponse(ServerActionReason.SUCCESS, 'Access validated', true);
     } catch (error) {
-        console.error('Error validating firmware access:', error);
-        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to validate firmware access');
+        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to validate firmware access', {
+            error,
+            body: {
+                deviceId,
+                firmwareId,
+                token,
+                context
+            }
+        });
     }
 }
 
@@ -202,12 +303,28 @@ export async function downloadFirmwareAction(
         // First validate access
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access');
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access', {
+                body: {
+                    userId,
+                    deviceId,
+                    firmwareId,
+                    token,
+                    context
+                }
+            });
         }
 
         const accessResult = await validateFirmwareAccessAction(deviceId, firmwareId, token, context);
         if (!accessResult.success) {
-            return createErrorResponse(accessResult.reason, accessResult.message);
+            return createErrorResponse(accessResult.reason, accessResult.message, {
+                body: {
+                    userId,
+                    deviceId,
+                    firmwareId,
+                    token,
+                    context
+                }
+            });
         }
 
         // Get the firmware file for download
@@ -219,15 +336,30 @@ export async function downloadFirmwareAction(
             downloadResult
         );
     } catch (error) {
-        console.error('Error downloading firmware:', error);
 
         if (error instanceof Error) {
             if (error.message === 'Firmware not found' || error.message === 'Firmware file not found in storage') {
-                return createErrorResponse(ServerActionReason.NOT_FOUND, error.message);
+                return createErrorResponse(ServerActionReason.NOT_FOUND, error.message, {
+                    error,
+                    body: {
+                        deviceId,
+                        firmwareId,
+                        token,
+                        context
+                    }
+                });
             }
         }
 
-        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to download firmware');
+        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to download firmware', {
+            error,
+            body: {
+                deviceId,
+                firmwareId,
+                token,
+                context
+            }
+        });
     }
 }
 
@@ -244,13 +376,29 @@ export async function deleteFirmwareAction(
         // First authenticate
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access');
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access', {
+                body: {
+                    userId,
+                    deviceId,
+                    firmwareId,
+                    token,
+                    context
+                }
+            });
         }
 
         // Validate access
         const accessResult = await validateFirmwareAccessAction(deviceId, firmwareId, token, context);
         if (!accessResult.success) {
-            return createErrorResponse(accessResult.reason, accessResult.message);
+            return createErrorResponse(accessResult.reason, accessResult.message, {
+                body: {
+                    userId,
+                    deviceId,
+                    firmwareId,
+                    token,
+                    context
+                }
+            });
         }
 
         // Delete firmware file from storage
@@ -265,8 +413,15 @@ export async function deleteFirmwareAction(
             null
         );
     } catch (error) {
-        console.error('Error deleting firmware:', error);
-        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to delete firmware');
+        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to delete firmware', {
+            error,
+            body: {
+                deviceId,
+                firmwareId,
+                token,
+                context
+            }
+        });
     }
 }
 /**
@@ -276,13 +431,29 @@ export async function assignFirmwareAction(deviceId: string, firmwareId: string,
     try {
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access');
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access', {
+                body: {
+                    userId,
+                    deviceId,
+                    firmwareId,
+                    token,
+                    context
+                }
+            });
         }
 
         // Validate user owns the device
         const hasAccess = await validateDeviceOwnership(userId, deviceId);
         if (!hasAccess) {
-            return createErrorResponse(ServerActionReason.FORBIDDEN, 'Access denied to this device');
+            return createErrorResponse(ServerActionReason.FORBIDDEN, 'Access denied to this device', {
+                body: {
+                    userId,
+                    deviceId,
+                    firmwareId,
+                    token,
+                    context
+                }
+            });
         }
 
         // Assign firmware to device
@@ -294,8 +465,15 @@ export async function assignFirmwareAction(deviceId: string, firmwareId: string,
             firmware
         );
     } catch (error) {
-        console.error('Error assigning firmware:', error);
-        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to assign firmware');
+        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to assign firmware', {
+            error,
+            body: {
+                deviceId,
+                firmwareId,
+                token,
+                context
+            }
+        });
     }
 
 }
@@ -313,13 +491,29 @@ export async function updateFirmwareDescriptionAction(
         // First authenticate
         const userId = await getUserIdFromAuthOrToken(token, context);
         if (!userId) {
-            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access');
+            return createErrorResponse(ServerActionReason.UNAUTHORIZED, 'Unauthorized access', {
+                body: {
+                    userId,
+                    deviceId,
+                    firmwareId,
+                    token,
+                    context
+                }
+            });
         }
 
         // Validate access
         const accessResult = await validateFirmwareAccessAction(deviceId, firmwareId, token, context);
         if (!accessResult.success) {
-            return createErrorResponse(accessResult.reason, accessResult.message);
+            return createErrorResponse(accessResult.reason, accessResult.message, {
+                body: {
+                    userId,
+                    deviceId,
+                    firmwareId,
+                    token,
+                    context
+                }
+            });
         }
 
         // Update firmware description
@@ -331,7 +525,14 @@ export async function updateFirmwareDescriptionAction(
             firmware
         );
     } catch (error) {
-        console.error('Error updating firmware description:', error);
-        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to update firmware description');
+        return createErrorResponse(ServerActionReason.INTERNAL_ERROR, 'Failed to update firmware description', {
+            error,
+            body: {
+                deviceId,
+                firmwareId,
+                token,
+                context
+            }
+        });
     }
 }

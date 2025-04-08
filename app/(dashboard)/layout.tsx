@@ -1,12 +1,15 @@
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarInset, SidebarProvider, } from "@/components/ui/sidebar"
+import { PrismInitializer } from "@/components/CodeBlock"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ClerkProvider } from "@clerk/nextjs"
 import { Toaster } from "sonner"
 import "../globals.css";
+import "../prism.css";
 import DashboardHeader from "@/components/dashboard/DashboardHeader"
 import { BreadcrumbProvider } from "@/lib/BreadcrumbContext"
 import { Metadata } from "next"
+
 
 export const metadata: Metadata = {
     title: "IoT Hub dashboard",
@@ -35,6 +38,7 @@ export default function RootLayout({
                                         <div className="p-4 lg:p-6">
                                             {children}
                                         </div>
+                                        <PrismInitializer />
                                         <Toaster richColors={true} closeButton />
                                     </SidebarInset>
                                 </BreadcrumbProvider>

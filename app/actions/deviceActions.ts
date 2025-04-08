@@ -1,7 +1,7 @@
 "use server";
 
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
-import { updateDevice, validateDeviceOwnership, createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors, getDeviceActiveView, getDevicesWithViews, getPlainDevice, getDeviceSensorsWithGroupCount, deleteDevice } from "@/lib/contexts/deviceContext";
+import { getDeviceGroupsWithActiveSensors, updateDevice, validateDeviceOwnership, createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors, getDeviceActiveView, getDevicesWithViews, getPlainDevice, getDeviceSensorsWithGroupCount, deleteDevice } from "@/lib/contexts/deviceContext";
 
 import { getAllUserViews } from "@/lib/contexts/userContext";
 import { CreateDeviceFormData, createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
@@ -20,16 +20,32 @@ export async function updateDeviceAction(
   token?: string | null,
   context?: string
 ): Promise<ServerActionResponse> {
+  const userId = await getUserIdFromAuthOrToken(token, context);
   try {
-    const userId = await getUserIdFromAuthOrToken(token, context);
     if (!userId) {
-      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "Unauthorized access");
+      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "Unauthorized access", {
+        body: {
+          userId: userId,
+          context: context,
+          token: token,
+          deviceId: deviceId,
+          data: data
+        }
+      });
     }
 
     // Validate device ownership
     const hasAccess = await validateDeviceOwnership(userId, deviceId);
     if (!hasAccess) {
-      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device", {
+        body: {
+          userId: userId,
+          context: context,
+          token: token,
+          deviceId: deviceId,
+          data: data
+        }
+      });
     }
 
     // Update device
@@ -37,17 +53,35 @@ export async function updateDeviceAction(
 
     return createSuccessResponse(ServerActionReason.SUCCESS, "Device updated successfully", null);
   } catch (error) {
-    console.error("Error updating device:", error);
-
     // Check for unique constraint violation
     if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
       return createErrorResponse(
         ServerActionReason.CONFLICT,
-        "A device with this name already exists"
+        "A device with this name already exists",
+        {
+          error,
+          body: {
+            userId: userId,
+            context: context,
+            token: token,
+            deviceId: deviceId,
+            data: data
+          }
+        }
       );
     }
 
-    return createErrorResponse();
+    return createErrorResponse(ServerActionReason.INTERNAL_ERROR, "Failed to update device", {
+      error,
+      body: {
+        userId: userId,
+        context: context,
+        token: token,
+        deviceId: deviceId,
+        data: data
+      }
+    }
+    );
   }
 }
 
@@ -60,16 +94,30 @@ export async function deleteDeviceAction(
   token?: string | null,
   context?: string
 ): Promise<ServerActionResponse> {
+  const userId = await getUserIdFromAuthOrToken(token, context);
   try {
-    const userId = await getUserIdFromAuthOrToken(token, context);
     if (!userId) {
-      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "Unauthorized access");
+      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "Unauthorized access", {
+        body: {
+          userId: userId,
+          context: context,
+          token: token,
+          deviceId: deviceId
+        }
+      });
     }
 
     // Validate device ownership
     const hasAccess = await validateDeviceOwnership(userId, deviceId);
     if (!hasAccess) {
-      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device", {
+        body: {
+          userId: userId,
+          context: context,
+          token: token,
+          deviceId: deviceId
+        }
+      });
     }
 
     // Delete device - Prisma will cascade delete all related entities based on schema
@@ -77,8 +125,15 @@ export async function deleteDeviceAction(
 
     return createSuccessResponse(ServerActionReason.SUCCESS, "Device deleted successfully", null);
   } catch (error) {
-    console.error("Error deleting device:", error);
-    return createErrorResponse();
+    return createErrorResponse(ServerActionReason.INTERNAL_ERROR, "Failed to delete device", {
+      error,
+      body: {
+        userId: userId,
+        context: context,
+        token: token,
+        deviceId: deviceId
+      }
+    });
   }
 }
 /**
@@ -87,13 +142,18 @@ export async function deleteDeviceAction(
  */
 export async function createDeviceAction(data: CreateDeviceFormData) {
   try {
-    console.log(data)
     // Server side validations
     const { userId } = await auth();
     if (!userId) {
       return createErrorResponse(
         ServerActionReason.UNAUTHORIZED,
-        "You must be logged in to create a device"
+        "You must be logged in to create a device",
+        {
+          body: {
+            userId: userId,
+            data: data
+          }
+        }
       )
     }
     data.userId = userId;
@@ -103,17 +163,22 @@ export async function createDeviceAction(data: CreateDeviceFormData) {
     return createSuccessResponse(ServerActionReason.CREATED, "Device created successfully", device);
   } catch (error) {
     if (error instanceof PrismaClientKnownRequestError) {
-      console.error(error);
       let message: string = "";
       if (error.code === "P2002") {
         message = "Device name must be unique";
       }
       return createErrorResponse(
         ServerActionReason.INVALID_DATA,
-        message || "Invalid data provided"
+        message || "Invalid data provided",
+        error
       );
     } else {
-      return createErrorResponse();
+      return createErrorResponse(ServerActionReason.INTERNAL_ERROR, "An error occurred while creating the device", {
+        error,
+        body: {
+          data: data
+        }
+      });
     }
   }
 }
@@ -130,7 +195,15 @@ export async function getDevicesWithActiveSensorsAction(page: number = 1, token?
   if (!userId) {
     return createErrorResponse(
       ServerActionReason.UNAUTHORIZED,
-      "Unauthorized access"
+      "Unauthorized access",
+      {
+        body: {
+          userId: userId,
+          context: context,
+          token: token,
+          page: page
+        }
+      }
     );
   }
   const res = await getDevicesWithActiveSensors(userId, page);
@@ -149,7 +222,15 @@ export async function getDevicesListWithDataAction(page: number = 1, token?: str
   if (!userId) {
     return createErrorResponse(
       ServerActionReason.UNAUTHORIZED,
-      "Unauthorized access"
+      "Unauthorized access",
+      {
+        body: {
+          userId: userId,
+          context: context,
+          token: token,
+          page: page
+        }
+      }
     );
   }
   const res = await getDevicesWithViews(userId, page);
@@ -163,11 +244,19 @@ export async function getDevicesQtyAction(token?: string | null, context?: strin
   if (!userId) {
     return createErrorResponse(
       ServerActionReason.UNAUTHORIZED,
-      "Unauthorized access"
+      "Unauthorized access",
+      {
+        body: {
+          userId: userId,
+          context: context,
+          token: token
+        }
+      }
     );
   }
   const res = await getDevicesQty(userId);
 
+  return createSuccessResponse(ServerActionReason.SUCCESS, "Devices quantity retrieved successfully", res);
   return createSuccessResponse(ServerActionReason.SUCCESS, "Devices quantity retrieved successfully", res);
 }
 /**
@@ -179,7 +268,14 @@ export async function getAllUserViewsAction(token?: string | null, context?: str
   if (!userId) {
     return createErrorResponse(
       ServerActionReason.UNAUTHORIZED,
-      "Unauthorized access"
+      "Unauthorized access",
+      {
+        body: {
+          userId: userId,
+          context: context,
+          token: token
+        }
+      }
     );
   }
   const res = await getAllUserViews(userId);
@@ -197,11 +293,20 @@ export async function getDeviceWithActiveSensorsAction(deviceId: string, token?:
   if (!userId) {
     return createErrorResponse(
       ServerActionReason.UNAUTHORIZED,
-      "Unauthorized access"
+      "Unauthorized access",
+      {
+        body: {
+          userId: userId,
+          context: context,
+          token: token,
+          deviceId: deviceId
+        }
+      }
     );
   }
   const device = await getDeviceWithActiveSensors(userId, deviceId);
 
+  return createSuccessResponse(ServerActionReason.SUCCESS, "Device retrieved successfully", device);
   return createSuccessResponse(ServerActionReason.SUCCESS, "Device retrieved successfully", device);
 }
 /**
@@ -212,7 +317,17 @@ export async function getDevicesViewWithActiveSensorsBetweenAction(view: string,
   if (!userId) {
     return createErrorResponse(
       ServerActionReason.UNAUTHORIZED,
-      "Unauthorized access"
+      "Unauthorized access",
+      {
+        body: {
+          userId: userId,
+          context: context,
+          token: token,
+          view: view,
+          startDate: startDate,
+          endDate: endDate
+        }
+      }
     );
   }
   const res = await getDevicesViewWithActiveSensorsBetween(userId, view, startDate, endDate);
@@ -226,7 +341,18 @@ export async function getDeviceViewWithActiveSensorsBetweenAction(deviceId: stri
   if (!userId) {
     return createErrorResponse(
       ServerActionReason.UNAUTHORIZED,
-      "Unauthorized access"
+      "Unauthorized access",
+      {
+        body: {
+          userId: userId,
+          context: context,
+          token: token,
+          deviceId: deviceId,
+          view: view,
+          startDate: startDate,
+          endDate: endDate
+        }
+      }
     );
   }
   const res = await getDeviceViewWithActiveSensorsBetween(userId, deviceId, view, startDate, endDate);
@@ -237,7 +363,16 @@ export async function getDeviceActiveViewWithActiveSensorsBetweenAction(deviceId
   if (!userId) {
     return createErrorResponse(
       ServerActionReason.UNAUTHORIZED,
-      "Unauthorized access"
+      "Unauthorized access", {
+      body: {
+        userId: userId,
+        context: context,
+        token: token,
+        deviceId: deviceId,
+        startDate: startDate,
+        endDate: endDate
+      }
+    }
     );
   }
   const view = await getDeviceActiveView(userId, deviceId);
@@ -250,29 +385,47 @@ export async function getDeviceAction(deviceId: string, token?: string | null, c
   if (!userId) {
     return createErrorResponse(
       ServerActionReason.UNAUTHORIZED,
-      "Unauthorized access"
+      "Unauthorized access",
+      {
+        body: {
+          userId: userId,
+          context: context,
+          token: token,
+          deviceId: deviceId
+        }
+      }
     );
   }
   const device = await getPlainDevice(userId, deviceId);
   if (!device) {
     return createErrorResponse(
       ServerActionReason.NOT_FOUND,
-      "Device not found"
+      "Device not found",
+      {
+        body: {
+          userId: userId,
+          context: context,
+          token: token,
+          deviceId: deviceId
+        }
+      }
     );
   }
   return createSuccessResponse(ServerActionReason.SUCCESS, "Device retrieved successfully", device);
 }
 export async function getDeviceSensorsAction(deviceId: string, token?: string | null, context?: string) {
+  const userId = await getUserIdFromAuthOrToken(token, context);
   try {
-    const userId = await getUserIdFromAuthOrToken(token, context);
     if (!userId) {
-      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in");
+      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in", { body: { userId: userId, context: context, token: token, deviceId: deviceId } });
     }
 
     // Validate device ownership
     const hasAccess = await validateDeviceOwnership(userId, deviceId);
     if (!hasAccess) {
-      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device");
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device",
+        { body: { userId: userId, context: context, token: token, deviceId: deviceId } }
+      );
     }
 
     // Get sensors with group counts
@@ -284,7 +437,50 @@ export async function getDeviceSensorsAction(deviceId: string, token?: string | 
       sensors
     );
   } catch (error) {
-    console.error("Error fetching device sensors:", error);
-    return createErrorResponse();
+    return createErrorResponse(ServerActionReason.INTERNAL_ERROR, "Failed to fetch device sensors", {
+      error,
+      body: { userId: userId, context: context, token: token, deviceId: deviceId }
+    });
+  }
+}
+/**
+ * Gets the device groups each with it's active sensors
+ * @param deviceId The id of the device to retrieve
+ * @param token The token to use for authentication (optional)
+ * @param context The context to use for authentication (optional)
+ * */
+export async function getDeviceGroupsWithSensorsAction(deviceId: string, token?: string | null, context?: string) {
+  const userId = await getUserIdFromAuthOrToken(token, context);
+  try {
+    if (!userId) {
+      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in", { body: { userId: userId, context: context, token: token, deviceId: deviceId } });
+    }
+
+    // Validate device ownership
+    const hasAccess = await validateDeviceOwnership(userId, deviceId);
+    if (!hasAccess) {
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device",
+        { body: { userId: userId, context: context, token: token, deviceId: deviceId } }
+      );
+    }
+
+    // Get groups with active sensors
+    const groups = await getDeviceGroupsWithActiveSensors(userId, deviceId);
+    if (!groups) {
+      return createErrorResponse(ServerActionReason.NOT_FOUND, "Device groups not found", {
+        body: { userId: userId, context: context, token: token, deviceId: deviceId }
+      });
+    }
+
+    return createSuccessResponse(
+      ServerActionReason.SUCCESS,
+      "Device groups retrieved successfully",
+      groups
+    );
+  } catch (error) {
+    return createErrorResponse(ServerActionReason.INTERNAL_ERROR, "Failed to fetch device groups", {
+      error,
+      body: { userId: userId, context: context, token: token, deviceId: deviceId }
+    });
   }
 }

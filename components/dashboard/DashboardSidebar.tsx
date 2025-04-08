@@ -39,7 +39,7 @@ const data = {
             ],
         }, {
             title: "Devices",
-            defaultOpen: false,
+            defaultOpen: true,
             url: "#",
             items: [
                 {
