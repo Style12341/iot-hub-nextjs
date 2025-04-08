@@ -27,10 +27,10 @@ export default function DeviceApiCode({ device }: DeviceApiCodeProps) {
         "sensors": [${group?.sensor.map((sensor) => `
                 {
                     "sensor_id": "${sensor.id}", // Sensor ID for: ${sensor.name}
-                    "value": ${Math.round(Math.random()*2000)/100}${hasTimestamp ? ',' : ''} // Insert value here ${hasTimestamp ? `\n\t\t\t\t\t"timestamp": ${Math.round(Date.now() / 1000)} // Unix timestamp, if not provided, the server will use the current timestamp` : ""}      
+                    "value": ${Math.round(Math.random() * 2000) / 100}${hasTimestamp ? ',' : ''} // Insert value here ${hasTimestamp ? `\n\t\t\t\t\t"timestamp": ${Math.round(Date.now() / 1000)} // Unix timestamp, if not provided, the server will use the current timestamp` : ""}      
                 }`).join(",") || ""}
         ]
-    }`
+}`
 
         )
     }, [group, hasFast, hasTimestamp]);
