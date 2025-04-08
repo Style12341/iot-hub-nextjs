@@ -1,7 +1,7 @@
 "use server";
 
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
-import { updateDevice, validateDeviceOwnership, createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors, getDeviceActiveView, getDevicesWithViews, getPlainDevice, getDeviceSensorsWithGroupCount, deleteDevice } from "@/lib/contexts/deviceContext";
+import { getDeviceGroupsWithActiveSensors, updateDevice, validateDeviceOwnership, createDevice, getDevicesQty, getDevicesViewWithActiveSensorsBetween, getDeviceViewWithActiveSensorsBetween, getDevicesWithActiveSensors, getDeviceWithActiveSensors, getDeviceActiveView, getDevicesWithViews, getPlainDevice, getDeviceSensorsWithGroupCount, deleteDevice } from "@/lib/contexts/deviceContext";
 
 import { getAllUserViews } from "@/lib/contexts/userContext";
 import { CreateDeviceFormData, createErrorResponse, createSuccessResponse, ServerActionReason, ServerActionResponse } from "@/types/types";
@@ -142,7 +142,6 @@ export async function deleteDeviceAction(
  */
 export async function createDeviceAction(data: CreateDeviceFormData) {
   try {
-    console.log(data)
     // Server side validations
     const { userId } = await auth();
     if (!userId) {
@@ -437,6 +436,47 @@ export async function getDeviceSensorsAction(deviceId: string, token?: string | 
     );
   } catch (error) {
     return createErrorResponse(ServerActionReason.INTERNAL_ERROR, "Failed to fetch device sensors", {
+      error,
+      body: { userId: userId, context: context, token: token, deviceId: deviceId }
+    });
+  }
+}
+/**
+ * Gets the device groups each with it's active sensors
+ * @param deviceId The id of the device to retrieve
+ * @param token The token to use for authentication (optional)
+ * @param context The context to use for authentication (optional)
+ * */
+export async function getDeviceGroupsWithSensorsAction(deviceId: string, token?: string | null, context?: string) {
+  const userId = await getUserIdFromAuthOrToken(token, context);
+  try {
+    if (!userId) {
+      return createErrorResponse(ServerActionReason.UNAUTHORIZED, "You must be logged in", { body: { userId: userId, context: context, token: token, deviceId: deviceId } });
+    }
+
+    // Validate device ownership
+    const hasAccess = await validateDeviceOwnership(userId, deviceId);
+    if (!hasAccess) {
+      return createErrorResponse(ServerActionReason.FORBIDDEN, "Access denied to this device",
+        { body: { userId: userId, context: context, token: token, deviceId: deviceId } }
+      );
+    }
+
+    // Get groups with active sensors
+    const groups = await getDeviceGroupsWithActiveSensors(userId, deviceId);
+    if (!groups) {
+      return createErrorResponse(ServerActionReason.NOT_FOUND, "Device groups not found", {
+        body: { userId: userId, context: context, token: token, deviceId: deviceId }
+      });
+    }
+
+    return createSuccessResponse(
+      ServerActionReason.SUCCESS,
+      "Device groups retrieved successfully",
+      groups
+    );
+  } catch (error) {
+    return createErrorResponse(ServerActionReason.INTERNAL_ERROR, "Failed to fetch device groups", {
       error,
       body: { userId: userId, context: context, token: token, deviceId: deviceId }
     });

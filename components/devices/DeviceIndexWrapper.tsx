@@ -97,18 +97,15 @@ export default function DeviceIndexWrapper({ initialDevices }: DeviceIndexWrappe
                                 if (!sensor.values) {
                                     sensor.values = [];
                                 }
-                                const timestamp = newSensor.value.timestamp
-                                    ? new Date(newSensor.value.timestamp)
-                                    : new Date();
+                                const newValues = newSensor.values.sort((a, b) => {
+                                    return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+                                })
                                 return {
                                     ...sensor,
                                     values: [
-                                        {
-                                            value: newSensor.value.value,
-                                            timestamp: timestamp
-                                        },
-                                        ...sensor.values
-                                    ].slice(0, 5)
+                                        ...newValues,
+                                        ...sensor.values,
+                                    ].slice(0, 14400)
                                 };
                             }
                             return sensor;

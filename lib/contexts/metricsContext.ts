@@ -29,7 +29,7 @@ export async function trackMetricInDB(metricName: Metrics, user_id: string, valu
             }
         });
 
-        console.log(`Tracked metric in DB: ${metricName} = ${value} at ${ts.toISOString()}`);
+        console.info(`Tracked metric in DB: ${metricName} = ${value} at ${ts.toISOString()}`);
     } catch (error) {
         console.warn(`Failed to track metric ${metricName} in DB:`, error);
     }
@@ -51,16 +51,13 @@ export async function getMetricValueBetween(metricName: Metrics, user_id: string
     });
     //Fill in missing timestamps with 0 values
     const timestamps = getTimestampsBetween(start, end, metricName);
-    console.log("timestamps", timestamps);
     const metricMap = new Map(metric.map(m => [m.timestamp.toISOString(), m.value]));
-    console.log("metricMap", metricMap);
     timestamps.forEach(ts => {
         if (!metricMap.has(ts.toISOString())) {
             metricMap.set(ts.toISOString(), 0);
         }
     }
     );
-    console.log("metricMap", metricMap);
     // Return in object format
     return Array.from(metricMap).map(([timestamp, value]) => {
         const newts = new Date(timestamp);

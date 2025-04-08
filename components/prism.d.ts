@@ -1,0 +1,12 @@
+declare module 'prismjs/components/prism-clike';
+declare module 'prismjs/components/prism-javascript';
+declare module 'prismjs/components/prism-typescript';
+declare module 'prismjs/components/prism-jsx';
+declare module 'prismjs/components/prism-tsx';
+declare module 'prismjs/components/prism-json';
+declare module 'prismjs/components/prism-bash';
+declare module 'prismjs/components/prism-c';
+declare module 'prismjs/components/prism-cpp';
+declare module 'prismjs/plugins/line-numbers/prism-line-numbers';
+declare module 'prismjs/plugins/toolbar/prism-toolbar';
+declare module 'prismjs/plugins/copy-to-clipboard/prism-copy-to-clipboard';

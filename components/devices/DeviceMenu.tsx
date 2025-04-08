@@ -90,6 +90,10 @@ export default function DeviceMenu({
             href: `/dashboard/devices/${deviceId}/settings`,
             label: "Settings",
             icon: <SettingsIcon className="h-4 w-4" />
+        }, {
+            href: `/dashboard/devices/${deviceId}/api`,
+            label: "API Code",
+            icon: <ListIcon className="h-4 w-4" />
         }
     ];
 
