@@ -14,7 +14,6 @@ type DeviceApiCodeProps = {
 export default function DeviceApiCode({ device }: DeviceApiCodeProps) {
     // This component will show the code for the API calls to the device
     const [group, setGroup] = useState(device.Groups.find((g) => g.active))
-    const [hasTimestamp, setHasTimestamp] = useState(true)
     const [hasFast, setHasFast] = useState(false)
     const [code, setCode] = useState<string>(`{}`)
     useEffect(() => {
@@ -27,13 +26,18 @@ export default function DeviceApiCode({ device }: DeviceApiCodeProps) {
         "sensors": [${group?.sensor.map((sensor) => `
                 {
                     "sensor_id": "${sensor.id}", // Sensor ID for: ${sensor.name}
-                    "value": ${Math.round(Math.random() * 2000) / 100}${hasTimestamp ? ',' : ''} // Insert value here ${hasTimestamp ? `\n\t\t\t\t\t"timestamp": ${Math.round(Date.now() / 1000)} // Unix timestamp, if not provided, the server will use the current timestamp` : ""}      
+                    "sensor_values": [
+                        {
+                            "value": ${Math.round(Math.random()*2000)/100}, // Sensor value here
+                            "timestamp": ${Math.round(Date.now()/1000)} // Unix timestamp here
+                        }
+                    ]
                 }`).join(",") || ""}
         ]
 }`
 
         )
-    }, [group, hasFast, hasTimestamp]);
+    }, [group, hasFast]);
 
 
     return <>
@@ -59,10 +63,6 @@ export default function DeviceApiCode({ device }: DeviceApiCodeProps) {
                 <div>
                     <Label htmlFor="fast" className="text-sm font-medium">Fast mode</Label>
                     <Checkbox id="fast" checked={hasFast} onCheckedChange={(e) => setHasFast(e === true)} className="w-4 h-4" />
-                </div>
-                <div>
-                    <Label htmlFor="timestamp" className="text-sm font-medium">Timestamp</Label>
-                    <Checkbox id="timestamp" checked={hasTimestamp} onCheckedChange={(e) => setHasTimestamp(e === true)} className="w-4 h-4" />
                 </div>
             </div>
         </div>
