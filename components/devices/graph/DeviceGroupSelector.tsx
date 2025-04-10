@@ -40,7 +40,7 @@ export function DeviceGroupSelector({
                     onValueChange={onDeviceChange}
                     disabled={isLoading}
                 >
-                    <SelectTrigger id="device-select">
+                    <SelectTrigger id="device-select" className="w-full">
                         <SelectValue placeholder="Select a device" />
                     </SelectTrigger>
                     <SelectContent>
@@ -63,7 +63,7 @@ export function DeviceGroupSelector({
                         onValueChange={onGroupChange}
                         disabled={!deviceGroups || isLoading}
                     >
-                        <SelectTrigger id="group-select">
+                        <SelectTrigger id="group-select" className="w-full">
                             <SelectValue placeholder="Select a group" />
                         </SelectTrigger>
                         <SelectContent>
