@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, memo, useState } from "react";
 import { Line } from "react-chartjs-2";
 import {
     Chart as ChartJS,
@@ -22,6 +22,7 @@ import {
     getStandardChartOptions,
     formatTimeSeriesDataWithGaps
 } from "@/lib/configs/chartConfig";
+import { useHoverContext } from "./SyncronizedChartGroup";
 
 // Register ChartJS components
 ChartJS.register(
@@ -40,35 +41,105 @@ type SensorChartProps = {
     sensorName: string;
     unit: string;
     data: { timestamp: Date; value: number }[];
-    onChartRef: (chart: any) => void;
-    onTooltipMove: (index: number) => void;
-    onTooltipLeave: () => void;
 };
 
-export function SensorChart({
+export const SensorChart = memo(function SensorChart({
     sensorId,
     sensorName,
     unit,
-    data,
-    onChartRef,
-    onTooltipMove,
-    onTooltipLeave
+    data
 }: SensorChartProps) {
     const chartRef = useRef<any>(null);
+    const hoverIndexRef = useRef<number | null>(null);
+    const processedData = useRef(formatTimeSeriesDataWithGaps(data));
+    const { activeTimestamp, setActiveTimestamp } = useHoverContext();
+    const activeTimestampRef = useRef<Date | null>(null);
+    // Track if this chart initiated the hover
+    const isInitiatorRef = useRef(false);
 
-    // Register chart instance for synchronization
+    // Update processed data when raw data changes
     useEffect(() => {
-        if (chartRef.current) {
-            onChartRef(chartRef.current);
+        processedData.current = formatTimeSeriesDataWithGaps(data);
+    }, [data]);
+
+    // Handle external hover updates
+    useEffect(() => {
+        // Store latest timestamp in ref to avoid infinite loops
+        if (activeTimestamp !== activeTimestampRef.current) {
+            activeTimestampRef.current = activeTimestamp;
+
+            // Don't react to our own updates
+            if (isInitiatorRef.current) {
+                isInitiatorRef.current = false;
+                return;
+            }
+
+            // Only proceed if we have a chart and timestamp
+            if (!chartRef.current || !activeTimestamp) {
+                // If timestamp is null, clear tooltips
+                if (!activeTimestamp && chartRef.current) {
+                    chartRef.current.setActiveElements([]);
+                    chartRef.current.update('none');
+                }
+                return;
+            }
+
+            try {
+                // Find the closest point to the active timestamp
+                let closestIndex = -1;
+                let minDistance = Infinity;
+
+                processedData.current.forEach((point, index) => {
+                    if (point.y === null) return; // Skip gap points
+
+                    const pointTime = new Date(point.x).getTime();
+                    const activeTime = new Date(activeTimestamp).getTime();
+                    const distance = Math.abs(pointTime - activeTime);
+
+                    if (distance < minDistance && distance < 30000) { // Within 30 seconds
+                        minDistance = distance;
+                        closestIndex = index;
+                    }
+                });
+
+                // If we found a close point, highlight it
+                if (closestIndex >= 0) {
+                    // Store index in ref to avoid re-renders
+                    hoverIndexRef.current = closestIndex;
+
+                    // Just update the tooltip position
+                    const chart = chartRef.current;
+                    const meta = chart.getDatasetMeta(0);
+                    if (meta?.data && closestIndex < meta.data.length) {
+                        chart.setActiveElements([{
+                            datasetIndex: 0,
+                            index: closestIndex
+                        }]);
+                        chart.tooltip.setActiveElements([{
+                            datasetIndex: 0,
+                            index: closestIndex
+                        }], {
+                            x: meta.data[closestIndex].x,
+                            y: meta.data[closestIndex].y
+                        });
+                        chart.update('none');
+                    }
+                } else if (chartRef.current) {
+                    chartRef.current.setActiveElements([]);
+                    chartRef.current.update('none');
+                }
+            } catch (error) {
+                console.error("Error synchronizing tooltip:", error);
+            }
         }
-    }, [chartRef.current, onChartRef]);
+    }, [activeTimestamp]);
 
     // Process data for Chart.js using shared utility
     const chartData = {
         datasets: [
             {
                 label: sensorName,
-                data: formatTimeSeriesDataWithGaps(data),
+                data: processedData.current,
                 ...getLineDatasetStyle(),
                 spanGaps: false, // Don't connect points across gaps
             },
@@ -88,22 +159,41 @@ export function SensorChart({
         interaction: {
             mode: 'index' as const,
             intersect: false,
+            axis: 'x' as const,
         },
-        onHover: (_: any, elements: any[]) => {
+        onHover: (event: any, elements: any[]) => {
+            if (!event || !elements) return;
+
             if (elements && elements.length > 0) {
-                onTooltipMove(elements[0].index);
-            } else {
-                onTooltipLeave();
+                const index = elements[0].index;
+                if (index >= 0 && index < processedData.current.length) {
+                    const point = processedData.current[index];
+                    if (point && point.x) {
+                        // Only update shared state if the index changed
+                        if (hoverIndexRef.current !== index) {
+                            hoverIndexRef.current = index;
+                            // Mark this chart as the initiator
+                            isInitiatorRef.current = true;
+                            // Update shared timestamp reference
+                            setActiveTimestamp(new Date(point.x));
+                        }
+                    }
+                }
+            } else if (event.type === 'mouseleave') {
+                // Reset state on mouse leave
+                isInitiatorRef.current = true;
+                hoverIndexRef.current = null;
+                setActiveTimestamp(null);
             }
         },
         plugins: {
             tooltip: {
+                enabled: true,
                 callbacks: {
                     label: (context: any) => `${context.parsed.y} ${unit}`,
                     title: (contexts: any[]) => {
-                        if (contexts.length > 0) {
-                            const date = new Date(contexts[0].parsed.x);
-                            return formatDate(date);
+                        if (contexts.length > 0 && contexts[0].parsed.x) {
+                            return formatDate(new Date(contexts[0].parsed.x));
                         }
                         return '';
                     }
@@ -145,4 +235,4 @@ export function SensorChart({
             </CardContent>
         </Card>
     );
-}
+});

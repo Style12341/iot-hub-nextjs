@@ -1,10 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, createContext, useContext } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SensorChart } from "./SensorChart";
+
+// Create a context for shared hover state
+type HoverState = {
+    activeTimestamp: Date | null;
+    setActiveTimestamp: (timestamp: Date | null) => void;
+};
+
+const HoverContext = createContext<HoverState>({
+    activeTimestamp: null,
+    setActiveTimestamp: () => { }
+});
 
 type SyncedChartGroupProps = {
     sensorData: Record<string, {
@@ -16,41 +27,7 @@ type SyncedChartGroupProps = {
 };
 
 export function SyncedChartGroup({ sensorData, isLoading }: SyncedChartGroupProps) {
-    // For chart synchronization
-    const [activeTooltipIndex, setActiveTooltipIndex] = useState<number | null>(null);
-    const chartRefs = useRef<Record<string, any>>({});
-
-    // Handler for tooltip sync
-    const handleTooltipMove = (sensorId: string, index: number) => {
-        if (activeTooltipIndex !== index) {
-            setActiveTooltipIndex(index);
-
-            // Synchronize all other charts
-            Object.entries(chartRefs.current).forEach(([id, chart]) => {
-                if (id !== sensorId && chart) {
-                    const meta = chart.getDatasetMeta(0);
-                    if (meta.data[index]) {
-                        chart.tooltip.setActiveElements(
-                            [{ datasetIndex: 0, index }],
-                            { x: meta.data[index].x, y: meta.data[index].y }
-                        );
-                        chart.update();
-                    }
-                }
-            });
-        }
-    };
-
-    // Reset tooltip across all charts
-    const handleTooltipLeave = () => {
-        setActiveTooltipIndex(null);
-        Object.values(chartRefs.current).forEach(chart => {
-            if (chart) {
-                chart.tooltip.setActiveElements([], {});
-                chart.update();
-            }
-        });
-    };
+    const [activeTimestamp, setActiveTimestamp] = useState<Date | null>(null);
 
     // Get sensor IDs with data
     const sensorIds = Object.keys(sensorData);
@@ -66,33 +43,35 @@ export function SyncedChartGroup({ sensorData, isLoading }: SyncedChartGroupProp
     }
 
     return (
-        <div className="space-y-6">
-            {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[1, 2].map(i => (
-                        <Card key={i}>
-                            <CardContent className="pt-6">
-                                <Skeleton className="h-[300px] w-full" />
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {sensorIds.map((sensorId) => (
-                        <SensorChart
-                            key={sensorId}
-                            sensorId={sensorId}
-                            sensorName={sensorData[sensorId].name}
-                            unit={sensorData[sensorId].unit}
-                            data={sensorData[sensorId].values}
-                            onChartRef={(chart) => chartRefs.current[sensorId] = chart}
-                            onTooltipMove={(index) => handleTooltipMove(sensorId, index)}
-                            onTooltipLeave={handleTooltipLeave}
-                        />
-                    ))}
-                </div>
-            )}
-        </div>
+        <HoverContext.Provider value={{ activeTimestamp, setActiveTimestamp }}>
+            <div className="space-y-6">
+                {isLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {[1, 2].map(i => (
+                            <Card key={i}>
+                                <CardContent className="pt-6">
+                                    <Skeleton className="h-[300px] w-full" />
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {sensorIds.map((sensorId) => (
+                            <SensorChart
+                                key={sensorId}
+                                sensorId={sensorId}
+                                sensorName={sensorData[sensorId].name}
+                                unit={sensorData[sensorId].unit}
+                                data={sensorData[sensorId].values}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </HoverContext.Provider>
     );
 }
+
+// Export the context for use in SensorChart
+export const useHoverContext = () => useContext(HoverContext);

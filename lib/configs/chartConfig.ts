@@ -82,7 +82,7 @@ function convertToRGBA(color: string, opacity: number): string {
  */
 export const getLineDatasetStyle = (
     colorSet: ChartColorSet = chartColors.primary,
-    filled = true
+    filled = false
 ) => ({
     borderColor: colorSet.border,
     backgroundColor: filled ? colorSet.background : 'transparent',
