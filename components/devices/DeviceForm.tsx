@@ -92,9 +92,6 @@ export default function DeviceForm({ views, categories, deviceAction, categoryAc
 
     return (
         <>
-            <div className="flex items-center justify-between mb-8">
-                <CategoryDialog create={true} onSubmit={addCategory} />
-            </div>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
                     <div className="space-y-6">
@@ -180,15 +177,18 @@ export default function DeviceForm({ views, categories, deviceAction, categoryAc
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-medium">Sensors</h3>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => append({ name: "", unit: "", categoryId: "" })}
-                            >
-                                <PlusCircle className="w-4 h-4 mr-2" />
-                                Add Sensor
-                            </Button>
+                            <div className="space-x-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="default"
+                                    onClick={() => append({ name: "", unit: "", categoryId: "" })}
+                                >
+                                    <PlusCircle className="w-4 h-4 mr-2" />
+                                    Add Sensor
+                                </Button>
+                                <CategoryDialog create={true} onSubmit={addCategory} />
+                            </div>
                         </div>
 
                         {/* Rest of the form remains unchanged */}
