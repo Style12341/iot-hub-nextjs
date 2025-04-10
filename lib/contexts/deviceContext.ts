@@ -710,6 +710,7 @@ export type DeviceGroupsWithSensorsIds = {
         active: boolean
         name: string
         sensor: {
+            groupSensorId: string
             id: string
             name: string
             unit: string
@@ -762,6 +763,7 @@ export async function getDeviceGroupsWithActiveSensors(userId: string, deviceId:
             name: g.name,
             sensor: g.GroupSensor.map(gs => {
                 return {
+                    groupSensorId: gs.id,
                     id: gs.Sensor.id,
                     name: gs.Sensor.name,
                     unit: gs.Sensor.unit,

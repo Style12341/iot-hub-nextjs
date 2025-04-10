@@ -159,3 +159,50 @@ export const getStandardChartOptions = (
         },
     },
 });
+/**
+ * Format chart data and insert null points for large gaps
+ * This ensures lines are disconnected when data points are more than
+ * the specified threshold apart
+ * 
+ * @param dataPoints - Array of data points with timestamp and value properties
+ * @param maxGapMs - Maximum allowed gap in milliseconds (default: 90000 = 1.5 minutes)
+ * @returns Formatted data points with null values inserted where gaps exist
+ */
+export const formatTimeSeriesDataWithGaps = (
+    dataPoints: Array<{ timestamp: string | Date; value: number }>,
+    maxGapMs: number = 90000
+) => {
+    // Early return for empty datasets
+    if (!dataPoints || dataPoints.length === 0) return [];
+
+    // First sort the data points by timestamp
+    const sortedData = [...dataPoints].sort((a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    const result = [];
+
+    // Process each point
+    for (let i = 0; i < sortedData.length; i++) {
+        const point = {
+            x: new Date(sortedData[i].timestamp),
+            y: parseFloat(sortedData[i].value.toString())
+        };
+
+        // Add current point
+        result.push(point);
+
+        // Check if there's a large gap between this point and the next one
+        if (i < sortedData.length - 1) {
+            const currentTime = point.x.getTime();
+            const nextTime = new Date(sortedData[i + 1].timestamp).getTime();
+
+            if (nextTime - currentTime > maxGapMs) {
+                // Insert a null point to create a gap in the line
+                result.push({ x: new Date(currentTime + 1), y: null });
+            }
+        }
+    }
+
+    return result;
+};
