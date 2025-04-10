@@ -11,7 +11,7 @@ import {
 } from "./ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, RefreshCw } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 
 type DateTimeRangeProps = {
@@ -136,16 +136,6 @@ export function DateTimeRangeSelector({
                         />
                     </PopoverContent>
                 </Popover>
-
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2"
-                    onClick={onApply}
-                >
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Update Charts
-                </Button>
             </div>
         </div>
     );

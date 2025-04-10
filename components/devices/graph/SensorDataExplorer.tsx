@@ -11,6 +11,8 @@ import { getSensorValuesAction } from "@/app/actions/sensorValuesActions";
 import { DeviceGroupsWithSensorsIds } from "@/lib/contexts/deviceContext";
 import { Device } from "@prisma/client";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 type SensorDataExplorerProps = {
     initialDevices: (Device & { View: { name: string } | null })[];
@@ -47,6 +49,8 @@ export function SensorDataExplorer({ initialDevices }: SensorDataExplorerProps) 
                     }
                     // Reset sensor selection
                     setSelectedSensorIds([]);
+                    // Clear sensor data when changing device
+                    setSensorData({});
                 }
             } catch (error) {
                 console.error("Failed to fetch device groups:", error);
@@ -58,7 +62,7 @@ export function SensorDataExplorer({ initialDevices }: SensorDataExplorerProps) 
         fetchDeviceGroups();
     }, [selectedDeviceId]);
 
-    // Fetch sensor data when selections change
+    // Fetch sensor data (now only called by button click)
     const fetchSensorData = async () => {
         if (!selectedGroupId || selectedSensorIds.length === 0) return;
 
@@ -85,12 +89,8 @@ export function SensorDataExplorer({ initialDevices }: SensorDataExplorerProps) 
         }
     };
 
-    // Update charts when selections change
-    useEffect(() => {
-        if (selectedGroupId && selectedSensorIds.length > 0) {
-            fetchSensorData();
-        }
-    }, [selectedGroupId, selectedSensorIds, dateRange]);
+    // Function to check if update is possible
+    const canUpdate = selectedDeviceId && selectedGroupId && selectedSensorIds.length > 0;
 
     return (
         <div className="space-y-6">
@@ -120,6 +120,17 @@ export function SensorDataExplorer({ initialDevices }: SensorDataExplorerProps) 
                             onDateRangeChange={setDateRange}
                             onApply={fetchSensorData}
                         />
+                    </div>
+
+                    <div className="mt-4 flex justify-end">
+                        <Button
+                            onClick={fetchSensorData}
+                            disabled={!canUpdate || isLoading}
+                            className="w-full sm:w-auto"
+                        >
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            {isLoading ? "Loading..." : "Update Charts"}
+                        </Button>
                     </div>
                 </CardContent>
             </Card>
