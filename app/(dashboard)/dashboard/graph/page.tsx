@@ -16,12 +16,12 @@ export default async function GraphPage() {
                 breadcrumbs={[
                     { href: '/dashboard', name: 'Dashboard' }
                 ]}
-                page="Sensor Explorer"
+                page="Graph"
             />
 
             <div className="container py-6 space-y-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Sensor Data Explorer</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Graphing</h1>
                     <p className="text-muted-foreground">
                         Select a device, group and sensors to visualize sensor data over time
                     </p>

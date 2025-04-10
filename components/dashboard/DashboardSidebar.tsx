@@ -121,6 +121,11 @@ export function DashboardSidebar() {
                     <SidebarMenu>
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild>
+                                <SidebarLink href="/dashboard/graph">Graph</SidebarLink>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild>
                                 <SidebarLink href="/dashboard/settings">Settings</SidebarLink>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
