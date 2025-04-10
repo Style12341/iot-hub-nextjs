@@ -2,7 +2,7 @@
 
 import getUserIdFromAuthOrToken from "@/lib/authUtils";
 import { createErrorResponse, createSuccessResponse, ServerActionReason } from "@/types/types";
-import db from "@/lib/prisma";
+import { validateSensorAccess, getSensorValuesGrouped } from "@/lib/contexts/sensorValuesContext";
 
 /**
  * Gets sensor values for given group sensors within a date range
@@ -21,15 +21,7 @@ export async function getSensorValuesAction(
             return createErrorResponse(
                 ServerActionReason.UNAUTHORIZED,
                 "Unauthorized access",
-                {
-                    body: {
-                        groupSensorIds,
-                        startDate,
-                        endDate,
-                        token,
-                        context
-                    }
-                }
+                null
             );
         }
 
@@ -37,102 +29,46 @@ export async function getSensorValuesAction(
             return createErrorResponse(
                 ServerActionReason.INVALID_DATA,
                 "No sensors selected",
-                {
-                    body: {
-                        groupSensorIds,
-                        startDate,
-                        endDate,
-                        token,
-                        context
-                    }
-                }
+                null
             );
         }
 
-        // Verify user has access to these group sensors
-        const accessCheck = await db.groupSensor.findMany({
-            where: {
-                id: { in: groupSensorIds },
-                Group: {
-                    Device: {
-                        userId
-                    }
-                }
-            },
-            select: {
-                id: true,
-                Sensor: {
-                    select: {
-                        name: true,
-                        unit: true,
-                        Category: {
-                            select: {
-                                name: true,
-                                color: true
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        // Verify user has access to these group sensors and get sensor metadata
+        const accessCheck = await validateSensorAccess(userId, groupSensorIds);
 
         if (accessCheck.length !== groupSensorIds.length) {
             return createErrorResponse(
                 ServerActionReason.FORBIDDEN,
                 "You don't have access to some of the selected sensors",
-                {
-                    body: {
-                        groupSensorIds,
-                        startDate,
-                        endDate,
-                        token,
-                        context
-                    },
-                    results: {
-                        accessCheck
-                    }
-                }
+                null
             );
         }
 
-        // Get sensor values for the given group sensors within the date range
-        const sensorValues = await db.sensorValue.findMany({
-            where: {
-                groupSensorId: { in: groupSensorIds },
-                timestamp: {
-                    gte: startDate,
-                    lte: endDate
-                }
-            },
-            orderBy: {
-                timestamp: 'asc'
-            }
-        });
-
-        // Group by sensor ID for easier consumption by charts
-        const groupedValues = groupSensorIds.reduce((acc, sensorId) => {
+        // Get raw sensor values - no sensor info, just timestamps and values
+        const rawSensorValues = await getSensorValuesGrouped(
+            groupSensorIds,
+            startDate,
+            endDate
+        );
+        // Combine sensor metadata with the raw values
+        const mergedSensorData = groupSensorIds.reduce((result, sensorId) => {
             const sensorInfo = accessCheck.find(s => s.id === sensorId);
-            const values = sensorValues.filter(v => v.groupSensorId === sensorId);
-
-            acc[sensorId] = {
+            result[sensorId] = {
                 name: sensorInfo?.Sensor.name || "Unknown Sensor",
                 unit: sensorInfo?.Sensor.unit || "",
                 color: sensorInfo?.Sensor.Category?.color || "#000000",
-                values: values.map(v => ({
-                    timestamp: v.timestamp,
-                    value: v.value
-                }))
+                values: rawSensorValues[sensorId] || []
             };
 
-            return acc;
+            return result;
         }, {} as Record<string, { name: string; color: string; unit: string; values: { timestamp: Date; value: number }[] }>);
-
         return createSuccessResponse(
             ServerActionReason.SUCCESS,
             "Sensor values retrieved successfully",
-            groupedValues
+            mergedSensorData
         );
     } catch (error) {
+        console.error("Error in getSensorValuesAction:", error);
         return createErrorResponse(
             ServerActionReason.INTERNAL_ERROR,
             "Failed to retrieve sensor values",
