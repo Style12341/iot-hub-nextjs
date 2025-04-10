@@ -2,7 +2,7 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm install --force
 
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ARG GCS_BUCKET_NAME

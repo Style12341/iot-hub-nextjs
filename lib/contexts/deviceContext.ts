@@ -536,12 +536,6 @@ export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string | null
     const now = Date.now();
     const diff = now - lastValueTime;
 
-    // For debugging
-    // console.log('Input lastValueAt:', lastValueAt);
-    // console.log('Parsed lastValueAt:', new Date(lastValueTime).toISOString());
-    // console.log('Current time:', new Date(now).toISOString());
-    // console.log('Time difference (ms):', diff);
-
     // Sanity check for future timestamps
     if (diff < -10000) { // Allow a small buffer for clock differences (10 seconds)
         console.warn('Warning: lastValueAt timestamp appears to be in the future:',
@@ -710,10 +704,12 @@ export type DeviceGroupsWithSensorsIds = {
         active: boolean
         name: string
         sensor: {
+            groupSensorId: string
             id: string
             name: string
             unit: string
             category?: string
+            categoryColor?: string
         }[]
     }[]
 }
@@ -741,7 +737,8 @@ export async function getDeviceGroupsWithActiveSensors(userId: string, deviceId:
                                     include: {
                                         Category: {
                                             select: {
-                                                name: true
+                                                name: true,
+                                                color: true
                                             }
                                         }
                                     }
@@ -762,10 +759,12 @@ export async function getDeviceGroupsWithActiveSensors(userId: string, deviceId:
             name: g.name,
             sensor: g.GroupSensor.map(gs => {
                 return {
+                    groupSensorId: gs.id,
                     id: gs.Sensor.id,
                     name: gs.Sensor.name,
                     unit: gs.Sensor.unit,
                     category: gs.Sensor.Category?.name,
+                    categoryColor: gs.Sensor.Category?.color,
                 }
             }),
             active: device.activeGroupId == g.id

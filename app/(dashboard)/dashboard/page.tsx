@@ -6,6 +6,7 @@ import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
 import Metric from "@/components/dashboard/Metric";
 import { redirect } from "next/navigation";
 import { LayoutGrid, Cpu, Database } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export default async function Dashboard() {
     const [devicesQtyRes, sensorsQtyRes, sensorValueMetricsRes] = await Promise.all([
@@ -42,53 +43,53 @@ export default async function Dashboard() {
     sensorValueMetrics.sort((a, b) => a.timestamp.toISOString().localeCompare(b.timestamp.toISOString()));
 
     return (
-        <div className="space-y-6">
+        <>
             {/* Client component that handles breadcrumbs */}
             <BreadcrumbHandler
                 breadcrumbs={[{ href: '/dashboard', name: 'Dashboard' }]}
                 page="Overview"
             />
+            <div className="container space-y-6">
+                <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
+                <Separator />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-min">
+                    <div className="flex flex-row md:flex-col gap-4">
+                        <Metric
+                            className="flex-1"
+                            variant="number"
+                            title="Total Devices"
+                            value={devicesQty}
+                            icon={<LayoutGrid className="h-4 w-4 text-muted-foreground" />}
+                            suffix={
+                                <div className="text-sm text-muted-foreground">
+                                    <div>Online: {onlineDevicesQty}</div>
+                                    <div>Offline: {offlineDevicesQty}</div>
+                                    <div>Waiting: {waitingDevicesQty}</div>
+                                </div>
+                            }
+                        />
+                        <Metric
+                            className="flex-1"
+                            variant="number"
+                            title="Total Sensors"
+                            value={sensorsQty}
+                            icon={<Cpu className="h-4 w-4 text-muted-foreground" />}
+                        />
+                    </div>
+                    <div className="">
+                        <Metric
 
-            {/* Server component content */}
-            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-min">
-                <div className="flex flex-row md:flex-col gap-4">
-                    <Metric
-                        className="flex-1"
-                        variant="number"
-                        title="Total Devices"
-                        value={devicesQty}
-                        icon={<LayoutGrid className="h-4 w-4 text-muted-foreground" />}
-                        suffix={
-                            <div className="text-sm text-muted-foreground">
-                                <div>Online: {onlineDevicesQty}</div>
-                                <div>Offline: {offlineDevicesQty}</div>
-                                <div>Waiting: {waitingDevicesQty}</div>
-                            </div>
-                        }
-                    />
-                    <Metric
-                        className="flex-1"
-                        variant="number"
-                        title="Total Sensors"
-                        value={sensorsQty}
-                        icon={<Cpu className="h-4 w-4 text-muted-foreground" />}
-                    />
+                            variant="graph"
+                            title="Sensor Values"
+                            description="Values uploaded in the last 5 minutes"
+                            data={sensorValueMetrics}
+                            timeRangeText="Last 5 minutes"
+                            icon={<Database className="h-4 w-4 text-muted-foreground" />}
+                            metricName="SENSOR_VALUES_PER_MINUTE"
+                            fetchInterval={60000}
+                        /></div>
                 </div>
-                <div className="">
-                    <Metric
-
-                        variant="graph"
-                        title="Sensor Values"
-                        description="Values uploaded in the last 5 minutes"
-                        data={sensorValueMetrics}
-                        timeRangeText="Last 5 minutes"
-                        icon={<Database className="h-4 w-4 text-muted-foreground" />}
-                        metricName="SENSOR_VALUES_PER_MINUTE"
-                        fetchInterval={60000}
-                    /></div>
             </div>
-        </div>
+        </>
     );
 }

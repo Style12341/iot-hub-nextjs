@@ -17,7 +17,15 @@ import {
 import 'chartjs-adapter-date-fns';
 import { SensorQueryResult } from "@/lib/contexts/deviceContext";
 import { formatDate } from "@/lib/utils";
-import { ChartColorSet, chartColors, generateColorSetFromBase, getLineDatasetStyle, getStandardChartOptions, getTimeScaleOptions } from "@/lib/configs/chartConfig";
+import {
+    ChartColorSet,
+    chartColors,
+    generateColorSetFromBase,
+    getLineDatasetStyle,
+    getStandardChartOptions,
+    getTimeScaleOptions,
+    formatTimeSeriesDataWithGaps
+} from "@/lib/configs/chartConfig";
 import { Tooltip as TooltipUI, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Register ChartJS components
@@ -32,8 +40,6 @@ ChartJS.register(
     TimeScale
 );
 
-
-
 interface SensorGraphProps {
     sensor: SensorQueryResult;
     className?: string;
@@ -46,44 +52,6 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
     const colorSet: ChartColorSet = color
         ? generateColorSetFromBase(color)
         : chartColors.primary;
-
-    // Format the data for Chart.js - ensures consistent Date objects
-    const formatChartData = (dataPoints: any[]) => {
-        // Early return for empty datasets
-        if (!dataPoints || dataPoints.length === 0) return [];
-
-        // First sort the data points by timestamp
-        const sortedData = [...dataPoints].sort((a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-        );
-
-        const result = [];
-        const MAX_GAP_MS = 90000; // 1 minute 30 seconds in milliseconds
-
-        // Process each point
-        for (let i = 0; i < sortedData.length; i++) {
-            const point = {
-                x: new Date(sortedData[i].timestamp),
-                y: parseFloat(sortedData[i].value.toString())
-            };
-
-            // Add current point
-            result.push(point);
-
-            // Check if there's a large gap between this point and the next one
-            if (i < sortedData.length - 1) {
-                const currentTime = point.x.getTime();
-                const nextTime = new Date(sortedData[i + 1].timestamp).getTime();
-
-                if (nextTime - currentTime > MAX_GAP_MS) {
-                    // Insert a null point to create a gap in the line
-                    result.push({ x: new Date(currentTime + 1), y: null });
-                }
-            }
-        }
-
-        return result;
-    };
 
     useEffect(() => {
         if (!sensor.values || sensor.values.length === 0) {
@@ -117,7 +85,7 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
         datasets: [
             {
                 label: sensor.name,
-                data: formatChartData(values),
+                data: formatTimeSeriesDataWithGaps(values),
                 ...getLineDatasetStyle(colorSet, false)
             },
         ],
