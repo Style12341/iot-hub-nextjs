@@ -21,11 +21,9 @@ export async function POST(req: Request) {
     const requestData = { token, device_id, group_id, sensors, firmware_version };
 
     if (fast) {
-        // Enqueue the job and return immediately
-        console.log("Sending job to queue")
         // On catch execute processLog synchronously
         logQueue.add('logJob', requestData).catch(async () => {
-            console.log("Job logging failed, executing synchronously")
+            console.error("Job logging failed, executing synchronously")
             processLog(requestData);
         }
         );

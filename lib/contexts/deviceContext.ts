@@ -536,12 +536,6 @@ export function getDeviceStatusFromLastValueAt(lastValueAt: Date | string | null
     const now = Date.now();
     const diff = now - lastValueTime;
 
-    // For debugging
-    // console.log('Input lastValueAt:', lastValueAt);
-    // console.log('Parsed lastValueAt:', new Date(lastValueTime).toISOString());
-    // console.log('Current time:', new Date(now).toISOString());
-    // console.log('Time difference (ms):', diff);
-
     // Sanity check for future timestamps
     if (diff < -10000) { // Allow a small buffer for clock differences (10 seconds)
         console.warn('Warning: lastValueAt timestamp appears to be in the future:',
