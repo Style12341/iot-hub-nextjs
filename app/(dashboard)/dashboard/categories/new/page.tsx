@@ -16,7 +16,7 @@ export default async function NewCategoryForm() {
             <div className="container space-y-6">
                 <h1 className="text-3xl font-bold tracking-tight">Create category</h1>
                 <Separator />
-                <div className="container mx-auto px-8">
+                <div className="container mx-auto">
                     <CategoryForm redirect />
                 </div>
             </div>
