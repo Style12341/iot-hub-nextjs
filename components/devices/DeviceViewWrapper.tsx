@@ -28,7 +28,6 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
     useEffect(() => {
         // Clean up any existing subscription first
         if (unsubscribeRef.current) {
-            console.log("Cleaning up existing SSE subscription");
             unsubscribeRef.current();
             unsubscribeRef.current = null;
         }
@@ -113,7 +112,6 @@ export default function DeviceViewWrapper({ initialDevices, isExpanded = true }:
         unsubscribeRef.current = unsubscribe;
 
         return () => {
-            console.log("Cleaning up SSE subscription and interval");
             clearInterval(intervalId);
             if (unsubscribeRef.current) {
                 unsubscribeRef.current();

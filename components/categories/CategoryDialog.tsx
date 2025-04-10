@@ -49,9 +49,9 @@ export default function CategoryDialog({
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 {children || (
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        {create ? "Create category" : "Edit category"}
+                    <Button type="button">
+                        <Plus className="h-4 w-4" />
+                        {create ? "Add category" : "Edit category"}
                     </Button>
                 )}
             </DialogTrigger>

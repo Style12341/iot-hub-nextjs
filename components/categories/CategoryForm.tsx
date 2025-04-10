@@ -270,7 +270,7 @@ export default function CategoryForm({
                     )}
                 />
 
-                <Button type="submit" disabled={isPending}>
+                <Button type="button" disabled={isPending} onClick={() => formMethods.handleSubmit(handleSubmit)()}>
                     {isPending
                         ? isEditMode ? "Updating..." : "Creating..."
                         : isEditMode ? "Update Category" : "Create Category"
