@@ -20,7 +20,9 @@ import { formatDate } from "@/lib/utils";
 import {
     getLineDatasetStyle,
     getStandardChartOptions,
-    formatTimeSeriesDataWithGaps
+    formatTimeSeriesDataWithGaps,
+    generateColorSetFromBase,
+    chartColors
 } from "@/lib/configs/chartConfig";
 import { useHoverContext } from "./SyncronizedChartGroup";
 
@@ -38,6 +40,7 @@ ChartJS.register(
 
 type SensorChartProps = {
     sensorId: string;
+    color?: string;
     sensorName: string;
     unit: string;
     data: { timestamp: Date; value: number }[];
@@ -45,6 +48,7 @@ type SensorChartProps = {
 
 export const SensorChart = memo(function SensorChart({
     sensorId,
+    color,
     sensorName,
     unit,
     data
@@ -56,6 +60,7 @@ export const SensorChart = memo(function SensorChart({
     const activeTimestampRef = useRef<Date | null>(null);
     // Track if this chart initiated the hover
     const isInitiatorRef = useRef(false);
+    const colorSet = color ? generateColorSetFromBase(color) : chartColors.primary;
 
     // Update processed data when raw data changes
     useEffect(() => {
@@ -140,7 +145,7 @@ export const SensorChart = memo(function SensorChart({
             {
                 label: sensorName,
                 data: processedData.current,
-                ...getLineDatasetStyle(),
+                ...getLineDatasetStyle(colorSet),
                 spanGaps: false, // Don't connect points across gaps
             },
         ],

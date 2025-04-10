@@ -19,6 +19,7 @@ const HoverContext = createContext<HoverState>({
 
 type SyncedChartGroupProps = {
     sensorData: Record<string, {
+        color: string;
         name: string;
         unit: string;
         values: { timestamp: Date; value: number }[];
@@ -60,6 +61,7 @@ export function SyncedChartGroup({ sensorData, isLoading }: SyncedChartGroupProp
                         {sensorIds.map((sensorId) => (
                             <SensorChart
                                 key={sensorId}
+                                color={sensorData[sensorId].color}
                                 sensorId={sensorId}
                                 sensorName={sensorData[sensorId].name}
                                 unit={sensorData[sensorId].unit}

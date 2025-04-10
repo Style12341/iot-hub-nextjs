@@ -64,7 +64,13 @@ export async function getSensorValuesAction(
                 Sensor: {
                     select: {
                         name: true,
-                        unit: true
+                        unit: true,
+                        Category: {
+                            select: {
+                                name: true,
+                                color: true
+                            }
+                        }
                     }
                 }
             }
@@ -111,6 +117,7 @@ export async function getSensorValuesAction(
             acc[sensorId] = {
                 name: sensorInfo?.Sensor.name || "Unknown Sensor",
                 unit: sensorInfo?.Sensor.unit || "",
+                color: sensorInfo?.Sensor.Category?.color || "#000000",
                 values: values.map(v => ({
                     timestamp: v.timestamp,
                     value: v.value
@@ -118,7 +125,7 @@ export async function getSensorValuesAction(
             };
 
             return acc;
-        }, {} as Record<string, { name: string; unit: string; values: { timestamp: Date; value: number }[] }>);
+        }, {} as Record<string, { name: string; color: string; unit: string; values: { timestamp: Date; value: number }[] }>);
 
         return createSuccessResponse(
             ServerActionReason.SUCCESS,
