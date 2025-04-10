@@ -15,6 +15,7 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination"
 import DeviceIndexWrapper from "@/components/devices/DeviceIndexWrapper";
+import { Separator } from "@/components/ui/separator";
 
 
 export default async function DevicesIndex({
@@ -42,62 +43,63 @@ export default async function DevicesIndex({
                 breadcrumbs={breadcrumbs}
                 page="Devices"
             />
-
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold tracking-tight">Devices</h1>
-                <Button asChild>
-                    <Link href="/dashboard/devices/new">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Add Device
-                    </Link>
-                </Button>
-            </div>
-
-            <DeviceIndexWrapper initialDevices={devices} key={`devices-page${currPage}`} />
-            {devices.length > 0 && <>
-                <div className="flex justify-center">
-                    <p className="text-sm text-gray-500">
-                        Showing {devices.length} of {count} devices
-                    </p>
+            <div className="container space-y-6">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-3xl font-bold tracking-tight">Devices</h1>
+                    <Button asChild>
+                        <Link href="/dashboard/devices/new">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Device
+                        </Link>
+                    </Button>
                 </div>
-                <Pagination>
-                    <PaginationContent>
-                        {currPage > 1 &&
-                            <PaginationItem>
-                                <PaginationPrevious href={`/dashboard/devices?page=${page - 1}`} />
-                            </PaginationItem>
-                        }
-                        {maxPage > 1 && [...Array(maxPage).keys()].map((i) => {
-                            const pageNumber = i + 1;
-                            const active = pageNumber === currPage;
-                            if (pageNumber === currPage || pageNumber === 1 || pageNumber === maxPage || Math.abs(pageNumber - currPage) < 2) {
-                                return (
-                                    <PaginationItem key={pageNumber}>
-                                        <PaginationLink isActive={active} href={`/dashboard/devices?page=${pageNumber}`} prefetch>
-                                            {pageNumber}
-                                        </PaginationLink>
-                                    </PaginationItem>
-                                );
-                            } else if (Math.abs(pageNumber - currPage) === 2) {
-                                return (
-                                    <PaginationItem key={pageNumber}>
-                                        <PaginationEllipsis />
-                                    </PaginationItem>
-                                );
+                <Separator />
+                <DeviceIndexWrapper initialDevices={devices} key={`devices-page${currPage}`} />
+                {devices.length > 0 && <>
+                    <div className="flex justify-center">
+                        <p className="text-sm text-gray-500">
+                            Showing {devices.length} of {count} devices
+                        </p>
+                    </div>
+                    <Pagination>
+                        <PaginationContent>
+                            {currPage > 1 &&
+                                <PaginationItem>
+                                    <PaginationPrevious href={`/dashboard/devices?page=${page - 1}`} />
+                                </PaginationItem>
                             }
-                        })}
-                        {currPage < maxPage &&
-                            <PaginationItem>
-                                <PaginationNext href={`/dashboard/devices?page=${currPage + 1}`} />
-                            </PaginationItem>
-                        }
+                            {maxPage > 1 && [...Array(maxPage).keys()].map((i) => {
+                                const pageNumber = i + 1;
+                                const active = pageNumber === currPage;
+                                if (pageNumber === currPage || pageNumber === 1 || pageNumber === maxPage || Math.abs(pageNumber - currPage) < 2) {
+                                    return (
+                                        <PaginationItem key={pageNumber}>
+                                            <PaginationLink isActive={active} href={`/dashboard/devices?page=${pageNumber}`} prefetch>
+                                                {pageNumber}
+                                            </PaginationLink>
+                                        </PaginationItem>
+                                    );
+                                } else if (Math.abs(pageNumber - currPage) === 2) {
+                                    return (
+                                        <PaginationItem key={pageNumber}>
+                                            <PaginationEllipsis />
+                                        </PaginationItem>
+                                    );
+                                }
+                            })}
+                            {currPage < maxPage &&
+                                <PaginationItem>
+                                    <PaginationNext href={`/dashboard/devices?page=${currPage + 1}`} />
+                                </PaginationItem>
+                            }
 
-                    </PaginationContent>
-                </Pagination>
+                        </PaginationContent>
+                    </Pagination>
 
-            </>
+                </>
 
-            }
-            {devices.length === 0 && <EmptyDevices />}
+                }
+                {devices.length === 0 && <EmptyDevices />}
+            </div>
         </div>
     );
 }

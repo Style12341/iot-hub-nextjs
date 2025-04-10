@@ -5,6 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 import { createCategoryAction } from "@/app/actions/categoryActions";
 import { getUserCategories } from "@/lib/contexts/categoriesContext";
 import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler";
+import { Separator } from "@/components/ui/separator";
 
 export default async function NewDevicePage() {
     const { userId } = await auth();
@@ -27,7 +28,9 @@ export default async function NewDevicePage() {
             <BreadcrumbHandler
                 breadcrumbs={breadcrumbs}
                 page="New"></BreadcrumbHandler>
-            <div className="container mx-auto py-8 px-8">
+            <div className="container space-y-6">
+                <h1 className="text-3xl font-bold tracking-tight">Create device</h1>
+                <Separator />
                 <DeviceForm
                     views={views}
                     categories={categories}
