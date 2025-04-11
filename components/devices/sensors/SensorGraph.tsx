@@ -27,6 +27,7 @@ import {
     formatTimeSeriesDataWithGaps
 } from "@/lib/configs/chartConfig";
 import { Tooltip as TooltipUI, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { set } from "date-fns";
 
 // Register ChartJS components
 ChartJS.register(
@@ -48,6 +49,48 @@ interface SensorGraphProps {
 
 export default function SensorGraph({ sensor, className = "", color }: SensorGraphProps) {
     const [values, setValues] = useState(sensor.values || []);
+    const [minimum, setMinimum] = useState(0);
+    const [maximum, setMaximum] = useState(0);
+    const [average, setAverage] = useState(0);
+    const [dataPoints, setDataPoints] = useState(0);
+    const [debounceRef, setDebounceRef] = useState<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        if (!values || values.length === 0) {
+            return;
+        }
+        if (debounceRef) {
+            clearTimeout(debounceRef);
+        }
+        const ref = setTimeout(() => {
+            const filteredValues = values.filter(v => v.value !== null && v.value !== undefined).map(v => v.value);
+            if (filteredValues.length === 0) {
+                setMinimum(0);
+                setMaximum(0);
+                setAverage(0);
+                return;
+            }
+            let min = Number.MAX_VALUE;
+            let max = Number.MIN_VALUE;
+            let sum = 0;
+            for (const v of filteredValues) {
+                if (v < min) {
+                    min = v;
+                }
+                if (v > max) {
+                    max = v;
+                }
+                sum += v;
+            }
+            const avg = sum / filteredValues.length;
+            setMinimum(min);
+            setMaximum(max);
+            setAverage(avg);
+            setDataPoints(filteredValues.length);
+        }, 100);
+        setDebounceRef(ref);
+    }, [values]);
+
     // Determine color set to use
     const colorSet: ChartColorSet = color
         ? generateColorSetFromBase(color)
@@ -142,11 +185,25 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
                 </div>
                 <div className="mt-2 text-xs text-muted-foreground">
                     {values.length > 0 ? (
-                        <div className="flex justify-between">
-                            <span>Latest: {values[0]?.value} {sensor.unit}</span>
-                            <span>{formatDate(values[0]?.timestamp || "")}</span>
-                        </div>
+                        <>
+                            <div className="flex justify-between">
+                                <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+                                    <span>Min: {minimum} {sensor.unit}</span>
+                                    <span>Max: {maximum} {sensor.unit}</span>
+                                    <span>Avg: {average.toFixed(2)} {sensor.unit}</span>
+                                    <span>Latest: {values[0]?.value} {sensor.unit}</span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
+                                    <span>DataPoints: {dataPoints}</span>
+                                    <span>{formatDate(values[0]?.timestamp || "")}</span>
+                                </div>
+                            </div>
+                            <div className="flex justify-between">
+
+                            </div>
+                        </>
                     ) : null}
+
                 </div>
             </CardContent>
         </Card >

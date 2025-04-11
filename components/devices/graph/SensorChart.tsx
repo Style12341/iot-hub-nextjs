@@ -53,6 +53,10 @@ export const SensorChart = memo(function SensorChart({
     unit,
     data
 }: SensorChartProps) {
+    const [minimum, setMinimum] = useState(0);
+    const [maximum, setMaximum] = useState(0);
+    const [average, setAverage] = useState(0);
+    const [debounceRef, setDebounceRef] = useState<NodeJS.Timeout | null>(null);
     const chartRef = useRef<any>(null);
     const hoverIndexRef = useRef<number | null>(null);
     const processedData = useRef(formatTimeSeriesDataWithGaps(data));
@@ -138,7 +142,41 @@ export const SensorChart = memo(function SensorChart({
             }
         }
     }, [activeTimestamp]);
-
+    useEffect(() => {
+        const values = data;
+        if (!values || values.length === 0) {
+            return;
+        }
+        if (debounceRef) {
+            clearTimeout(debounceRef);
+        }
+        const ref = setTimeout(() => {
+            const filteredValues = values.filter(v => v.value !== null && v.value !== undefined).map(v => v.value);
+            if (filteredValues.length === 0) {
+                setMinimum(0);
+                setMaximum(0);
+                setAverage(0);
+                return;
+            }
+            let min = Number.MAX_VALUE;
+            let max = Number.MIN_VALUE;
+            let sum = 0;
+            for (const v of filteredValues) {
+                if (v < min) {
+                    min = v;
+                }
+                if (v > max) {
+                    max = v;
+                }
+                sum += v;
+            }
+            const avg = sum / filteredValues.length;
+            setMinimum(min);
+            setMaximum(max);
+            setAverage(avg);
+        }, 100);
+        setDebounceRef(ref);
+    }, [data]);
     // Process data for Chart.js using shared utility
     const chartData = {
         datasets: [
@@ -231,12 +269,25 @@ export const SensorChart = memo(function SensorChart({
                         </div>
                     )}
                 </div>
-                {latestValue && (
-                    <div className="mt-2 text-xs text-muted-foreground flex justify-between">
-                        <span>Latest: {latestValue.value} {unit}</span>
-                        <span>{formatDate(latestValue.timestamp)}</span>
-                    </div>
-                )}
+                <div className="mt-2 text-xs text-muted-foreground">
+                    {latestValue && (
+                        <>
+                            <div className="flex justify-between gap-3">
+                                <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+                                    <span>Min: {minimum} {unit}</span>
+                                    <span>Max: {maximum} {unit}</span>
+                                    <span>Avg: {average.toFixed(2)} {unit}</span>
+                                    <span>Latest: {latestValue.value} {unit}</span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
+                                    <span>DataPoints: {data.length}</span>
+                                    <span>{formatDate(latestValue.timestamp || "")}</span>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                </div>
             </CardContent>
         </Card>
     );
