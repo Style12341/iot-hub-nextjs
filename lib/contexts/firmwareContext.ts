@@ -110,6 +110,9 @@ export async function getAssignedFirmware(deviceId: string) {
  */
 
 export async function updateActiveFirmware(deviceId: string, firmware_version: string) {
+    if (RegExp(/^[0-9]+\.[0-9]+\.[0-9]+$/).test(firmware_version) === false) {
+        return false;
+    }
     return await db.device.update({
         where: {
             id: deviceId,

@@ -6,12 +6,19 @@ import {
   SignedOut,
   UserButton,
 } from '@clerk/nextjs'
+import Image from "next/image"
 export default function Navbar() {
   return (
-    <header className="flex h-20 w-full shrink-0 items-center px-4 md:px-6">
-      <Link href="#" className="mr-6 flex" prefetch={false}>
-        <MountainIcon className="h-6 w-6" />
-        <span className="sr-only">Acme Inc</span>
+    <header className="flex h-20 w-full shrink-0 items-center px-4 md:px-6 bg-primary/2">
+      <Link href="#" className="flex items-center mb-4 md:mb-0" prefetch={false}>
+        <Image
+          src="/logo.png"
+          alt="IoT Hub Logo"
+          width={32}
+          height={32}
+          className="mr-2"
+        />
+        <h2 className="font-semibold text-2xl">IoT Hub</h2>
       </Link>
       <nav className="ml-auto flex gap-6">
         <NavbarLink href="/">Home</NavbarLink>

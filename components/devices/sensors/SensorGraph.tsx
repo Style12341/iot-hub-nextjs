@@ -152,7 +152,8 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
             }
         },
         animation: {
-            duration: 0
+            duration: 200,
+            easing: 'easeInQuad' as const
         }
     };
 

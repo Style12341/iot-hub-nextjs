@@ -8,6 +8,7 @@ import { getUserFromToken } from '@/lib/contexts/userTokensContext';
 import { DeviceSSEMessage, LOGTOKEN, SensorValueSSEMessage } from '@/types/types';
 import { getDeviceChannel } from '../sseUtils';
 import { trackMetricInDB } from '../contexts/metricsContext';
+import { updateActiveFirmware } from '../contexts/firmwareContext';
 
 type SensorValue = {
     value: number;
@@ -229,9 +230,11 @@ export async function processLog(body: DeviceLogBody) {
                 values: sensorLogsGroupedByGroupSensorId[log.groupSensorId]
             }))
         };
+        console.log("[DeviceLogWorker] Device firmware:", firmware_version);
 
         try {
             await Promise.all([
+                updateActiveFirmware(device_id, deviceStatus.activeFirmwareVersion),
                 updateDeviceActiveGroup(device_id, group_id),
                 updateDeviceLastValueAt(device_id),
                 createMultipleSensorValues(logs),

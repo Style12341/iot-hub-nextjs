@@ -17,9 +17,10 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../ui/colla
 import { ChevronRight, Minus, Plus } from "lucide-react"
 import { title } from "process"
 import SidebarLink from "./SideBarLink"
-// This is sample data.
+import Image from "next/image"
+import { UserButton } from "@clerk/nextjs"
+import CustomUserButton from "./CustomUserButton"
 const data = {
-    versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
     navMain: [
         {
             title: "Dashboard",
@@ -73,8 +74,15 @@ export function DashboardSidebar() {
                             asChild
                             className="data-[slot=sidebar-menu-button]:!p-1.5"
                         >
-                            <Link href="#">
-                                <span className="text-base font-semibold">IoT Hub</span>
+                            <Link href="/" className="flex items-center mb-4 md:mb-0" prefetch={false}>
+                                <Image
+                                    src="/logo.png"
+                                    alt="IoT Hub Logo"
+                                    width={32}
+                                    height={32}
+                                    className=""
+                                />
+                                <h2 className="font-semibold text-xl">IoT Hub</h2>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -133,6 +141,7 @@ export function DashboardSidebar() {
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter>
+                <CustomUserButton />
             </SidebarFooter>
         </Sidebar>
     )
