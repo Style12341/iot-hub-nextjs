@@ -301,7 +301,6 @@ export function ViewDeviceCard(device: DeviceQueryResult) {
 
         if (newDevice.sensors && device.sensors) {
             newDevice.sensors = newDevice.sensors.map((sensor) => {
-                if (!sensor.values) return sensor;
                 const newSensor = device.sensors?.find((s) => s.id === sensor.id);
                 if (!newSensor || !newSensor.values || !newSensor.values[0]) return sensor;
 
@@ -315,7 +314,7 @@ export function ViewDeviceCard(device: DeviceQueryResult) {
                 if (newValuesFiltered) {
                     return {
                         ...sensor,
-                        values: [...newValuesFiltered, ...sensor.values.flat()] // Flatten nested arrays
+                        values: [...newValuesFiltered, ...sensor?.values?.flat() || []] // Flatten nested arrays
                     };
                 }
 
