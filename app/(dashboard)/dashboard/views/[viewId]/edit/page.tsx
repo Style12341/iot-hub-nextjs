@@ -4,6 +4,7 @@ import BreadcrumbHandler from "@/components/dashboard/BreadcrumbHandler"
 import ViewForm from "@/components/views/ViewForm"
 import { getViewByIdAction } from "@/app/actions/viewActions"
 import { redirect } from "next/navigation"
+import { Separator } from "@/components/ui/separator"
 
 interface EditViewPageProps {
     params: Promise<{
@@ -34,7 +35,9 @@ export default async function EditViewPage({ params }: EditViewPageProps) {
                 page={`Edit: ${view.name}`}
             />
 
-            <div className="container mx-auto py-6">
+            <div className="container mx-auto space-y-6">
+                <h1 className="text-3xl font-bold tracking-tight">Edit view</h1>
+                <Separator />
                 <ViewForm
                     create={false}
                     initialData={view}

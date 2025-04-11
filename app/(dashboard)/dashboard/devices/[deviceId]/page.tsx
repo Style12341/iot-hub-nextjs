@@ -24,7 +24,7 @@ export default async function DeviceDetailsPage({
     const device = deviceResult.data.device;
     return (
 
-        <div className="space-y-6">
+        <div className="container mx-auto space-y-6">
             <BreadcrumbHandler
                 breadcrumbs={[
                     { href: '/dashboard', name: 'Dashboard' },

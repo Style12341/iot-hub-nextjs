@@ -32,7 +32,7 @@ export default async function FirmwarePage({
         { href: `/dashboard/devices/${data.deviceData.id}`, name: data.deviceData.name },
     ];
     return (
-        <div className="space-y-6">
+        <div className="container mx-auto space-y-6">
             <DeviceMenu deviceId={deviceId} activeTab="firmwares" variant="responsive" />
             <BreadcrumbHandler
                 breadcrumbs={breadcrumbs}

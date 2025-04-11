@@ -28,7 +28,7 @@ export default async function NewGroupPage({
     ];
 
     return (
-        <div className="space-y-6">
+        <div className="container mx-auto space-y-6">
             <DeviceMenu deviceId={deviceId} activeTab="groups" variant="responsive" />
 
             <BreadcrumbHandler
