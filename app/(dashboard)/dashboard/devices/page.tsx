@@ -43,7 +43,7 @@ export default async function DevicesIndex({
                 breadcrumbs={breadcrumbs}
                 page="Devices"
             />
-            <div className="container space-y-6">
+            <div className="container mx-auto space-y-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold tracking-tight">Devices</h1>
                     <Button asChild>

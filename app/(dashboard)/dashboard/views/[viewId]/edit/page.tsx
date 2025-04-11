@@ -34,7 +34,7 @@ export default async function EditViewPage({ params }: EditViewPageProps) {
                 page={`Edit: ${view.name}`}
             />
 
-            <div className="container py-6">
+            <div className="container mx-auto py-6">
                 <ViewForm
                     create={false}
                     initialData={view}

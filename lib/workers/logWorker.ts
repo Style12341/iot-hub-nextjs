@@ -293,7 +293,8 @@ const logWorker = new Worker(
         }
     },
     {
-        connection: redis.duplicate()
+        connection: redis.duplicate(),
+        concurrency: 50,
     }
 );
 

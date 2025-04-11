@@ -20,7 +20,7 @@ export default async function GraphPage() {
                 page="Graph"
             />
 
-            <div className="container pb-6 space-y-6">
+            <div className="container mx-auto pb-6 space-y-6">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Graphing</h1>
                     <p className="text-muted-foreground">

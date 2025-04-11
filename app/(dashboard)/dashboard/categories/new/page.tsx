@@ -13,10 +13,10 @@ export default async function NewCategoryForm() {
                 breadcrumbs={[{ href: '/dashboard', name: 'Dashboard' }, { href: '/dashboard/categories', name: 'Categories' }]}
                 page="New"
             />
-            <div className="container space-y-6">
+            <div className="container mx-auto space-y-6">
                 <h1 className="text-3xl font-bold tracking-tight">Create category</h1>
                 <Separator />
-                <div className="container mx-auto">
+                <div className="">
                     <CategoryForm redirect />
                 </div>
             </div>
