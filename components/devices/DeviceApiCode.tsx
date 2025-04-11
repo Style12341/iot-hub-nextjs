@@ -40,7 +40,7 @@ export default function DeviceApiCode({ device }: DeviceApiCodeProps) {
                     }
                     // Additional values can be added to this array as needed
                 ]
-            }`).join("") || ""}
+            }`).join(",") || ""}
     ]
 }`
         )
@@ -62,7 +62,7 @@ export default function DeviceApiCode({ device }: DeviceApiCodeProps) {
                     }
                     // Additional values can be added to this array as needed
                 ]
-            }`).join("") || ""}
+            }`).join(",") || ""}
     ]
 }`)
         const formatName = (name: string) => {
