@@ -49,11 +49,11 @@ export default async function Dashboard() {
                 breadcrumbs={[{ href: '/dashboard', name: 'Dashboard' }]}
                 page="Overview"
             />
-            <div className="container space-y-6">
+            <div className="space-y-6">
                 <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
                 <Separator />
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-min">
-                    <div className="flex flex-row md:flex-col gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
                         <Metric
                             className="flex-1"
                             variant="number"
@@ -76,7 +76,7 @@ export default async function Dashboard() {
                             icon={<Cpu className="h-4 w-4 text-muted-foreground" />}
                         />
                     </div>
-                    <div className="">
+                    <div className="col-span-2">
                         <Metric
 
                             variant="graph"
