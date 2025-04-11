@@ -197,8 +197,12 @@ export const SensorChart = memo(function SensorChart({
             (context: any) => `${context.parsed.y} ${unit}`
         ),
         responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 0 }, // Disable animations for better performance
+        maintainAspectRatio: false
+        ,
+        animation: {
+            duration: 200,
+            easing: 'easeInQuad' as const
+        },
         interaction: {
             mode: 'index' as const,
             intersect: false,
