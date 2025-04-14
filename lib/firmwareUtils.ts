@@ -1,3 +1,4 @@
+"use server"
 import { bucket } from './configs/gcsConfig';
 import { createHash } from 'crypto';
 import { Firmware } from '@prisma/client';
@@ -235,6 +236,35 @@ export async function deleteFirmwareFileById(firmwareId: string): Promise<void> 
             error,
             body: {
                 firmwareId: firmwareId,
+            }
+        });
+        throw error;
+    }
+}
+export async function deleteFirmwareFile(firmware?: FirmwareType | null) {
+    try {
+        if (!firmware) {
+            throw new Error('Firmware not found');
+        }
+        if (firmware.embedded) {
+            return; // No need to delete embedded firmware
+        }
+        // Get file from Google Cloud Storage using stored path directly
+        const file = bucket.file(firmware.fileUrl);
+
+        // Check if file exists
+        const [exists] = await file.exists();
+        if (!exists) {
+            throw new Error('Firmware file not found in storage');
+        }
+
+        // Delete the file from Google Cloud Storage
+        await file.delete();
+    } catch (error) {
+        console.error('Error deleting firmware file:', {
+            error,
+            body: {
+                firmware: firmware
             }
         });
         throw error;
