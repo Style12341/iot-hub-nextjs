@@ -11,6 +11,12 @@ import {
 } from "@/components/ui/select";
 import { Label } from "../../ui/label";
 import { Skeleton } from "../../ui/skeleton";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type DeviceGroupSelectorProps = {
     devices: (Device & { View: { name: string } | null })[];
@@ -44,11 +50,33 @@ export function DeviceGroupSelector({
                         <SelectValue placeholder="Select a device" />
                     </SelectTrigger>
                     <SelectContent>
-                        {devices.map((device) => (
-                            <SelectItem key={device.id} value={device.id}>
-                                {device.name} ({device.View?.name || "No View"})
-                            </SelectItem>
-                        ))}
+                        <TooltipProvider>
+                            {devices.map((device) => {
+                                const isWaiting = device.status === "WAITING";
+
+                                return (
+                                    <Tooltip key={device.id}>
+                                        <TooltipTrigger asChild>
+                                            <div>
+                                                <SelectItem
+                                                    value={device.id}
+                                                    disabled={isWaiting}
+                                                    className={isWaiting ? "opacity-50 cursor-not-allowed" : ""}
+                                                >
+                                                    {device.name} ({device.View?.name || "No View"})
+                                                    {isWaiting && " (Waiting)"}
+                                                </SelectItem>
+                                            </div>
+                                        </TooltipTrigger>
+                                        {isWaiting && (
+                                            <TooltipContent side="right">
+                                                <p>This device is waiting for sensor values</p>
+                                            </TooltipContent>
+                                        )}
+                                    </Tooltip>
+                                );
+                            })}
+                        </TooltipProvider>
                     </SelectContent>
                 </Select>
             </div>
@@ -67,7 +95,12 @@ export function DeviceGroupSelector({
                             <SelectValue placeholder="Select a group" />
                         </SelectTrigger>
                         <SelectContent>
-                            {deviceGroups?.Groups.map((group) => (
+                            {deviceGroups?.Groups.sort((a, b) => {
+                                if (a.active === b.active) {
+                                    return a.name.localeCompare(b.name);
+                                }
+                                return a.active ? -1 : 1;
+                            }).map((group) => (
                                 <SelectItem key={group.id} value={group.id}>
                                     {group.name} {group.active ? "(Active)" : ""}
                                 </SelectItem>

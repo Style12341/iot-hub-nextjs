@@ -13,10 +13,7 @@ export async function deleteCategory(userId: string, categoryId: string) {
 }
 export async function createCategory(data: CreateCategoryFormData): Promise<SensorCategory> {
     return await db.sensorCategory.create({
-        data: {
-            name: data.name,
-            userId: data.userId
-        }
+        data: data
     });
 }
 export async function editCategory(data: CreateCategoryFormData, categoryId: string): Promise<SensorCategory> {
