@@ -31,7 +31,7 @@ import ViewDialog from "../views/ViewDialog";
 
 // Props type for the component
 type DeviceFormProps = {
-    categories: { id: string; name: string }[];
+    categories: SensorCategory[];
     views: { id: string; name: string }[];
     deviceAction: (formData: CreateDeviceFormData) => Promise<ServerActionResponse>;
     categoryAction: (formData: CreateCategoryFormData) => Promise<ServerActionResponse>;
@@ -261,13 +261,31 @@ export default function DeviceForm({ views, categories, deviceAction, categoryAc
                                                     >
                                                         <FormControl>
                                                             <SelectTrigger>
-                                                                <SelectValue placeholder="Select category" />
+                                                                <SelectValue placeholder="Select category">
+                                                                    {field.value && (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div
+                                                                                className="h-3 w-3 rounded-full"
+                                                                                style={{
+                                                                                    backgroundColor: categoriesState.find(c => c.id === field.value)?.color || "#CBD5E1"
+                                                                                }}
+                                                                            />
+                                                                            <span>{categoriesState.find(c => c.id === field.value)?.name || "Select category"}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </SelectValue>
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
                                                             {categoriesState.map((category) => (
                                                                 <SelectItem key={category.id} value={category.id}>
-                                                                    {category.name}
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div
+                                                                            className="h-3 w-3 rounded-full"
+                                                                            style={{ backgroundColor: category.color }}
+                                                                        />
+                                                                        {category.name}
+                                                                    </div>
                                                                 </SelectItem>
                                                             ))}
                                                         </SelectContent>
