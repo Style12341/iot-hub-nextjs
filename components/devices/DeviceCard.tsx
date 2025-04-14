@@ -10,7 +10,7 @@ import SensorListItem from "./sensors/SensorListItem";
 import { DeviceQueryResult, SensorValueQueryResult } from "@/lib/contexts/deviceContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import SensorGraph from "./sensors/SensorGraph";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { getDeviceViewWithActiveSensorsBetweenAction } from "@/app/actions/deviceActions";
@@ -21,9 +21,10 @@ interface DeviceCardProps {
     device: DeviceQueryResult;
     isWrapper?: boolean; // Flag to indicate if this card is managed by DeviceIndexWrapper
     viewMode?: boolean; // Flag to indicate if this card is in view mode
+    singleColumn?: boolean; // Flag to indicate if this card is in single column mode
 }
 
-export default function DeviceCard({ device, isWrapper = false, viewMode = false }: DeviceCardProps) {
+export default function DeviceCard({ device, isWrapper = false, viewMode = false, singleColumn = false }: DeviceCardProps) {
     const [isStatusChanging, setIsStatusChanging] = useState(false);
     useEffect(() => {
         setIsStatusChanging(true)
@@ -124,7 +125,7 @@ export default function DeviceCard({ device, isWrapper = false, viewMode = false
                 ) : <></>}
             </CardHeader>
 
-            {viewMode ? ViewDeviceCard(device) : IndexDeviceCard(device)}
+            {viewMode ? ViewDeviceCard(device,singleColumn) : IndexDeviceCard(device)}
         </Card>
     );
 }
@@ -217,7 +218,7 @@ function IndexDeviceCard(device: DeviceQueryResult) {
     )
 
 }
-export function ViewDeviceCard(device: DeviceQueryResult) {
+export function ViewDeviceCard(device: DeviceQueryResult, singleColumn?: boolean) {
     const [timeRange, setTimeRange] = useState<number>(10); // Default time range value
     const [deviceData, setDeviceData] = useState<DeviceQueryResult>(device); // State to hold fetched data
 
@@ -354,7 +355,7 @@ export function ViewDeviceCard(device: DeviceQueryResult) {
             </Select>
             <div className="space-y-4">
                 {deviceData.sensors && deviceData.sensors.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className={cn("grid grid-cols-1 gap-4", deviceData.sensors.length > 1 && !singleColumn ? "lg:grid-cols-2" : "lg:grid-cols-1")}>
                         {deviceData.sensors.map((sensor) => (
                             <SensorGraph
                                 key={sensor.id}

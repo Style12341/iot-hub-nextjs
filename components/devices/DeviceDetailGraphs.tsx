@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeviceSSEMessage } from "@/types/types";
 import { ViewDeviceCard } from "./DeviceCard";
+import { View } from "lucide-react";
 
 interface DeviceDetailGraphsProps {
     initialData: DeviceQueryResult;
@@ -93,6 +94,8 @@ export default function DeviceDetailGraphs({
     }
 
     return (
-        <ViewDeviceCard {...deviceData}></ViewDeviceCard>
+        <>
+            {ViewDeviceCard(deviceData, true)}
+        </>
     );
 }

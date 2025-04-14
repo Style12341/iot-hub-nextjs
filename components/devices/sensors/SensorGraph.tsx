@@ -188,13 +188,13 @@ export default function SensorGraph({ sensor, className = "", color }: SensorGra
                     {values.length > 0 ? (
                         <>
                             <div className="flex justify-between">
-                                <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+                                <div className="grid grid-cols-2 gap-2">
                                     <span>Min: {minimum} {sensor.unit}</span>
                                     <span>Max: {maximum} {sensor.unit}</span>
                                     <span>Avg: {average.toFixed(2)} {sensor.unit}</span>
                                     <span>Latest: {values[0]?.value} {sensor.unit}</span>
                                 </div>
-                                <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
+                                <div className="grid grid-cols-1 gap-2">
                                     <span>DataPoints: {dataPoints}</span>
                                     <span>{formatDate(values[0]?.timestamp || "")}</span>
                                 </div>
