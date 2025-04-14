@@ -125,7 +125,7 @@ export default function DeviceCard({ device, isWrapper = false, viewMode = false
                 ) : <></>}
             </CardHeader>
 
-            {viewMode ? ViewDeviceCard(device,singleColumn) : IndexDeviceCard(device)}
+            {viewMode ? ViewDeviceCard(device, singleColumn) : IndexDeviceCard(device)}
         </Card>
     );
 }
@@ -295,12 +295,11 @@ export function ViewDeviceCard(device: DeviceQueryResult, singleColumn?: boolean
     useEffect(() => {
         const newDevice = {
             ...deviceData,
-            status: device.status === "WAITING" ? "OFFLINE" : device.status,
             group: device.group,
             lastValueAt: device.lastValueAt || new Date(),
         };
 
-        if (newDevice.sensors && device.sensors) {
+        if (device.status != "WAITING" && newDevice.sensors && device.sensors) {
             newDevice.sensors = newDevice.sensors.map((sensor) => {
                 const newSensor = device.sensors?.find((s) => s.id === sensor.id);
                 if (!newSensor || !newSensor.values || !newSensor.values[0]) return sensor;
@@ -337,40 +336,45 @@ export function ViewDeviceCard(device: DeviceQueryResult, singleColumn?: boolean
     // Oldest value is by default 10 minutes ago
 
     return (
-        <CardContent className="px-2 space-y-4">
-            <Select
-                defaultValue={timeRange.toString()}
-                onValueChange={(value) => setTimeRange(parseInt(value))}
-            >
-                <SelectTrigger className="w-[180px] h-8 text-xs">
-                    <SelectValue placeholder="Select time range" />
-                </SelectTrigger>
-                <SelectContent>
-                    {timeRanges.map((range) => (
-                        <SelectItem key={range.value} value={range.value.toString()}>
-                            {range.label}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            <div className="space-y-4">
-                {deviceData.sensors && deviceData.sensors.length > 0 ? (
-                    <div className={cn("grid grid-cols-1 gap-4", deviceData.sensors.length > 1 && !singleColumn ? "lg:grid-cols-2" : "lg:grid-cols-1")}>
-                        {deviceData.sensors.map((sensor) => (
-                            <SensorGraph
-                                key={sensor.id}
-                                sensor={sensor}
-                                // Get color based on category, or use default if category not found
-                                color={sensor.categoryColor}
-                            />
+
+        deviceData.status === "WAITING" ?
+            <CardContent className="flex justify-center items-center">
+                Waiting for data...
+            </CardContent> :
+            <CardContent className="px-2 space-y-4">
+                <Select
+                    defaultValue={timeRange.toString()}
+                    onValueChange={(value) => setTimeRange(parseInt(value))}
+                >
+                    <SelectTrigger className="w-[180px] h-8 text-xs">
+                        <SelectValue placeholder="Select time range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {timeRanges.map((range) => (
+                            <SelectItem key={range.value} value={range.value.toString()}>
+                                {range.label}
+                            </SelectItem>
                         ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-4 text-muted-foreground">
-                        No sensor data available
-                    </div>
-                )}
-            </div>
-        </CardContent>
+                    </SelectContent>
+                </Select>
+                <div className="space-y-4">
+                    {deviceData.sensors && deviceData.sensors.length > 0 ? (
+                        <div className={cn("grid grid-cols-1 gap-4", deviceData.sensors.length > 1 && !singleColumn ? "lg:grid-cols-2" : "lg:grid-cols-1")}>
+                            {deviceData.sensors.map((sensor) => (
+                                <SensorGraph
+                                    key={sensor.id}
+                                    sensor={sensor}
+                                    // Get color based on category, or use default if category not found
+                                    color={sensor.categoryColor}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-4 text-muted-foreground">
+                            No sensor data available
+                        </div>
+                    )}
+                </div>
+            </CardContent>
     );
 }
