@@ -205,7 +205,7 @@ export const SensorChart = memo(function SensorChart({
         },
         interaction: {
             mode: 'index' as const,
-            intersect: false,
+            intersect: true,
             axis: 'x' as const,
         },
         onHover: (event: any, elements: any[]) => {
