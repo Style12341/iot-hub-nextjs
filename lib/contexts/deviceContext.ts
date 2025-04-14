@@ -1,6 +1,8 @@
 import { CreateDeviceFormData } from "@/types/types";
 import db from "../prisma";
 import { Device, DeviceStatus, Firmware, View, Sensor } from "@prisma/client";
+import { deleteFirmwareById, getDeviceFirmwares } from "./firmwareContext";
+import { deleteFirmwareFile, deleteFirmwareFileById } from "../firmwareUtils";
 // Example usage
 export interface SensorValueQueryResult {
     value: number;
@@ -676,6 +678,15 @@ export async function getDeviceSensorsWithGroupCount(deviceId: string): Promise<
     }));
 }
 export async function deleteDevice(deviceId: string) {
+
+    const firmwaresToDelete = await getDeviceFirmwares(deviceId);
+    await Promise.all(firmwaresToDelete.map(async (firmware) => {
+        if (firmware) {
+            await deleteFirmwareFile(firmware);
+            await deleteFirmwareById(firmware.id);
+        }
+    }));
+
     // Delete the device and its related data
     const deletedDevice = await db.device.delete({
         where: {
