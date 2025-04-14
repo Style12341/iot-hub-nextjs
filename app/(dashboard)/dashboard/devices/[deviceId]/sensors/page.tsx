@@ -58,16 +58,17 @@ export default async function SensorPage({ params }: SensorPageProps) {
 
   return (
     <>
-      <BreadcrumbHandler
-        breadcrumbs={[
-          { href: '/dashboard', name: 'Dashboard' },
-          { href: '/dashboard/devices', name: 'Devices' },
-          { href: `/dashboard/devices/${deviceId}`, name: device.name }
-        ]}
-        page="Sensors"
-      />
-      <DeviceMenu deviceId={deviceId} activeTab="sensors" variant="responsive" />
-      <div className="container mx-auto py-6 space-y-6">
+
+      <div className="container mx-auto space-y-6">
+        <BreadcrumbHandler
+          breadcrumbs={[
+            { href: '/dashboard', name: 'Dashboard' },
+            { href: '/dashboard/devices', name: 'Devices' },
+            { href: `/dashboard/devices/${deviceId}`, name: device.name }
+          ]}
+          page="Sensors"
+        />
+        <DeviceMenu deviceId={deviceId} activeTab="sensors" variant="responsive" />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Sensors</h1>

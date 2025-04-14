@@ -40,17 +40,16 @@ export default async function DeviceSettingsPage({ params }: DeviceSettingsPageP
 
     return (
         <>
-            <DeviceMenu deviceId={deviceId} activeTab="api" variant="responsive" />
-            <BreadcrumbHandler
-                breadcrumbs={[
-                    { href: '/dashboard', name: 'Dashboard' },
-                    { href: '/dashboard/devices', name: 'Devices' },
-                    { href: `/dashboard/devices/${deviceId}`, name: device.name }
-                ]}
-                page="Api Code"
-            />
-
-            <div className="container mx-auto py-6 space-y-6">
+            <div className="container mx-auto space-y-6">
+                <DeviceMenu deviceId={deviceId} activeTab="api" variant="responsive" />
+                <BreadcrumbHandler
+                    breadcrumbs={[
+                        { href: '/dashboard', name: 'Dashboard' },
+                        { href: '/dashboard/devices', name: 'Devices' },
+                        { href: `/dashboard/devices/${deviceId}`, name: device.name }
+                    ]}
+                    page="Api Code"
+                />
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">API Code</h1>
                     <p className="text-muted-foreground">
@@ -58,7 +57,7 @@ export default async function DeviceSettingsPage({ params }: DeviceSettingsPageP
                         <br /> Select the appropriate format for your implementation.
                     </p>
                 </div>
-                
+
                 <Separator />
                 <DeviceApiCode device={deviceGroupsWSensors} />
             </div>

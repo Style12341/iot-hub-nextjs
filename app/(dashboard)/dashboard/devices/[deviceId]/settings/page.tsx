@@ -40,17 +40,18 @@ export default async function DeviceSettingsPage({ params }: DeviceSettingsPageP
 
   return (
     <>
-      <DeviceMenu deviceId={deviceId} activeTab="settings" variant="responsive" />
-      <BreadcrumbHandler
-        breadcrumbs={[
-          { href: '/dashboard', name: 'Dashboard' },
-          { href: '/dashboard/devices', name: 'Devices' },
-          { href: `/dashboard/devices/${deviceId}`, name: device.name }
-        ]}
-        page="Settings"
-      />
 
-      <div className="container mx-auto py-6 space-y-6">
+
+      <div className="container mx-auto space-y-6">
+        <DeviceMenu deviceId={deviceId} activeTab="settings" variant="responsive" />
+        <BreadcrumbHandler
+          breadcrumbs={[
+            { href: '/dashboard', name: 'Dashboard' },
+            { href: '/dashboard/devices', name: 'Devices' },
+            { href: `/dashboard/devices/${deviceId}`, name: device.name }
+          ]}
+          page="Settings"
+        />
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
           <p className="text-muted-foreground">
